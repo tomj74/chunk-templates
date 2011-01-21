@@ -12,7 +12,7 @@ public class TextFilter
     public static String FILTER_FIRST = "FILTER_FIRST";
     public static String FILTER_LAST  = "FILTER_LAST";
 
-    public static String applyTextFilter(String filter, String text)
+    public static String applyTextFilter(Chunk context, String filter, String text)
     {
         if (filter == null) return text;
 
@@ -21,8 +21,8 @@ public class TextFilter
         if (pipePos >= 0) {
             String firstFilter = filter.substring(0,pipePos);
             String nextFilters = filter.substring(pipePos+1);
-            text = applyTextFilter(firstFilter, text);
-            return applyTextFilter(nextFilters, text);
+            text = applyTextFilter(context, firstFilter, text);
+            return applyTextFilter(context, nextFilters, text);
         }
 
         if (text == null) {
@@ -77,10 +77,10 @@ public class TextFilter
             return applyFormatString(text, filter);
         } else if (filter.startsWith("ondefined")) {
             // direct transform if text is defined
-            return (text.trim().equals("")) ? "" : applyDirectTransform(filter);
+            return (text.trim().equals("")) ? "" : applyDirectTransform(context,filter);
         } else if (filter.startsWith("onmatch")) {
             // case-style transform with optional nomatch postfix
-            return applyMatchTransform(text,filter);
+            return applyMatchTransform(context, text,filter);
         } else if (filter.startsWith("s/")) {
             // regular expression (regex)
             return applyRegex(text,filter);
@@ -117,12 +117,12 @@ public class TextFilter
             // selected(value) is convenience syntax for
             // onmatch(/^value$/, selected="yes" )
             // supports comparing two tags eg {~tagA|select(~tagB)}
-            return selected(text, filter);
+            return selected(context, text, filter);
         } else if (filter.startsWith("check")) {
             // checked(value) is convenience syntax for
             // onmatch(/^value$/, checked="yes" )
             // supports comparing two tags eg {~tagA|check(~tagB)}
-            return checked(text, filter);
+            return checked(context, text, filter);
         } else if (filter.startsWith("qcalc")) {
             // simple x+y addition, subtraction, etc.
             return applyQuickCalc(text, filter);
@@ -147,17 +147,17 @@ public class TextFilter
     private static final String SELECTED_TOKEN = " selected=\"yes\" ";
     private static final String CHECKED_TOKEN = " checked=\"yes\" ";
     
-    private static String selected(String text, String filter)
+    private static String selected(Chunk context, String text, String filter)
     {
-        return selected(text, filter, SELECTED_TOKEN);
+        return selected(context, text, filter, SELECTED_TOKEN);
     }
     
-    private static String checked(String text, String filter)
+    private static String checked(Chunk context, String text, String filter)
     {
-        return selected(text, filter, CHECKED_TOKEN);
+        return selected(context, text, filter, CHECKED_TOKEN);
     }
     
-    private static String selected(String text, String filter, String token)
+    private static String selected(Chunk context, String text, String filter, String token)
     {
         if (text == null) return "";
 
@@ -181,7 +181,7 @@ public class TextFilter
             //
             String xlation = testValue + "|onmatch(/^"
                 + makeSafe(text) + "$/," + token + ")";
-            return magicBraces(xlation);
+            return magicBraces(context, xlation);
         }
         
         // simple case, compare to static text string
@@ -244,6 +244,8 @@ public class TextFilter
         } catch (NumberFormatException e) {
             // not a number?  no-op
             return text;
+        } catch (NoClassDefFoundError e) {
+        	return "[ERROR: jeplite jar missing from classpath! calc filter requires jeplite library]";
         }
     }
 
@@ -265,7 +267,7 @@ public class TextFilter
         }
     }
 
-    private static String applyDirectTransform(String formatString)
+    private static String applyDirectTransform(Chunk context, String formatString)
     {
         int parenPos = formatString.indexOf("(");
         int finalParen = formatString.lastIndexOf(")");
@@ -279,25 +281,42 @@ public class TextFilter
                 output = formatString.substring(parenPos+1);
             }
             // add braces if necessary
-            return magicBraces(output);
+            return magicBraces(context, output);
         } else {
             return "";
         }
     }
 
-    private static String magicBraces(String output)
+    private static String magicBraces(Chunk context, String output)
     {
         char firstChar = output.charAt(0);
         if (firstChar == '~' || firstChar == '+') {
-            return "{"+output+"}";
+        	if (context == null || context.isConforming()) {
+        		return "{"+output+"}";
+        	} else {
+        		String tagOpen = context.makeTag("XXX");
+        		tagOpen = TextFilter.applyRegex(tagOpen, "s/XXX.*//");
+        		
+        		String tag = context.makeTag(output);
+        		
+        		tag = Chunk.findAndReplace(tag, tagOpen+'~', tagOpen);
+        		tag = Chunk.findAndReplace(tag, tagOpen+'+', TemplateSet.INCLUDE_SHORTHAND);
+        		
+        		return tag;
+        	}
         } else if (firstChar == '^') {
-            return "{~."+output.substring(1)+"}";
+        	if (context == null) {
+        		// internally, {^xyz} is just an alias for {~.xyz}
+        		return TemplateSet.DEFAULT_TAG_START+'.'+output.substring(1)+TemplateSet.DEFAULT_TAG_END;
+        	} else {
+        		return context.makeTag(output.substring(1));
+        	}
         } else {
             return output;
         }
     }
 
-    private static String applyMatchTransform(String text, String formatString)
+    private static String applyMatchTransform(Chunk context, String text, String formatString)
     {
         // scan for next regex, check for match, kick out on first match
         int cursor = 8;
@@ -346,7 +365,7 @@ public class TextFilter
             if (matches(text,pattern)) {
                 if (cursor == commaPos + 1) return "";
                 String output = formatString.substring(commaPos+1,cursor);
-                return magicBraces(output);
+                return magicBraces(context,output);
             }
         }
 
@@ -356,7 +375,7 @@ public class TextFilter
             String output = formatString.substring(elseClause + "nomatch(".length());
             if (output.endsWith(")")) output = output.substring(0,output.length()-1);
             if (output.length() == 0) return output;
-            return magicBraces(output);
+            return magicBraces(context,output);
         } else {
             // standard behavior without a nomatch clause is blank output
             return "";
@@ -470,7 +489,8 @@ public class TextFilter
         }
     }
 
-    public static String base64Decode(String text)
+    @SuppressWarnings({ "rawtypes", "unchecked" })
+	public static String base64Decode(String text)
     {
         byte[] decoded = null;
         // try base 64 using two potentially available 3rd party classes
@@ -529,7 +549,8 @@ public class TextFilter
         }
     }
 
-    public static String base64(byte[] bytes)
+    @SuppressWarnings({ "rawtypes", "unchecked" })
+	public static String base64(byte[] bytes)
     {
         // try base 64 using two potentially available 3rd party classes
         try {
@@ -855,7 +876,7 @@ public class TextFilter
     private static final Pattern parsePatternAlt =
         Pattern.compile("include\\.\\(([\\!\\~])(.*)\\)([^\\)]*)$");
 
-    public static String translateIncludeIf(String tag, String open, String close, Map tagTable)
+    public static String translateIncludeIf(String tag, String open, String close, Map<String,Object> tagTable)
     {
         // {~.includeIf(~asdf).tpl_name}
         // is equiv to {~asdf|ondefined(+tpl_name):}

@@ -27,7 +27,32 @@ public class Theme implements ContentSource, ChunkFactory
 			themeLayers.add(simple);
 		} else {
 			for (int i=0; i<layerNames.length; i++) {
-				TemplateSet x = new TemplateSet(themesFolder + layerNames[i]);
+				TemplateSet x = new TemplateSet(this.themesFolder + layerNames[i]);
+				// important: do not return pretty HTML-formatted error strings
+				// when template can not be located.
+				x.signalFailureWithNull();
+				themeLayers.add(x);
+			}
+		}
+	}
+	
+	public Theme(String themesFolder, String themeLayerNames, String ext)
+	{
+        // ensure trailing fileseparator
+        char lastChar = themesFolder.charAt(themesFolder.length()-1);
+        char fs = System.getProperty("file.separator").charAt(0);
+        if (lastChar != '\\' && lastChar != '/' && lastChar != fs) {
+            themesFolder += fs;
+        }
+        this.themesFolder = themesFolder;
+		
+		String[] layerNames = parseLayerNames(themeLayerNames);
+		if (layerNames == null) {
+			TemplateSet simple = new TemplateSet(themesFolder,ext,0);
+			themeLayers.add(simple);
+		} else {
+			for (int i=0; i<layerNames.length; i++) {
+				TemplateSet x = new TemplateSet(this.themesFolder + layerNames[i],ext,0);
 				// important: do not return pretty HTML-formatted error strings
 				// when template can not be located.
 				x.signalFailureWithNull();
@@ -179,20 +204,20 @@ public class Theme implements ContentSource, ChunkFactory
     }
 
     // chunk factory now supports sharing content sources with its factory-created chunks
-    private HashSet altSources = null;
+    private HashSet<ContentSource> altSources = null;
 
     public void addProtocol(ContentSource src)
     {
-        if (altSources == null) altSources = new HashSet();
+        if (altSources == null) altSources = new HashSet<ContentSource>();
         altSources.add(src);
     }
 
     private void shareContentSources(Chunk c)
     {
         if (altSources == null) return;
-        java.util.Iterator iter = altSources.iterator();
+        java.util.Iterator<ContentSource> iter = altSources.iterator();
         while (iter.hasNext()) {
-            ContentSource src = (ContentSource)iter.next();
+            ContentSource src = iter.next();
             c.addProtocol(src);
         }
     }

@@ -6,11 +6,8 @@ import java.io.BufferedReader;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.io.File;
-import java.util.Date;
-import java.util.Vector;
 import java.util.Hashtable;
 import java.util.HashSet;
-import java.util.Properties;
 
 // Project Title: Chunk
 // Description: Template Util
@@ -105,8 +102,8 @@ public class TemplateSet implements ContentSource, ChunkFactory
     private static final int DEFAULT_REFRESH = 15; // minutes
     private static final String DEFAULT_EXTENSION = "html";
 
-    private Hashtable cache = new Hashtable();
-    private Hashtable cacheFetch = new Hashtable();
+    private Hashtable<String,StringBuilder> cache = new Hashtable<String,StringBuilder>();
+    private Hashtable<String,Long> cacheFetch = new Hashtable<String,Long>();
     private int dirtyInterval = DEFAULT_REFRESH; // minutes
     private String defaultExtension = DEFAULT_EXTENSION;
     private String tagStart = DEFAULT_TAG_START;
@@ -811,20 +808,20 @@ public class TemplateSet implements ContentSource, ChunkFactory
     }
 
     // chunk factory now supports sharing content sources with its factory-created chunks
-    private HashSet altSources = null;
+    private HashSet<ContentSource> altSources = null;
 
     public void addProtocol(ContentSource src)
     {
-        if (altSources == null) altSources = new HashSet();
+        if (altSources == null) altSources = new HashSet<ContentSource>();
         altSources.add(src);
     }
 
     private void shareContentSources(Chunk c)
     {
         if (altSources == null) return;
-        java.util.Iterator iter = altSources.iterator();
+        java.util.Iterator<ContentSource> iter = altSources.iterator();
         while (iter.hasNext()) {
-            ContentSource src = (ContentSource)iter.next();
+            ContentSource src = iter.next();
             c.addProtocol(src);
         }
     }

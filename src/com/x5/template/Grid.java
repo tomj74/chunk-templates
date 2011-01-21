@@ -11,7 +11,7 @@ public class Grid
     private String cellTemplate;
     private String rowTemplate;
     private String emptyTemplate;
-    private Map options;
+    private Map<String,String> options;
 
     public static String expandGrid(String params, Chunk ch)
     {
@@ -108,7 +108,7 @@ public class Grid
                 if (dataStore instanceof TableData) {
                     this.data = (TableData)dataStore;
                 } else if (dataStore instanceof String) {
-                    this.data = new InlineTable((String)dataStore);
+                    this.data = InlineTable.parseTable((String)dataStore);
                 }
             }
         }
@@ -116,7 +116,7 @@ public class Grid
 
     private void registerOption(String param, String value)
     {
-        if (options == null) options = new java.util.HashMap();
+        if (options == null) options = new java.util.HashMap<String,String>();
         options.put(param,value);
     }
 
@@ -127,7 +127,8 @@ public class Grid
     }
 
     public static String cookGrid(TableData data, int perRow, Chunk context,
-                                  String cellTemplate, String rowTemplate, String emptyTemplate, Map opt)
+                                  String cellTemplate, String rowTemplate, String emptyTemplate,
+                                  Map<String,String> opt)
     {
         ContentSource tpl = context.getTemplateSet();
 

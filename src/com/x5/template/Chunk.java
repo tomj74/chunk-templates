@@ -3,14 +3,11 @@ package com.x5.template;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Hashtable;
-import java.util.Iterator;
+import java.util.Set;
 import java.util.Vector;
 import java.util.Enumeration;
 import java.util.Map;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import sun.tools.tree.ThisExpression;
 
 import com.x5.util.DataCapsule;
 import com.x5.util.DataCapsuleReader;
@@ -266,17 +263,17 @@ import com.x5.util.TableData;
  * @version 3.0
  */
 
-public class Chunk implements Map
+public class Chunk implements Map<String,Object>
 {
     public static final int HASH_THRESH = 25;
-    public static final int DEPTH_LIMIT = 9;
+    public static final int DEPTH_LIMIT = 17;
 
-    protected Object templateRoot = null;
+    protected String templateRoot = null;
     private String[] firstTags = new String[HASH_THRESH];
     private Object[] firstValues = new Object[HASH_THRESH];
     private int tagCount = 0;
-    protected Vector template = null;
-    private Hashtable tags = null;
+    protected Vector<Object> template = null;
+    private Hashtable<String,Object> tags = null;
     protected String tagStart = TemplateSet.DEFAULT_TAG_START;
     protected String tagEnd = TemplateSet.DEFAULT_TAG_END;
 
@@ -325,7 +322,7 @@ public class Chunk implements Map
             templateRoot = toAdd;
         } else {
             if (template == null) {
-                template = new Vector();
+                template = new Vector<Object>();
                 template.addElement(templateRoot);
             }
             template.addElement(toAdd);
@@ -346,7 +343,7 @@ public class Chunk implements Map
         // if we're adding a chunk we'll almost definitely add more than one.
         // switch to vector
         if (template == null) {
-            template = new Vector();
+            template = new Vector<Object>();
             if (templateRoot != null) template.addElement(templateRoot);
         }
         template.addElement(toAdd);
@@ -463,7 +460,7 @@ public class Chunk implements Map
             }
             if (tagCount >= HASH_THRESH) {
                 // threshhold reached, upgrade to hashtable
-                tags = new Hashtable(HASH_THRESH * 2);
+                tags = new Hashtable<String,Object>(HASH_THRESH * 2);
                 copyToHashtable();
                 tags.put(tagName,tagValue);
             } else {
@@ -586,7 +583,7 @@ public class Chunk implements Map
     public String toString(Chunk context)
     {
         // sometimes orphaned chunks need to be reunited with their ancestry
-        Vector ancestors = new Vector();
+        Vector<Chunk> ancestors = new Vector<Chunk>();
         if (context.ancestorStack != null) {
             ancestors.addAll(context.ancestorStack);
         }
@@ -594,7 +591,7 @@ public class Chunk implements Map
         return explodeForParent(ancestors);
     }
 
-    private String explodeForParent(Vector ancestors)
+    private String explodeForParent(Vector<Chunk> ancestors)
     {
         if (template == null && templateRoot == null) return "";
         StringBuilder buf = new StringBuilder();
@@ -613,7 +610,7 @@ public class Chunk implements Map
             return buf.toString();
         } else {
             // ick, the post-filter output may contain explodable tags
-            String postFilter = TextFilter.applyTextFilter(delayedFilter, buf.toString());
+            String postFilter = TextFilter.applyTextFilter(this, delayedFilter, buf.toString());
             StringBuilder buf2 = new StringBuilder();
             // re-process (hopefully this won't have any weird side-effects)
             explodeAndAppend(postFilter, buf2, ancestors, 1);
@@ -621,14 +618,14 @@ public class Chunk implements Map
         }
     }
 
-    private void explodeAndAppend(Object obj, StringBuilder buf, Vector ancestors, int depth)
+    private void explodeAndAppend(Object obj, StringBuilder buf, Vector<Chunk> ancestors, int depth)
     {
         if (depth >= DEPTH_LIMIT) {
             buf.append("[**ERR** max template recursions: "+DEPTH_LIMIT+"]");
         } else if (obj instanceof String) {
             buf.append(explodeString((String)obj, ancestors, depth));
         } else if (obj instanceof Chunk) {
-            if (ancestors == null) ancestors = new Vector();
+            if (ancestors == null) ancestors = new Vector<Chunk>();
             ancestors.addElement(this);
             Chunk c = (Chunk) obj;
             buf.append(c.explodeForParent(ancestors));
@@ -664,14 +661,12 @@ public class Chunk implements Map
         return null;
     }
 
-    private Hashtable altSources = null;
-    private static final java.util.regex.Pattern includeIfPattern =
-        java.util.regex.Pattern.compile("^\\.include(If|\\.\\()");
-
+    private Hashtable<String,ContentSource> altSources = null;
+    
     public void addProtocol(ContentSource src)
     {
         if (altSources == null) {
-            altSources = new Hashtable();
+            altSources = new Hashtable<String,ContentSource>();
             // delayed adding macro library for memory efficiency
             // (avoid overhead of hashtable whenever possible)
             if (macroLibrary != null) {
@@ -682,7 +677,10 @@ public class Chunk implements Map
         altSources.put(protocol,src);
     }
 
-    private String altFetch(String tagName, Vector ancestors)
+    private static final java.util.regex.Pattern includeIfPattern =
+        java.util.regex.Pattern.compile("^\\.include(If|\\.\\()");
+
+    private String altFetch(String tagName, Vector<Chunk> ancestors)
     {
         String tagValue = null;
 
@@ -706,7 +704,12 @@ public class Chunk implements Map
         if (tagName.startsWith(".calc(")) {
             // FIXME this is not threadsafe (synchronize call/block?)
             this.ancestorStack = ancestors;
-            String eval = Calc.evalCalc(tagName,this);
+            String eval = null;
+            try {
+                eval = Calc.evalCalc(tagName,this);
+            } catch (NoClassDefFoundError e) {
+            	eval = "[ERROR: jeplite jar missing from classpath! ^calc special requires jeplite library]";
+            }
             this.ancestorStack = null;
 
             return eval;
@@ -821,7 +824,7 @@ public class Chunk implements Map
         return resolveTagValue(tagName, null);
     }
 
-    protected Object resolveTagValue(String tagName, Vector ancestors)
+    protected Object resolveTagValue(String tagName, Vector<Chunk> ancestors)
     {
         //strip off the default if provided eg {~tagName:333} means use 333
         // if no specific value is provided.
@@ -951,7 +954,7 @@ public class Chunk implements Map
                     if (filter == null) {
                         return '{'+defValue+'}';
                     } else if (order.equals(TextFilter.FILTER_FIRST)) {
-                        String filtered = TextFilter.applyTextFilter(filter, null);
+                        String filtered = TextFilter.applyTextFilter(this, filter, null);
                         if (filtered != null) {
                             return filtered;
                         } else {
@@ -965,10 +968,10 @@ public class Chunk implements Map
             // reached here?  simple case: no funny chained replacement business
             if (filter != null) {
                 if (order.equals(TextFilter.FILTER_FIRST)) {
-                    String filtered = TextFilter.applyTextFilter(filter, null);
+                    String filtered = TextFilter.applyTextFilter(this, filter, null);
                     return (filtered != null) ? filtered : defValue;
                 } else {
-                    return TextFilter.applyTextFilter(filter, defValue);
+                    return TextFilter.applyTextFilter(this, filter, defValue);
                 }
             } else {
                 return defValue;
@@ -977,7 +980,7 @@ public class Chunk implements Map
             if (pipePos > 0) {
                 // apply filter if provided
                 String filter = tagName.substring(pipePos+1);
-                return TextFilter.applyTextFilter(filter, null);
+                return TextFilter.applyTextFilter(this, filter, null);
             } else {
                 return null;
             }
@@ -1281,7 +1284,7 @@ public class Chunk implements Map
     }
 
     // the core search-and-replace routine
-    private String explodeString(String template, Vector ancestors, int depth)
+    private String explodeString(String template, Vector<Chunk> ancestors, int depth)
     {
         template = expandMacros(template);
 
@@ -1351,7 +1354,7 @@ public class Chunk implements Map
     public boolean containsKey(Object key)
     {
         if (tags == null) {
-            tags = new Hashtable();
+            tags = new Hashtable<String,Object>();
             copyToHashtable();
         }
         return tags.containsKey(key);
@@ -1360,16 +1363,16 @@ public class Chunk implements Map
     public boolean containsValue(Object value)
     {
         if (tags == null) {
-            tags = new Hashtable();
+            tags = new Hashtable<String,Object>();
             copyToHashtable();
         }
         return tags.containsValue(value);
     }
 
-    public java.util.Set entrySet()
+    public Set<java.util.Map.Entry<String, Object>> entrySet()
     {
         if (tags == null) {
-            tags = new Hashtable();
+            tags = new Hashtable<String,Object>();
             copyToHashtable();
         }
         return tags.entrySet();
@@ -1378,13 +1381,13 @@ public class Chunk implements Map
     public boolean equals(Object o)
     {
         if (tags == null) {
-            tags = new Hashtable();
+            tags = new Hashtable<String,Object>();
             copyToHashtable();
         }
         return tags.equals(o);
     }
 
-    private Vector ancestorStack = null;
+    private Vector<Chunk> ancestorStack = null;
 
     public Object get(Object key)
     {
@@ -1394,7 +1397,7 @@ public class Chunk implements Map
     public int hashCode()
     {
         if (tags == null) {
-            tags = new Hashtable();
+            tags = new Hashtable<String,Object>();
             copyToHashtable();
         }
         return tags.hashCode();
@@ -1409,19 +1412,19 @@ public class Chunk implements Map
         }
     }
 
-    public java.util.Set keySet()
+    public java.util.Set<String> keySet()
     {
         if (tags == null) {
-            tags = new Hashtable();
+            tags = new Hashtable<String,Object>();
             copyToHashtable();
         }
         return tags.keySet();
     }
 
-    public Object put(Object key, Object value)
+    public Object put(String key, Object value)
     {
-        Object x = getTag((String)key);
-        set((String)key, value, "");
+        Object x = getTag(key);
+        set(key, value, "");
         return x;
     }
 
@@ -1430,13 +1433,14 @@ public class Chunk implements Map
         throw new UnsupportedOperationException();
     }
 
-    public void putAll(Map t)
+    @SuppressWarnings({ "unchecked", "rawtypes" })
+	public void putAll(Map t)
     {
         if (t == null || t.size() < 0) return;
-        java.util.Set set = t.keySet();
-        java.util.Iterator i = set.iterator();
+        java.util.Set<String> set = t.keySet();
+        java.util.Iterator<String> i = set.iterator();
         while (i.hasNext()) {
-            String tagName = (String) i.next();
+            String tagName = i.next();
             set(tagName, t.get(tagName), "");
         }
     }
@@ -1447,10 +1451,10 @@ public class Chunk implements Map
         return tagCount;
     }
 
-    public java.util.Collection values()
+    public java.util.Collection<Object> values()
     {
         if (tags == null) {
-            tags = new Hashtable();
+            tags = new Hashtable<String,Object>();
             copyToHashtable();
         }
         return tags.values();
@@ -1462,12 +1466,12 @@ public class Chunk implements Map
      * Assumes keys are strings and values are either type String
      * or type Chunk.
      */
-    public void setMultiple(Hashtable rules)
+    public void setMultiple(Hashtable<String,Object> rules)
     {
         if (rules == null || rules.size() <= 0) return;
-        Enumeration e = rules.keys();
+        Enumeration<String> e = rules.keys();
         while (e.hasMoreElements()) {
-            String tagName = (String) e.nextElement();
+            String tagName = e.nextElement();
             set(tagName,rules.get(tagName),"");
         }
     }
@@ -1479,7 +1483,7 @@ public class Chunk implements Map
     public void setMultiple(Chunk copyFrom)
     {
         if (copyFrom != null) {
-            Hashtable h = copyFrom.getTagsTable();
+            Hashtable<String,Object> h = copyFrom.getTagsTable();
             setMultiple(h);
         }
     }
@@ -1490,7 +1494,7 @@ public class Chunk implements Map
      * Does not return a clone.
      * @return a Hashtable containing the Chunk's find-and-replace rules.
      */
-    public Hashtable getTagsTable()
+    public Hashtable<String,Object> getTagsTable()
     {
         if (tags != null) {
             return tags;
@@ -1506,7 +1510,7 @@ public class Chunk implements Map
 
     private void copyToHashtable()
     {
-        if (tags == null) tags = new Hashtable(tagCount);
+        if (tags == null) tags = new Hashtable<String,Object>(tagCount*2);
         for (int i=0; i<tagCount; i++) {
             tags.put(firstTags[i],firstValues[i]);
         }
@@ -1614,6 +1618,17 @@ public class Chunk implements Map
     			this.set(tags[i], val.toString());
     		}
     	}
+    }
+    
+    public String makeTag(String tagName)
+    {
+        return tagStart + tagName + tagEnd;
+    }
+    
+    public boolean isConforming()
+    {
+    	if (tagStart.equals(TemplateSet.DEFAULT_TAG_START)) return true;
+    	return false;
     }
     
     /**
