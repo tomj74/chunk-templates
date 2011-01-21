@@ -9,12 +9,15 @@ public class DataCapsuleReader
 	// For efficiency, keep around instances of DataCapsuleReader objects
 	// in a static hashtable so we don't have to wait for slow reflection
 	// after the first time...
-	private static Hashtable<String, DataCapsuleReader> readerCache = new Hashtable();
+	private static Hashtable<String, DataCapsuleReader> readerCache
+		= new Hashtable<String, DataCapsuleReader>();
 	
 	private String[] labels;
 	private String[] bareLabels;
 	private String[] methodNames;
 	private Method[] methods;
+	
+	@SuppressWarnings("rawtypes")
 	private Class capsuleClass;
 	
 	public static DataCapsuleReader getReader(DataCapsule[] dataCapsules)
@@ -179,16 +182,12 @@ public class DataCapsuleReader
 		return rawOutput;
 	}
 	
-	private Class getCapsuleClass()
-	{
-		return capsuleClass;
-	}
-	
 	public String getDataClassName()
 	{
 		return capsuleClass.getName();
 	}
 	
+	@SuppressWarnings("unchecked")
 	private Method[] grokMethods(DataCapsule data)
 	{
 		Method[] methods = new Method[methodNames.length];
@@ -203,6 +202,7 @@ public class DataCapsuleReader
 		return methods;
 	}
 	
+	@SuppressWarnings("unused")
 	private Method[] grokSimpleMethods(DataCapsule data)
 	{
         /**

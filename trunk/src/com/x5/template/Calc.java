@@ -32,15 +32,18 @@ public class Calc
         expr = "(2 + 2 * x^x) % 2";
         System.out.println(evalExpression(expr,null,varnames,varvalues));
 
-        java.util.HashMap<String,String> map = new java.util.HashMap<String,String>();
+        java.util.HashMap<String,Object> map = new java.util.HashMap<String,Object>();
         map.put("a","20");
         map.put("b","30");
 
         String calcString = "\"$x * 3 + $y * 40\",\"%.2f\",~a,~b";
         System.out.println(evalCalc(calcString, map));
+        
+        calcString = "\"$x * $x\",\"%.2f\",~a,~b";
+        System.out.println(evalCalc(calcString, map));
     }
 
-    public static String evalCalc(String calc, Map vars)
+    public static String evalCalc(String calc, Map<String,Object> vars)
     {
         int quote1 = calc.indexOf("\"");
         if (quote1 < 0) return null;
@@ -101,7 +104,7 @@ public class Calc
         }
     }
 
-    private static String[] grokVarValues(String list, Map vars)
+    private static String[] grokVarValues(String list, Map<String,Object> vars)
     {
         String[] tokens = list.split(",");
         if (tokens == null) return null;
@@ -114,10 +117,10 @@ public class Calc
             key = key.trim();
             if (key.startsWith("~")) key = key.substring(1);
             //System.err.println("scanning map for "+key);
-            String value = (String)vars.get(key);
-            //System.err.println("...got "+value);
-
-            values[i] = value;
+            Object value = vars.get(key);
+            if (value instanceof String) {
+            	values[i] = (String)value;
+            }
         }
         return values;
     }
@@ -136,7 +139,7 @@ public class Calc
             while (isLegalNameChar(c) && ++endOfName < expr.length()) {
                 c = expr.charAt(endOfName);
             }
-            if (names == null) names = new ArrayList();
+            if (names == null) names = new ArrayList<String>();
 
             String name = "V"+expr.substring(varMarker+1,endOfName);
             if (!names.contains(name)) {

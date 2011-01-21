@@ -11,7 +11,7 @@ public class Loop
     private Chunk chunk;
     private String rowTemplate;
     private String emptyTemplate;
-    private Map options;
+    private Map<String,String> options;
 
     public static void main(String[] args)
     {
@@ -118,10 +118,10 @@ public class Loop
                     if (dataStore instanceof TableData) {
                         this.data = (TableData)dataStore;
                     } else if (dataStore instanceof String) {
-                        this.data = new InlineTable((String)dataStore);
+                        this.data = InlineTable.parseTable((String)dataStore);
                         registerOption("array_index_tags","FALSE");
                     } else if (dataStore instanceof String[]) {
-                    	this.data = new InlineTable((String[])dataStore);
+                    	this.data = new SimpleTable((String[])dataStore);
                     } else if (dataStore instanceof Object[]) {
                     	// assume array of objects that implement DataCapsule
                     	this.data = DataCapsuleTable.extractData((Object[])dataStore);
@@ -131,7 +131,8 @@ public class Loop
             } else {
                 // template reference
                 if (chunk != null) {
-                    this.data = new InlineTable(chunk.getTemplateSet().fetch(dataVar));
+                	String tableAsString = chunk.getTemplateSet().fetch(dataVar);
+                    this.data = InlineTable.parseTable(tableAsString);
                 }
             }
         }
@@ -139,7 +140,7 @@ public class Loop
 
     private void registerOption(String param, String value)
     {
-        if (options == null) options = new java.util.HashMap();
+        if (options == null) options = new java.util.HashMap<String,String>();
         options.put(param,value);
     }
 
@@ -148,7 +149,9 @@ public class Loop
         return Loop.cookLoop(data, chunk, rowTemplate, emptyTemplate, options);
     }
 
-    public static String cookLoop(TableData data, Chunk context, String rowTemplate, String emptyTemplate, Map opt)
+    public static String cookLoop(TableData data, Chunk context,
+    		String rowTemplate, String emptyTemplate,
+    		Map<String,String> opt)
     {
         if (data == null || !data.hasNext()) {
             if (emptyTemplate == null) {
@@ -164,9 +167,9 @@ public class Loop
         if (opt != null) {
         	if (opt.containsKey("divider")) {
 	        	dividerTemplate = (String)opt.get("divider");
-	        	ContentSource html = context.getTemplateSet();
-	        	if (html.provides(dividerTemplate)) {
-	        		dividerTemplate = html.fetch(dividerTemplate);
+	        	ContentSource templates = context.getTemplateSet();
+	        	if (templates.provides(dividerTemplate)) {
+	        		dividerTemplate = templates.fetch(dividerTemplate);
 	        	}
         	}
         	if (opt.containsKey("array_index_tags")) {

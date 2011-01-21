@@ -8,7 +8,7 @@ public class DataCapsuleTable implements TableData
 	private DataCapsuleReader fish;
 	private DataCapsule[] records;
 	private int cursor = -1;
-	private Map currentRecord;
+	private Map<String,String> currentRecord;
 	
 	public static DataCapsuleTable extractData(Object[] objArray)
 	{

@@ -1,19 +1,13 @@
 package com.x5.template;
 
 import java.util.Map;
-import java.util.HashMap;
 import java.util.ArrayList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import com.x5.util.TableData;
 
-public class InlineTable implements TableData
+public class InlineTable
 {
-    private String[] labels;
-    private ArrayList<String[]> records;
-    private int cursor = -1;
-    private Map currentRecord;
-
     // comma or close-bracket
     private static final Pattern DELIM = Pattern.compile("[,\\]]");
 
@@ -24,7 +18,7 @@ public class InlineTable implements TableData
     {
         String test = "[[code,name,price],[abc,Apples,$2.50],[xyz,Whiz-Bang \\[you\\, and everyone\\, will love it!\\],$13.99]]";
         System.out.println("Reading in table...");
-        TableData table = new InlineTable(test);
+        TableData table = InlineTable.parseTable(test);
         System.out.println("...finished.  Checking data structures:");
 
         String[] labels = table.getColumnLabels();
@@ -42,27 +36,15 @@ public class InlineTable implements TableData
         }
     }
 
-    public InlineTable(String data)
+    public static TableData parseTable(String data)
     {
-        parseTable(data);
+        return _parseTable(data);
     }
     
-    public InlineTable(String[] data)
-    {
-    	if (data == null) return;
-    	labels = new String[]{"anonymous"};
-    	// make a single-column table out of a String array.
-    	records = new ArrayList<String[]>();
-    	for (int i=0; i<data.length; i++) {
-    		String[] record = new String[]{data[i]};
-    		records.add(record);
-    	}
-    }
-
     /*
      * example [[code,name,price],[abc,Apples,$2.50],[xyz,Whiz-Bang \[you\, and everyone\, will love it!\],$13.99]]
      */
-    private void parseTable(String data)
+    private static SimpleTable _parseTable(String data)
     {
         // first elt of array is labels
         // remainder is record data
@@ -74,9 +56,12 @@ public class InlineTable implements TableData
 
         if (marker < 0) {
             //System.err.println("could not locate start of data");
-            return;
+            return null;
         }
 
+        String[] labels = null;
+        ArrayList<String[]> records = null;
+        
         // parse a row
         while (marker > -1 && marker < dataLen) {
             // scan for bracket marking start of row
@@ -120,9 +105,11 @@ public class InlineTable implements TableData
             // scan to start of next row
             if (marker > 0) marker = data.indexOf(",",marker+1);
         }
+        
+        return new SimpleTable(labels, records);
     }
 
-    public static int nextUnescapedDelim(Pattern delim, String input, int searchFrom)
+    private static int nextUnescapedDelim(Pattern delim, String input, int searchFrom)
     {
         Matcher m = delim.matcher(input);
         boolean hasDelim = m.find(searchFrom);
@@ -153,57 +140,6 @@ public class InlineTable implements TableData
             }
         }
         return delimPos;
-    }
-
-    public String[] getColumnLabels()
-    {
-        return labels;
-    }
-
-    public void setColumnLabels(String[] labels)
-    {
-        this.labels = labels;
-    }
-
-    public String[] getRow()
-    {
-        if (cursor < 0) cursor = 0;
-
-        if (records != null && records.size() > cursor) {
-            return records.get(cursor);
-        } else {
-            return null;
-        }
-    }
-
-    public boolean hasNext()
-    {
-        if (records != null && records.size() > cursor + 1) {
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    public Map<String,String> nextRecord()
-    {
-        cursor++;
-        String[] values = getRow();
-
-        if (values == null) return null;
-
-        if (currentRecord == null) {
-            currentRecord = new HashMap<String,String>();
-        } else {
-            currentRecord.clear();
-        }
-
-        for (int i=0; i<labels.length; i++) {
-            String label = labels[i];
-            currentRecord.put(label,values[i]);
-        }
-
-        return currentRecord;
     }
 
 }
