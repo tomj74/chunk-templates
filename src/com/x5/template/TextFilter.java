@@ -96,12 +96,12 @@ public class TextFilter
         } else if (filter.equals("md5base64") || filter.equals("md5b64")) {
             // md5 hash (base64)
             return md5Base64(text);
-        } else if (filter.equals("sha") || filter.equals("shahex")) {
+        } else if (filter.equals("sha1") || filter.equals("sha1hex")) {
             // md5 hash (hex)
-            return shaHex(text);
-        } else if (filter.equals("shabase64") || filter.equals("shab64")) {
+            return sha1Hex(text);
+        } else if (filter.equals("sha1base64") || filter.equals("sha1b64")) {
             // md5 hash (base64)
-            return shaBase64(text);
+            return sha1Base64(text);
         } else if (filter.equals("hex")) {
             try {
                 return new java.math.BigInteger(1,text.getBytes("UTF-8")).toString(16);
@@ -115,12 +115,12 @@ public class TextFilter
             return defang(text);
         } else if (filter.startsWith("sel")) {
             // selected(value) is convenience syntax for
-            // onmatch(/^value$/, selected="yes" )
+            // onmatch(/^value$/, selected="selected" )
             // supports comparing two tags eg {~tagA|select(~tagB)}
             return selected(context, text, filter);
         } else if (filter.startsWith("check")) {
             // checked(value) is convenience syntax for
-            // onmatch(/^value$/, checked="yes" )
+            // onmatch(/^value$/, checked="checked" )
             // supports comparing two tags eg {~tagA|check(~tagB)}
             return checked(context, text, filter);
         } else if (filter.startsWith("qcalc")) {
@@ -144,8 +144,8 @@ public class TextFilter
         return applyRegex(text, "s/[^A-Za-z0-9@\\!\\?\\*\\#\\$\\(\\)\\+\\=\\:\\;\\,\\~\\/\\._-]//g");
     }
     
-    private static final String SELECTED_TOKEN = " selected=\"yes\" ";
-    private static final String CHECKED_TOKEN = " checked=\"yes\" ";
+    private static final String SELECTED_TOKEN = " selected=\"selected\" ";
+    private static final String CHECKED_TOKEN = " checked=\"checked\" ";
     
     private static String selected(Chunk context, String text, String filter)
     {
@@ -625,19 +625,19 @@ public class TextFilter
         return hashCrypt("MD5",text,base64);
     }
 
-    public static String shaHex(String text)
+    public static String sha1Hex(String text)
     {
-        return sha(text, false);
+        return sha1(text, false);
     }
 
-    public static String shaBase64(String text)
+    public static String sha1Base64(String text)
     {
-        return sha(text, true);
+        return sha1(text, true);
     }
 
-    public static String sha(String text, boolean base64)
+    public static String sha1(String text, boolean base64)
     {
-        return hashCrypt("SHA",text,base64);
+        return hashCrypt("SHA-1",text,base64);
     }
 
     public static int nextArgDelim(String arglist, int searchFrom)
