@@ -268,7 +268,7 @@ public class Chunk implements Map<String,Object>
     public static final int HASH_THRESH = 25;
     public static final int DEPTH_LIMIT = 17;
 
-    protected String templateRoot = null;
+    protected Snippet templateRoot = null;
     private String[] firstTags = new String[HASH_THRESH];
     private Object[] firstValues = new Object[HASH_THRESH];
     private int tagCount = 0;
@@ -311,11 +311,8 @@ public class Chunk implements Map<String,Object>
     {
     	return chunkFactory;
     }
-
-    /**
-     * Add a String on to the end a Chunk's template.
-     */
-    public void append(String toAdd)
+    
+    public void append(Snippet toAdd)
     {
         // don't bother with overhead of vector until necessary
         if (templateRoot == null && template == null) {
@@ -327,6 +324,18 @@ public class Chunk implements Map<String,Object>
             }
             template.addElement(toAdd);
         }
+    }
+
+    /**
+     * Add a String on to the end a Chunk's template.
+     */
+    public void append(String toAdd)
+    {
+    	if (toAdd == null) return;
+    	
+    	// cut string into snippets-to-process and literals
+    	Snippet snippet = new Snippet(toAdd);
+    	append(snippet);
     }
 
     /**
@@ -386,21 +395,12 @@ public class Chunk implements Map<String,Object>
     }
     
     /**
-     * Careful, setUnlessNull will DELETE a previous value
+     * Careful, setOrDelete will DELETE a previous value
      * for the tag at this level if passed a null value.
      * 
      * This is a way around the standard behavior which interprets
      * null values as the empty string.
      * 
-     * @param tagName
-     * @param tagValue
-     */
-    public void setUnlessNull(String tagName, Object tagValue)
-    {
-    	setOrDelete(tagName, tagValue);
-    }
-    
-    /**
      * The default is to use the empty string for null object/strings.
      * setOrDelete provides an alternate option, leaving the tag "unset"
      * in case the value is null, which allows the template to provide
@@ -436,6 +436,7 @@ public class Chunk implements Map<String,Object>
         // ensure that tagValue is either a String or a Chunk (or some tabular data)
         if (tagValue != null) {
         	if (!(tagValue instanceof String
+        			|| tagValue instanceof Snippet
         			|| tagValue instanceof Chunk
         			|| tagValue instanceof TableData
         			|| tagValue instanceof Object[])) {
@@ -596,7 +597,7 @@ public class Chunk implements Map<String,Object>
         if (template == null && templateRoot == null) return "";
         StringBuilder buf = new StringBuilder();
         if (template == null) {
-            explodeAndAppend(templateRoot, buf, ancestors, 1);
+    		explodeAndAppend(templateRoot, buf, ancestors, 1);
         } else {
             for (int i=0; i < template.size(); i++) {
                 Object obj = template.elementAt(i);
@@ -622,8 +623,27 @@ public class Chunk implements Map<String,Object>
     {
         if (depth >= DEPTH_LIMIT) {
             buf.append("[**ERR** max template recursions: "+DEPTH_LIMIT+"]");
+        } else if (obj instanceof Snippet) {
+        	Snippet snippet = (Snippet)obj;
+        	if (snippet.isSimple()) {
+        		// most snippets are simple (ie don't contain literals)
+        		buf.append(explodeString(snippet.getSimpleText(), ancestors, depth));
+        	} else {
+            	ArrayList<SnippetPart> parts = snippet.getParts();
+            	if (parts == null) return;
+        		for (SnippetPart part : parts) {
+                	if (part.isLiteral()) {
+                		buf.append(part.getText()); // DO NOT INTERPOLATE literal block
+                	} else {
+                        buf.append(explodeString(part.getText(), ancestors, depth));
+                	}
+        		}
+        	}
         } else if (obj instanceof String) {
-            buf.append(explodeString((String)obj, ancestors, depth));
+        	// snippet-ify to catch/skip literal blocks
+        	Snippet snippet = new Snippet((String)obj);
+			explodeAndAppend(snippet,buf,ancestors,depth);
+            ///buf.append(explodeString((String)obj, ancestors, depth));
         } else if (obj instanceof Chunk) {
             if (ancestors == null) ancestors = new Vector<Chunk>();
             ancestors.addElement(this);
@@ -680,7 +700,7 @@ public class Chunk implements Map<String,Object>
     private static final java.util.regex.Pattern includeIfPattern =
         java.util.regex.Pattern.compile("^\\.include(If|\\.\\()");
 
-    private String altFetch(String tagName, Vector<Chunk> ancestors)
+    private Object altFetch(String tagName, Vector<Chunk> ancestors)
     {
         String tagValue = null;
 
@@ -699,7 +719,16 @@ public class Chunk implements Map<String,Object>
 
             return translation;
         }
-
+        
+        /**
+         * literals are intercepted higher up so theoretically we do not
+         * need to handle literals here...
+        // a ^literal block
+        if (tagName.startsWith(".^") || tagName.startsWith(".literal")) {
+        	return tagName;
+        }
+         */
+        
         // the ^calc(...) fn
         if (tagName.startsWith(".calc(")) {
             // FIXME this is not threadsafe (synchronize call/block?)
@@ -761,25 +790,34 @@ public class Chunk implements Map<String,Object>
         String cleanItemName = itemName;
         cleanItemName = cleanItemName.replaceAll("[\\|:].*$", "");
         
+        ContentSource fetcher = null;
         if (altSources != null) {
-            ContentSource fetcher = (ContentSource)altSources.get(srcName);
-            // when altSources exists, it handles includes too            
-            if (fetcher != null) tagValue = fetcher.fetch(cleanItemName);
-        } else {
+            fetcher = altSources.get(srcName);
+        } else if (macroLibrary != null && srcName.equals(macroLibrary.getProtocol())) {
             // if the only alt source is the macro library for includes,
             // no hashtable is made (for memory efficiency)
-            if (macroLibrary != null && srcName.equals(macroLibrary.getProtocol())) {
+        	fetcher = macroLibrary;
+        }
+        // when altSources exists, it handles includes too
+        if (fetcher != null) {
+            if (fetcher instanceof Theme) {
                 // include's are special, handle via macroLibrary TemplateSet
-                tagValue = macroLibrary.fetch(cleanItemName);
+            	// slight optimization, return Snippet instead of String
+            	Theme theme = (Theme)fetcher;
+            	Snippet s = theme.getSnippet(cleanItemName);
+            	if (s != null) return s;
+            } else {
+            	tagValue = fetcher.fetch(cleanItemName);
             }
         }
 
         if (tagValue == null && ancestors != null) {
             // still null? maybe an ancestor knows how to grok
-            for (int i=ancestors.size()-1; i>=0 && tagValue == null; i--) {
+            for (int i=ancestors.size()-1; i>=0; i--) {
                 Chunk ancestor = (Chunk)ancestors.elementAt(i);
                 // lazy... should repeat if/else above to avoid re-parsing the tag
-                tagValue = ancestor.altFetch(tagName, null);
+                Object x = ancestor.altFetch(tagName, null);
+                if (x != null) return x;
             }
         }
 
@@ -809,6 +847,30 @@ public class Chunk implements Map<String,Object>
         if (nextParen < 0 || nextParen < pipePos) return pipePos;
         return tagName.indexOf("|",nextParen+1);
     }
+    
+    private String resolveBackticks(String lookupName, Vector<Chunk> ancestors)
+    {
+    	int backtickA = lookupName.indexOf('`');
+    	if (backtickA < 0) return lookupName;
+    	int backtickB = lookupName.indexOf('`',backtickA+1);
+    	if (backtickB < 0) return lookupName;
+    	
+    	String embeddedTag = lookupName.substring(backtickA+2,backtickB);
+    	char typeChar = lookupName.charAt(backtickA+1);
+    	if (typeChar == '^') {
+    		embeddedTag = '.'+embeddedTag;
+    	} else if (typeChar != '~') {
+    		// only ^ and ~ are legal for now
+    		return lookupName;
+    	}
+    	
+    	String dynLookupName = lookupName.substring(0,backtickA)
+    	  + resolveTagValue(embeddedTag,ancestors)
+    	  + lookupName.substring(backtickB+1);
+    	
+    	// there may be more...
+    	return resolveBackticks(dynLookupName,ancestors);
+    }
 
     // resolveTagValue responds in the context of an explosion tree.
     // ie, if the tag has not been set in this chunk, it goes up the
@@ -826,10 +888,14 @@ public class Chunk implements Map<String,Object>
 
     protected Object resolveTagValue(String tagName, Vector<Chunk> ancestors)
     {
-        //strip off the default if provided eg {~tagName:333} means use 333
-        // if no specific value is provided.
+    	if (tagName.indexOf('`') > -1) {
+    		tagName = resolveBackticks(tagName, ancestors);
+    	}
         String lookupName = tagName;
 
+        //strip off the default if provided eg {~tagName:333} means use 333
+        // if no specific value is provided.
+        //strip filters as well eg {~tagName|s/xx/yy/}
         int colonPos = tagName.indexOf(':');
         int pipePos = tagName.indexOf('|');
         pipePos = confirmPipe(tagName,pipePos);
@@ -839,7 +905,7 @@ public class Chunk implements Map<String,Object>
             if (pipePos > 0 && pipePos < colonPos) firstMod = pipePos;
             lookupName = tagName.substring(0,firstMod);
         }
-
+        
         Object tagValue = null;
 
         if (lookupName.charAt(0) == '.') {
@@ -891,7 +957,7 @@ public class Chunk implements Map<String,Object>
                 		// so it will pass the ondefined test.
                 		filterMeLater.set("oneTag", "DEFINED");
                 	}
-                } else if (!(tagValue instanceof String)) {
+                } else if (!(tagValue instanceof String) && !(tagValue instanceof Snippet)) {
                 	// not a String, not a String array -- the only legal filter here
                 	// is ondefined(...)
                 	if (filters[0].startsWith("ondefined")) {
@@ -1041,13 +1107,94 @@ public class Chunk implements Map<String,Object>
         // presto change-o {+template} into {~.include.template}
         // also handles {^protocol.arg} into {~.protocol.arg}
         //
-        // is supporting this worth the cost of another TWO passes through the string?
+        // is supporting this worth the cost of another pass through the string?
         //
+    	if (template == null) return null;
+
+    	StringBuilder expanded = new StringBuilder();
+    	
+        // restrict search to inside tags
+        int cursor = template.indexOf("{");
+        if (cursor < 0) return template;
+        
+        int marker = 0;
+
+        while (cursor > -1) {
+            expanded.append(template.substring(marker,cursor));
+            marker = cursor;
+            
+            if (template.length() == cursor+1) {
+            	// kick out at first sign of trouble
+            	break;
+            }
+            char afterBrace = template.charAt(cursor+1);
+            if (afterBrace == '+') {
+            	expanded.append("{~.include.");
+            	cursor += 2;
+            	marker += 2;
+            } else if (afterBrace == '^') {
+            	// check for literal block, and do not perform expansions
+            	// inside any literal blocks.
+            	int afterLiteralBlock = skipLiterals(template,cursor);
+            	if (afterLiteralBlock == cursor) {
+	                // ^ is shorthand for ~. eg {^include.#xyz} or {^wiki.External_Content}
+            		expanded.append("{~.");
+            		cursor += 2;
+            		marker += 2;
+            	} else {
+            		// make sure literal starts with {~. or else expansion
+            		// won't catch it and skip it properly
+            		expanded.append("{~.");
+            		expanded.append(template.substring(marker+2,afterLiteralBlock-TemplateSet.LITERAL_END.length()));
+            		expanded.append("{~.}");
+            		cursor = afterLiteralBlock;
+            		marker = afterLiteralBlock;
+            	}
+            } else {
+                cursor += 2;
+            }
+            // on to the next tag...
+            if (cursor > -1) {
+            	cursor = template.indexOf("{",cursor);
+            }
+        }
+        
+    	expanded.append(template.substring(marker));
+        return expanded.toString();
+        
+    	/*
         String p1 = findAndReplace(template, TemplateSet.INCLUDE_SHORTHAND, "{~.include.");
         String p2 = findAndReplace(p1, TemplateSet.PROTOCOL_SHORTHAND, "{~.");
         return p2;
+        */
     }
 
+    private static int skipLiterals(String template, int cursor)
+    {
+    	int wall = template.length();
+    	int shortLen = TemplateSet.LITERAL_SHORTHAND.length();
+    	int scanStart = cursor;
+    	if (cursor + shortLen <= wall && template.substring(cursor,cursor+shortLen).equals(TemplateSet.LITERAL_SHORTHAND)) {
+    		scanStart = cursor + shortLen;
+    	} else {
+    		int longLen = TemplateSet.LITERAL_START.length();
+    		if (cursor + longLen <= wall && template.substring(cursor,cursor+longLen).equals(TemplateSet.LITERAL_START)) {
+    			scanStart = cursor + longLen;
+    		}
+    	}
+    	
+    	if (scanStart > cursor) {
+    		int tail = template.indexOf(TemplateSet.LITERAL_END, scanStart);
+    		if (tail < 0) {
+    			return wall;
+    		} else {
+    			return tail + TemplateSet.LITERAL_END.length();
+    		}
+    	} else {
+    		return cursor;
+    	}
+    }
+    
     private String expandMacros(String template)
     {
         template = expandIncludes(template);
@@ -1091,8 +1238,11 @@ public class Chunk implements Map<String,Object>
         int letBegin = macroVars.indexOf(this.tagStart);
         if (letBegin < 0) {
             // no assignments
-            String theTemplate = altFetch(".include."+templateRef,null);
-            expanded.append( expandMacros(theTemplate) );
+        	// altFetch returns String or Snippet
+            Object theTemplate = altFetch(".include."+templateRef,null);
+            if (theTemplate != null) {
+            	expanded.append( expandMacros(theTemplate.toString()) );
+            }
         } else {
             // make chunk from templateRef and delegate assignments
             if (letBegin > 0) macroVars = macroVars.substring(letBegin);
@@ -1245,10 +1395,24 @@ public class Chunk implements Map<String,Object>
         int endPos = template.indexOf(tagEnd,searchFrom);
         if (endPos < 0) return endPos;
 
-        // tricky business: ignore all tag markers inside a regex
+        // tricky business: ignore all tag markers inside a regex.
+        // also, preserve literals.
 
         // search backwards for regex start
         int x = endPos;
+        
+        /**
+         * literals are intercepted higher up the chain now.
+         * no need to scan for them here.
+        // {~.^} or {~.literal}
+        if (x - searchFrom == 1 && template.substring(searchFrom,x).equals(".")
+       		|| x - searchFrom == 8 && template.substring(searchFrom,x).equals(".literal")) {
+        	x = template.indexOf(TemplateSet.LITERAL_END_EXPANDED,x+1);
+        	if (x < 0) return x;
+        	return x + TemplateSet.LITERAL_END_EXPANDED.length() - 1;
+        }
+         */
+        
         int regexPos = 0;
         boolean isMatchOnly = false;
         while (regexPos == 0 && x > searchFrom+1) {
@@ -1332,7 +1496,25 @@ public class Chunk implements Map<String,Object>
             return buf.toString();
         }
     }
-
+    
+    /**
+     * literals are now caught higher up the chain
+     * no need to process them and then unprocess them anymore.
+    private String makePrettyLiteral(String literal)
+    {
+    	// turn {~.literal}...{~.} back into {^literal}...{^}
+    	// and turn {~.^}...{~.} back into {^^}...{^}
+    	String pretty = tagStart + literal + tagEnd;
+    	if (pretty.startsWith("{~.")) {
+    		pretty = TemplateSet.PROTOCOL_SHORTHAND + pretty.substring(3);
+    	}
+    	int endMarker = pretty.lastIndexOf(TemplateSet.LITERAL_END_EXPANDED);
+    	if (endMarker > -1) {
+    		pretty = pretty.substring(0,endMarker) + TemplateSet.LITERAL_END;
+    	}
+    	return pretty;
+    }
+     */
 
     /**
      * Clears all tag replacement rules.

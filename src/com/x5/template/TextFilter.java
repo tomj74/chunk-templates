@@ -162,6 +162,9 @@ public class TextFilter
         if (text == null) return "";
 
         String[] args = parseArgs(filter);
+        // no arg!!  so, just return token if text is non-null
+        if (args == null) return token;
+        
         String testValue = args[0];
         
         if (testValue.charAt(0) == '~') {
@@ -200,6 +203,8 @@ public class TextFilter
         if (quote1 < 0) {
             quote1 = filter.indexOf("(");
             quote2 = filter.lastIndexOf(")");
+            if (quote2 < 0) return null;
+                
             isQuoted = false;
         } else {
             quote2 = filter.indexOf("\"",quote1+1);
@@ -309,7 +314,7 @@ public class TextFilter
         		// internally, {^xyz} is just an alias for {~.xyz}
         		return TemplateSet.DEFAULT_TAG_START+'.'+output.substring(1)+TemplateSet.DEFAULT_TAG_END;
         	} else {
-        		return context.makeTag(output.substring(1));
+        		return context.makeTag('.'+output.substring(1));
         	}
         } else {
             return output;

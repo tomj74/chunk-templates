@@ -76,12 +76,12 @@ public class Theme implements ContentSource, ChunkFactory
 		}
 	}
 	
-	public String getSnippet(String templateName, String ext)
+	public Snippet getSnippet(String templateName, String ext)
 	{
 		// later layers have precedence if they provide the item
 		for (int i=themeLayers.size()-1; i>=0; i--) {
 			TemplateSet x = themeLayers.get(i);
-			String template = x.getSnippet(templateName, ext);
+			Snippet template = x.getSnippet(templateName, ext);
 			if (template != null) {
 				return template;
 			}
@@ -89,15 +89,19 @@ public class Theme implements ContentSource, ChunkFactory
 		return prettyFail(templateName, ext);
 	}
 
-	public String getSnippet(String itemName)
+	public Snippet getSnippet(String itemName)
 	{
 		// later layers have precedence if they provide the item
 		for (int i=themeLayers.size()-1; i>=0; i--) {
 			TemplateSet x = themeLayers.get(i);
+			if (x.provides(itemName)) {
+				return x.getSnippet(itemName);
+			}
+			/*
 			String template = x.fetch(itemName);
 			if (template != null) {
 				return template;
-			}
+			}*/
 		}
 		return prettyFail(itemName, null);
 	}
@@ -111,7 +115,7 @@ public class Theme implements ContentSource, ChunkFactory
 		return false;
 	}
 	
-	private String prettyFail(String templateName, String ext)
+	private Snippet prettyFail(String templateName, String ext)
 	{
 		String prettyExt = ext;
 		if (prettyExt == null) {
@@ -132,12 +136,14 @@ public class Theme implements ContentSource, ChunkFactory
 	    }
 	    
 	    err.append("] -->");
-	    return err.toString();
+	    return new Snippet(err.toString());
 	}
 	
 	public String fetch(String itemName)
 	{
-		return getSnippet(itemName);
+		Snippet s = getSnippet(itemName);
+		if (s == null) return null;
+		return s.toString();
 	}
 
 	public String getProtocol()
