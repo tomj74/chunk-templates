@@ -41,7 +41,7 @@ public class TemplateSetSlice extends TemplateSet
         this.extension = ext;
     }
 
-    public String getSnippet(String templateName)
+    public Snippet getSnippet(String templateName)
     {
         String fullTemplateName = putInContext(templateName);
         if (extension == null) {
