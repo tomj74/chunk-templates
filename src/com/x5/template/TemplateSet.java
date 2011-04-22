@@ -3,9 +3,13 @@ package com.x5.template;
 import java.io.IOException;
 import java.io.FileReader;
 import java.io.BufferedReader;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.io.File;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.Hashtable;
 import java.util.HashSet;
 
@@ -116,6 +120,7 @@ public class TemplateSet implements ContentSource, ChunkFactory
     private String tagStart = DEFAULT_TAG_START;
     private String tagEnd = DEFAULT_TAG_END;
     private String templatePath = System.getProperty("templateset.folder","");
+    private Class<?> classInJar = null;
     
     private boolean prettyFail = true;
 
@@ -217,8 +222,8 @@ public class TemplateSet implements ContentSource, ChunkFactory
 
             filename = getTemplatePath(name,extension);
             char fs = System.getProperty("file.separator").charAt(0);
-            filename.replace('\\',fs);
-            filename.replace('/',fs);
+            filename = filename.replace('\\',fs);
+            filename = filename.replace('/',fs);
             try {
                 File templateFile = new File(filename);
                 if (templateFile.exists()) {
@@ -227,6 +232,27 @@ public class TemplateSet implements ContentSource, ChunkFactory
                     readAndCacheTemplate(stub,extension,brTemp);
                     in.close();
                     template = getFromCache(name, extension);
+                } else {
+                	// file does not exist, check around in classpath/jars
+                	String resourcePath = filename;
+                	if (resourcePath.charAt(0) != '/') {
+                		resourcePath = '/' + resourcePath;
+                	}
+                	InputStream inJar = null;
+                	
+                	// ideally, somebody called Theme.setJarContext(this.getClass())
+                	// and we have a pointer to the jar where the templates live.
+                	if (classInJar != null) inJar = classInJar.getResourceAsStream(resourcePath);
+
+                	// last ditch effort, check in surrounding jars in classpath...
+                	if (inJar == null) inJar = fishForTemplate(resourcePath);
+                	
+                	if (inJar != null) {
+	                	BufferedReader brTemp = new BufferedReader(new InputStreamReader(inJar));
+	                	readAndCacheTemplate(stub,extension,brTemp);
+	                	inJar.close();
+	                	template = getFromCache(name, extension);
+                	}
                 }
             } catch (java.io.IOException e) {
             	if (!prettyFail) return null;
@@ -264,6 +290,32 @@ public class TemplateSet implements ContentSource, ChunkFactory
         }
 
         return template;
+    }
+    
+    // should run a benchmark and see how expensive this is...
+    private InputStream fishForTemplate(String resourcePath)
+    {
+		// fish around for this resource in other jars in the classpath
+		String cp = System.getProperty("java.class.path");
+		if (cp == null) return null;
+		
+		String[] jars = cp.split(":");
+		if (jars == null) return null;
+		
+		for (String jar : jars) {
+			if (jar.endsWith(".jar")) {
+				String resourceURL = "jar:file:"+jar+"!"+resourcePath;
+				try {
+					URL url = new URL(resourceURL);
+					InputStream in = url.openStream();
+					if (in != null) return in;
+				} catch (MalformedURLException e) {
+				} catch (IOException e) {
+				}
+			}
+		}
+		
+		return null;
     }
 
     /**
@@ -618,12 +670,18 @@ public class TemplateSet implements ContentSource, ChunkFactory
     {
         String ref = extension + "." + name;
         template = expandShorthand(name,template);
+        if (template == null) return;
+        
         cache.put(ref, new Snippet(template.toString()));
         cacheFetch.put(ref, new Long(System.currentTimeMillis()) );
     }
 
     public static StringBuilder expandShorthand(String name, StringBuilder template)
     {
+    	// do NOT place in cache if ^super directive is found
+    	// that way, the parent layer will be used instead.
+    	if (template.indexOf("{^super}") > -1) return null;
+    	
         // to allow shorthand intra-template references, must pre-process the template
         // at this point and expand any intra-template references, eg:
         //  {~.includeIf(...).#xxx} => {~.includeIf(...).template_name#xxx}
@@ -1072,5 +1130,8 @@ public class TemplateSet implements ContentSource, ChunkFactory
     	}
     }
     
-   
+    public void setJarContext(Class<?> classInSameJar)
+    {
+    	this.classInJar = classInSameJar;
+    }
 }

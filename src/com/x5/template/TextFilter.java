@@ -49,7 +49,8 @@ public class TextFilter
         } else if (filter.equals("lc")) {
             // lowercase
             return text.toLowerCase();
-        } else if (filter.equals("html") || filter.equals("htmlescape") || filter.equals("htmlesc")) {
+        } else if (filter.equals("html") || filter.equals("htmlescape") || filter.equals("htmlesc")
+        		|| filter.equals("xml") || filter.equals("xmlescape") || filter.equals("xmlesc")) {
             // html-escape
             text = Chunk.findAndReplace(text,"&","&amp;");
             text = Chunk.findAndReplace(text,"<","&lt;");
@@ -716,14 +717,63 @@ public class TextFilter
         if (ignoreCase) pattern = "(?i)" + pattern;
         if (dotAll) pattern = "(?s)" + pattern;
 
+        boolean caseConversions = false;
+        if (replaceWith.matches(".*\\\\[UL][\\$\\\\]\\d.*")) {
+        	// this monkey business marks up case-conversion blocks
+        	// since java's regex engine doesn't support perl-style
+        	// case-conversion.  but we do :)
+        	caseConversions = true;
+            replaceWith = replaceWith.replaceAll("\\\\([UL])[\\$\\\\](\\d)", "!$1@\\$$2@$1!");
+        }
+        
         try {
+        	String result = null;
+        	
             if (greedy) {
-                return text.replaceAll(pattern,replaceWith);
+                result = text.replaceAll(pattern,replaceWith);
             } else {
-                return text.replaceFirst(pattern,replaceWith);
+                result = text.replaceFirst(pattern,replaceWith);
+            }
+            
+            if (caseConversions) {
+            	return applyCaseConversions(result);
+            } else {
+            	return result;
             }
         } catch (IndexOutOfBoundsException e) {
             return text + "[REGEX "+regex+" Error: "+e.getMessage()+"]";
+        }
+    }
+    
+    private static String applyCaseConversions(String result)
+    {
+    	StringBuilder x = new StringBuilder();
+    	
+    	Matcher m = Pattern.compile("!U@(.*?)@U!").matcher(result);
+    	int last = 0;
+        while (m.find()) {
+            x.append(result.substring(last, m.start()));
+            x.append(m.group(1).toUpperCase());
+            last = m.end();
+        }
+        if (last > 0) {
+        	x.append(result.substring(last));
+            result = x.toString();
+            x = new StringBuilder();
+            last = 0;
+        }
+        
+    	m = Pattern.compile("!L@(.*?)@L!").matcher(result);
+        while (m.find()) {
+            x.append(result.substring(last, m.start()));
+            x.append(m.group(1).toLowerCase());
+            last = m.end();
+        }
+        if (last > 0) {
+        	x.append(result.substring(last));
+        	return x.toString();
+        } else {
+        	return result;
         }
     }
 
@@ -746,6 +796,10 @@ public class TextFilter
                     buf.append('\r');
                 } else if (strArr[i] == 'f') {
                     buf.append('\f');
+                } else if (strArr[i] == 'U') {
+                	buf.append("\\U");
+                } else if (strArr[i] == 'L') {
+                	buf.append("\\L");
                 } else if (strArr[i] == 'u') {
                     // Unicode escape
                     int utf = Integer.parseInt(str.substring(i + 1, i + 5), 16);

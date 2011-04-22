@@ -71,8 +71,8 @@ public class Theme implements ContentSource, ChunkFactory
 	public void setDirtyInterval(int minutes)
 	{
 		// propagate setting down to each layer
-		for (TemplateSet set: themeLayers) {
-			set.setDirtyInterval(minutes);
+		for (TemplateSet layer: themeLayers) {
+			layer.setDirtyInterval(minutes);
 		}
 	}
 	
@@ -182,7 +182,7 @@ public class Theme implements ContentSource, ChunkFactory
         Chunk c = new Chunk();
         c.setTagBoundaries(tagStart,tagEnd);
         c.setMacroLibrary(this,this);
-        c.append( fetch(templateName) );
+        c.append( getSnippet(templateName) );
         shareContentSources(c);
         return c;
     }
@@ -231,6 +231,25 @@ public class Theme implements ContentSource, ChunkFactory
 	public String makeTag(String tagName)
 	{
         return tagStart + tagName + tagEnd;
+	}
+	
+	/**
+	 * If your templates are packaged into a jar with your application code,
+	 * then you should use this method to tell chunk where your templates are.
+     *
+	 * Chunk might still be able to find your templates but it will work a
+	 * lot harder.  Without this info, it has to peek into every jar in the
+	 * classpath every time.
+	 * 
+	 * @param classInSameJar
+	 */
+	public void setJarContext(Class<?> classInSameJar)
+	{
+		if (themeLayers != null) {
+			for (TemplateSet layer : themeLayers) {
+				layer.setJarContext(classInSameJar);
+			}
+		}
 	}
 
 }
