@@ -156,6 +156,8 @@ public class Loop
         if (data == null || !data.hasNext()) {
             if (emptyTemplate == null) {
                 return "[Loop Error: Empty Table - please specify no_data template parameter in ^loop tag]";
+            } else if (emptyTemplate.length() == 0) {
+            	return "";
             } else {
                 return context.getTemplateSet().fetch(emptyTemplate);
             }

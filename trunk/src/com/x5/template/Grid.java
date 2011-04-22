@@ -132,8 +132,14 @@ public class Grid
     {
         ContentSource tpl = context.getTemplateSet();
 
-        if (!data.hasNext()) {
-            return tpl.fetch(emptyTemplate);
+        if (data == null || !data.hasNext()) {
+            if (emptyTemplate == null) {
+                return "[Grid Error: Empty Table - please specify no_data template parameter in ^grid tag]";
+            } else if (emptyTemplate.length() == 0) {
+            	return "";
+            } else {
+                return tpl.fetch(emptyTemplate);
+            }
         }
 
         // TODO honor options like filler template and cells marker
