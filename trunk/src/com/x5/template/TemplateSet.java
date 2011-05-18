@@ -938,7 +938,7 @@ public class TemplateSet implements ContentSource, ChunkFactory
                     expanded.append(fullRef);
                     tagCursor = hashPos;
                 }
-            } else if ((a == ')' || a == 'e') && b == '.') {
+            } else if ((a == ')' || a == 'e') && (b == '.' || b == ' ')) {
                 if (expanded == null) expanded = new StringBuilder();
                 expanded.append(tagDirective.substring(tagCursor,hashPos));
                 expanded.append(fullRef);
