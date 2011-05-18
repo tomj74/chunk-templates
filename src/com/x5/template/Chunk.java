@@ -785,9 +785,11 @@ public class Chunk implements Map<String,Object>
 
         // parse content source "protocol"
         int delimPos = tagName.indexOf(".",1);
-        if (delimPos < 0) {
-            return "[malformed content reference: '"+tagName+"' -- missing dot delimiter]";
+        int spacePos = tagName.indexOf(" ",1); // {^include abc#xyz} is ok too
+        if (delimPos < 0 && spacePos < 0) {
+            return "[malformed content reference: '"+tagName+"' -- missing argument]";
         }
+        if (spacePos > 0 && (delimPos < 0 || spacePos < delimPos)) delimPos = spacePos;
         String srcName = tagName.substring(1,delimPos);
         String itemName = tagName.substring(delimPos+1);
 
@@ -963,40 +965,7 @@ public class Chunk implements Map<String,Object>
                 filterMeLater.append("{~oneTag}");
                 filterMeLater.delayedFilter = filters[0];
                 
-                if (tagValue instanceof String[]) {
-                	// String[] is only really legal here if the very first
-                	// filter is join -- must pre-apply the filter here
-                	if (filters[0].startsWith("join")) {
-                		String joinedString = TextFilter.joinStringArray((String[])tagValue,filters[0]);
-                		filterMeLater.set("oneTag", joinedString);
-                		filterMeLater.delayedFilter = null;
-                	} else if (filters[0].startsWith("ondefined")) {
-                		// well, it *is* non-null... give it a dummy string value
-                		// so it will pass the ondefined test.
-                		filterMeLater.set("oneTag", "DEFINED");
-                	}
-                } else if (!(tagValue instanceof String) && !(tagValue instanceof Snippet)) {
-                	// not a String, not a String array -- the only legal filter here
-                	// is ondefined(...)
-                	if (filters[0].startsWith("ondefined")) {
-                		// got this far? it *is* defined...
-                		filterMeLater.set("oneTag", "DEFINED");
-                	} else {
-                		// no valid filters
-                		return tagValue;
-                	}
-                }
-
-                // then subsequent filters each wrap a new layer
-                for (int i=1; i<filters.length; i++) {
-                    Chunk wrapper = (chunkFactory == null) ? new Chunk() : chunkFactory.makeChunk();
-                    wrapper.set("oneTag",filterMeLater,filter);
-                    wrapper.append("{~oneTag}");
-                    wrapper.delayedFilter = filters[i];
-                    filterMeLater = wrapper;
-                }
-
-                return filterMeLater;
+                return makeFilterOnion(tagValue, filterMeLater, filters);
             } else {
                 // no filter, no need to subchunk
                 return tagValue;
@@ -1070,7 +1039,58 @@ public class Chunk implements Map<String,Object>
             }
         }
     }
+    
+    private Object makeFilterOnion(String[] tagValue, Chunk filterMeLater, String[] filters)
+    {
+        // String[] is only really legal here if the very first
+        // filter is join -- must pre-apply the filter here
+        if (filters[0].startsWith("join")) {
+            String joinedString = TextFilter.joinStringArray((String[])tagValue,filters[0]);
+            filterMeLater.set("oneTag", joinedString);
+            filterMeLater.delayedFilter = null;
+        } else if (filters[0].startsWith("ondefined")) {
+            // well, it *is* non-null... give it a dummy string value
+            // so it will pass the ondefined test.
+            filterMeLater.set("oneTag", "DEFINED");
+        }
+        
+        return wrapRemainingFilters(filterMeLater,filters);
+    }
+    
+    private Chunk wrapRemainingFilters(Chunk filterMeLater, String[] filters)
+    {
+        // then subsequent filters each wrap a new layer
+        for (int i=1; i<filters.length; i++) {
+            Chunk wrapper = (chunkFactory == null) ? new Chunk() : chunkFactory.makeChunk();
+            wrapper.set("oneTag",filterMeLater,"");
+            wrapper.append("{~oneTag}");
+            wrapper.delayedFilter = filters[i];
+            filterMeLater = wrapper;
+        }
+    
+        return filterMeLater;
+    }
+    
+    private Object makeFilterOnion(Object tagValue, Chunk filterMeLater, String[] filters)
+    {
+        if (tagValue instanceof String[]) {
+            return makeFilterOnion((String[])tagValue, filterMeLater, filters);
+        } else if (tagValue instanceof String || tagValue instanceof Chunk || tagValue instanceof Snippet) {
+            return wrapRemainingFilters(filterMeLater, filters);
+        }
 
+        // not a String/Snippet/Chunk, and not a String array -- the only legal filter here
+        // is ondefined(...)
+        if (filters[0].startsWith("ondefined")) {
+            // got this far? it *is* defined...
+            filterMeLater.set("oneTag", "DEFINED");
+            return wrapRemainingFilters(filterMeLater, filters);
+        } else {
+            // no valid filters
+            return tagValue;
+        }
+    }
+    
     // pipe denotes a request to apply a filter
     // colon denotes a default value
     // they may come in either order {~tag_name:hello there|url} or {~tag_name|url:hello there}

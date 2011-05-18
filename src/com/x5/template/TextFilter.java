@@ -130,6 +130,9 @@ public class TextFilter
         } else if (filter.startsWith("calc")) {
             // exec simple eval
             return easyCalc(text,filter);
+        } else if (filter.startsWith("indent")) {
+            // indent
+            return applyIndent(text,filter);
         } else {
             // ?? unknown filter, do nothing
             return text;
@@ -1157,6 +1160,47 @@ public class TextFilter
     		if (array[i] != null) x.append(array[i]);
     	}
     	return x.toString();
+    }
+    
+    public static String applyIndent(String text, String filter)
+    {
+        String[] args = parseArgs(filter);
+        String indent = args[0];
+
+        String padChip = " ";
+        if (args.length > 1) {
+            padChip = args[1];
+        }
+        
+        try {
+            int pad = Integer.parseInt(indent);
+            int textLen = text.length();
+            
+            String linePrefix = padChip;
+            for (int i=1; i<pad; i++) linePrefix += padChip;
+            
+            StringBuilder indented = new StringBuilder();
+            indented.append(linePrefix);
+
+            Pattern eol = Pattern.compile("(\\r\\n|\\r|\\n)");
+            Matcher m = eol.matcher(text);
+
+            int marker = 0;
+            while (m.find()) {
+                String line = text.substring(marker,m.end());
+                indented.append(line);
+                marker = m.end();
+                if (marker < textLen) indented.append(linePrefix);
+            }
+            
+            if (marker < textLen) {
+                indented.append(text.substring(marker));
+            }
+            
+            return indented.toString();
+        } catch (NumberFormatException e) {
+            return text;
+        }
     }
 
 }
