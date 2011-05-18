@@ -5,7 +5,7 @@ import java.util.Map;
 import com.x5.util.DataCapsuleTable;
 import com.x5.util.TableData;
 
-public class Loop
+public class Loop implements BlockTagHelper
 {
     private TableData data;
     private Chunk chunk;
@@ -24,6 +24,7 @@ public class Loop
     }
 
     public static String expandLoop(String params, Chunk ch)
+    throws BlockTagException
     {
         Loop loop = new Loop(params, ch);
         return loop._cookLoop();
@@ -76,7 +77,7 @@ public class Loop
 
         // okay, this is heinously inefficient, scanning the whole thing every time for each param
         // esp. optional params which probably won't even be there
-        String[] optional = new String[]{"range","divider"}; //... what else?
+        String[] optional = new String[]{"range","divider","trim"}; //... what else?
         for (int i=0; i<optional.length; i++) {
             String param = optional[i];
             String val = getAttribute(param, params);
@@ -145,13 +146,15 @@ public class Loop
     }
 
     private String _cookLoop()
+    throws BlockTagException
     {
-        return Loop.cookLoop(data, chunk, rowTemplate, emptyTemplate, options);
+    	if (rowTemplate == null) throw new BlockTagException("loop",this);
+        return Loop.cookLoop(data, chunk, rowTemplate, emptyTemplate, options, false);
     }
 
     public static String cookLoop(TableData data, Chunk context,
     		String rowTemplate, String emptyTemplate,
-    		Map<String,String> opt)
+    		Map<String,String> opt, boolean isBlock)
     {
         if (data == null || !data.hasNext()) {
             if (emptyTemplate == null) {
@@ -159,7 +162,11 @@ public class Loop
             } else if (emptyTemplate.length() == 0) {
             	return "";
             } else {
-                return context.getTemplateSet().fetch(emptyTemplate);
+                if (isBlock) {
+                    return emptyTemplate;
+                } else {
+                    return context.getTemplateSet().fetch(emptyTemplate);
+                }
             }
         }
         
@@ -184,7 +191,13 @@ public class Loop
         String[] columnLabels = data.getColumnLabels();
 
         StringBuilder rows = new StringBuilder();
-        Chunk rowX = factory.makeChunk(rowTemplate);
+        Chunk rowX;
+        if (isBlock) {
+            rowX = factory.makeChunk();
+            rowX.append(rowTemplate);
+        } else {
+            rowX = factory.makeChunk(rowTemplate);
+        }
         int counter = 0;
         while (data.hasNext()) {
             rowX.set("0",counter);
@@ -260,5 +273,38 @@ public class Loop
         }
     }
 
+    public String cookBlock(String blockBody)
+    {
+        // split body up into row template and optional empty template
+        //  (delimited by {^on_empty} )
+        // trim both, unless requested not to.
+//        return null;
+        boolean isBlock = true;
+        
+        boolean doTrim = true;
+        String trimOpt = (options == null) ? null : options.get("trim");
+        if (trimOpt != null && trimOpt.equalsIgnoreCase("false")) {
+            doTrim = false;
+        }
+        
+        String delim = "{~.on_empty}";
+        
+        int delimPos = blockBody.indexOf(delim);
+        if (delimPos > -1) {
+            String template = blockBody.substring(0,delimPos);
+            String onEmpty = blockBody.substring(delimPos+delim.length());
+            this.rowTemplate = doTrim ? template.trim() : template;
+            this.emptyTemplate = doTrim ? onEmpty.trim() : onEmpty;
+        } else {
+            this.rowTemplate = doTrim ? blockBody.trim() : blockBody;
+        }
+        
+        return Loop.cookLoop(data, chunk, rowTemplate, emptyTemplate, options, isBlock);
+    }
+    
+    public String getBlockEndMarker()
+    {
+        return "/loop";
+    }
 
 }
