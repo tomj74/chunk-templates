@@ -539,6 +539,15 @@ public class Chunk implements Map<String,Object>
     {
         if (tagValue != null) set(tagName, tagValue.toString());
     }
+    
+    /**
+     * unset("tag") deletes the named tag expansion rule from the ruleset.
+     * @param tagName
+     */
+    public void unset(String tagName)
+    {
+    	if (tagName != null) { setOrDelete(tagName, null); }
+    }
 
     /**
      * @return true if a rule exists for this tagName, otherwise false.
@@ -701,6 +710,7 @@ public class Chunk implements Map<String,Object>
         java.util.regex.Pattern.compile("^\\.include(If|\\.\\()");
 
     private Object altFetch(String tagName, Vector<Chunk> ancestors)
+    throws BlockTagException
     {
         String tagValue = null;
 
@@ -864,12 +874,18 @@ public class Chunk implements Map<String,Object>
     		return lookupName;
     	}
     	
-    	String dynLookupName = lookupName.substring(0,backtickA)
-    	  + resolveTagValue(embeddedTag,ancestors)
-    	  + lookupName.substring(backtickB+1);
-    	
-    	// there may be more...
-    	return resolveBackticks(dynLookupName,ancestors);
+    	try {
+        	String dynLookupName = lookupName.substring(0,backtickA)
+        	  + resolveTagValue(embeddedTag,ancestors)
+        	  + lookupName.substring(backtickB+1);
+        	
+        	// there may be more...
+        	return resolveBackticks(dynLookupName,ancestors);
+    	} catch (BlockTagException e) {
+    	    // should never, ever happen.
+    	    e.printStackTrace(System.err);
+    	    return null;
+    	}
     }
 
     // resolveTagValue responds in the context of an explosion tree.
@@ -882,11 +898,13 @@ public class Chunk implements Map<String,Object>
     // over the same in each row, the tag is given a value once at the
     // table level.
     protected Object resolveTagValue(String tagName)
+    throws BlockTagException
     {
         return resolveTagValue(tagName, null);
     }
 
     protected Object resolveTagValue(String tagName, Vector<Chunk> ancestors)
+    throws BlockTagException
     {
     	if (tagName.indexOf('`') > -1) {
     		tagName = resolveBackticks(tagName, ancestors);
@@ -1239,9 +1257,14 @@ public class Chunk implements Map<String,Object>
         if (letBegin < 0) {
             // no assignments
         	// altFetch returns String or Snippet
-            Object theTemplate = altFetch(".include."+templateRef,null);
-            if (theTemplate != null) {
-            	expanded.append( expandMacros(theTemplate.toString()) );
+            try {
+                Object theTemplate = altFetch(".include."+templateRef,null);
+                if (theTemplate != null) {
+                	expanded.append( expandMacros(theTemplate.toString()) );
+                }
+            } catch (BlockTagException e) {
+                // won't ever happen.
+                e.printStackTrace(System.err);
             }
         } else {
             // make chunk from templateRef and delegate assignments
@@ -1468,19 +1491,34 @@ public class Chunk implements Map<String,Object>
             // find end of tag
             if ((end = findMatchingEndBrace(template,begin)) > -1) {
                 String tagName = template.substring(begin,end);
-                Object tagValue = resolveTagValue(tagName, ancestors);
-                // unresolved tags get put back the way we found
-                // them in case the final String which explode() returns
-                // is then fed into another Chunk which *does* have
-                // a value.
-                if (tagValue == null) {
-                    buf.append(tagStart);
-                    buf.append(tagName);
-                    buf.append(tagEnd);
-                } else {
-                    explodeAndAppend(tagValue, buf, ancestors, depth+1);
+                try {
+                    Object tagValue = resolveTagValue(tagName, ancestors);
+                    // unresolved tags get put back the way we found
+                    // them in case the final String which explode() returns
+                    // is then fed into another Chunk which *does* have
+                    // a value.
+                    if (tagValue == null) {
+                        buf.append(tagStart);
+                        buf.append(tagName);
+                        buf.append(tagEnd);
+                    } else {
+                        explodeAndAppend(tagValue, buf, ancestors, depth+1);
+                    }
+                    marker = end + tagEndLen;
+                } catch (BlockTagException e) {
+                    BlockTagHelper helper = e.getHelper();
+                    int[] blockEnd = findBlockEnd(template,end,helper);
+                    if (blockEnd == null) {
+                        // FAIL...
+                        buf.append("<!-- [tag expansion error! "+e.getTagFunction()+" block with no matching end marker! ] -->");
+                        marker = end + tagEndLen;
+                    } else {
+                        String blockBody = template.substring(end+1,blockEnd[0]);
+                        String cooked = helper.cookBlock(blockBody);
+                        explodeAndAppend(cooked, buf, ancestors, depth+1);
+                        marker = blockEnd[1];
+                    }
                 }
-                marker = end + tagEndLen;
             } else {
                 // somebody didn't end a tag...
                 // leave broken tagstart and move along
@@ -1494,6 +1532,19 @@ public class Chunk implements Map<String,Object>
         } else {
             buf.append(template.substring(marker));
             return buf.toString();
+        }
+    }
+    
+    private int[] findBlockEnd(String template, int blockStartPos, BlockTagHelper helper)
+    {
+        String endBlock = helper.getBlockEndMarker();
+        String scanFor = tagStart + "." + endBlock + tagEnd;
+        
+        int endMarkerPos = template.indexOf(scanFor, blockStartPos);
+        if (endMarkerPos > 0) {
+            return new int[]{endMarkerPos,endMarkerPos+scanFor.length()};
+        } else {
+            return null;
         }
     }
     
@@ -1573,7 +1624,11 @@ public class Chunk implements Map<String,Object>
 
     public Object get(Object key)
     {
-        return resolveTagValue((String)key,ancestorStack);
+        try {
+            return resolveTagValue((String)key,ancestorStack);
+        } catch (BlockTagException e) {
+            return null;
+        }
     }
 
     public int hashCode()
