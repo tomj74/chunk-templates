@@ -13,27 +13,7 @@ public class Theme implements ContentSource, ChunkFactory
 	
 	public Theme(String themesFolder, String themeLayerNames)
 	{
-        // ensure trailing fileseparator
-        char lastChar = themesFolder.charAt(themesFolder.length()-1);
-        char fs = System.getProperty("file.separator").charAt(0);
-        if (lastChar != '\\' && lastChar != '/' && lastChar != fs) {
-            themesFolder += fs;
-        }
-        this.themesFolder = themesFolder;
-		
-		String[] layerNames = parseLayerNames(themeLayerNames);
-		if (layerNames == null) {
-			TemplateSet simple = new TemplateSet(themesFolder);
-			themeLayers.add(simple);
-		} else {
-			for (int i=0; i<layerNames.length; i++) {
-				TemplateSet x = new TemplateSet(this.themesFolder + layerNames[i]);
-				// important: do not return pretty HTML-formatted error strings
-				// when template can not be located.
-				x.signalFailureWithNull();
-				themeLayers.add(x);
-			}
-		}
+		this(themesFolder, themeLayerNames, null);
 	}
 	
 	public Theme(String themesFolder, String themeLayerNames, String ext)
@@ -53,6 +33,7 @@ public class Theme implements ContentSource, ChunkFactory
 		} else {
 			for (int i=0; i<layerNames.length; i++) {
 				TemplateSet x = new TemplateSet(this.themesFolder + layerNames[i],ext,0);
+				x.setLayerName(layerNames[i]);
 				// important: do not return pretty HTML-formatted error strings
 				// when template can not be located.
 				x.signalFailureWithNull();
@@ -248,6 +229,15 @@ public class Theme implements ContentSource, ChunkFactory
 		if (themeLayers != null) {
 			for (TemplateSet layer : themeLayers) {
 				layer.setJarContext(classInSameJar);
+			}
+		}
+	}
+	
+	public void setJarContext(Object ctx)
+	{
+		if (themeLayers != null) {
+			for (TemplateSet layer : themeLayers) {
+				layer.setJarContext(ctx);
 			}
 		}
 	}

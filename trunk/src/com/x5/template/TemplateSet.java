@@ -8,10 +8,13 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.io.File;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Hashtable;
 import java.util.HashSet;
+import java.util.Set;
 
 // Project Title: Chunk
 // Description: Template Util
@@ -120,7 +123,10 @@ public class TemplateSet implements ContentSource, ChunkFactory
     private String tagStart = DEFAULT_TAG_START;
     private String tagEnd = DEFAULT_TAG_END;
     private String templatePath = System.getProperty("templateset.folder","");
+    private String layerName = null;
+    
     private Class<?> classInJar = null;
+    private Object resourceContext = null;
     
     private boolean prettyFail = true;
 
@@ -157,7 +163,7 @@ public class TemplateSet implements ContentSource, ChunkFactory
             this.templatePath = templatePath;
         }
         this.dirtyInterval = refreshMins;
-        this.defaultExtension = extension;
+        this.defaultExtension = (extension == null ? DEFAULT_EXTENSION : extension);
     }
 
     /**
@@ -234,10 +240,7 @@ public class TemplateSet implements ContentSource, ChunkFactory
                     template = getFromCache(name, extension);
                 } else {
                 	// file does not exist, check around in classpath/jars
-                	String resourcePath = filename;
-                	if (resourcePath.charAt(0) != '/') {
-                		resourcePath = '/' + resourcePath;
-                	}
+                	String resourcePath = getResourcePath(name,extension);
                 	InputStream inJar = null;
                 	
                 	// ideally, somebody called Theme.setJarContext(this.getClass())
@@ -295,6 +298,11 @@ public class TemplateSet implements ContentSource, ChunkFactory
     // should run a benchmark and see how expensive this is...
     private InputStream fishForTemplate(String resourcePath)
     {
+    	if (resourceContext != null) {
+    		InputStream in = fishForTemplateInContext(resourcePath);
+    		if (in != null) return in;
+    	}
+    	
 		// fish around for this resource in other jars in the classpath
 		String cp = System.getProperty("java.class.path");
 		if (cp == null) return null;
@@ -304,20 +312,75 @@ public class TemplateSet implements ContentSource, ChunkFactory
 		
 		for (String jar : jars) {
 			if (jar.endsWith(".jar")) {
-				String resourceURL = "jar:file:"+jar+"!"+resourcePath;
-				try {
-					URL url = new URL(resourceURL);
-					InputStream in = url.openStream();
-					if (in != null) return in;
-				} catch (MalformedURLException e) {
-				} catch (IOException e) {
-				}
+				InputStream in = peekInsideJar("jar:file:"+jar, resourcePath);
+				if (in != null) return in;
 			}
 		}
 		
 		return null;
     }
+    
+    private InputStream peekInsideJar(String jar, String resourcePath)
+    {
+		String resourceURL = jar + "!" + resourcePath;
+		try {
+			URL url = new URL(resourceURL);
+			InputStream in = url.openStream();
+			if (in != null) return in;
+		} catch (MalformedURLException e) {
+		} catch (IOException e) {
+		}
+		
+		return null;
+    }
 
+    @SuppressWarnings("rawtypes")
+	private InputStream fishForTemplateInContext(String resourcePath)
+    {
+		// call getResourceAsStream via reflection
+		Class<?> ctxClass = resourceContext.getClass();
+		Method m = null;
+		try {
+			final Class[] oneString = new Class[]{String.class};
+			m = ctxClass.getMethod("getResourceAsStream", oneString);
+    		if (m != null) {
+				InputStream in = (InputStream)m.invoke(resourceContext, new Object[]{resourcePath});
+				if (in != null) return in;
+    		}
+    		
+    		// no dice, start peeking inside jars in WEB-INF/lib/
+    		m = ctxClass.getMethod("getResourcePaths", oneString);
+    		if (m != null) {
+    			Set paths = (Set)m.invoke(resourceContext, new Object[]{"/WEB-INF/lib"});
+    			if (paths != null) {
+    				for (Object urlString : paths) {
+    					String jar = (String)urlString;
+    					if (jar.endsWith(".jar")) {
+    						m = ctxClass.getMethod("getResource", oneString);
+    						URL jarURL = (URL)m.invoke(resourceContext, new Object[]{jar});
+    						InputStream in = peekInsideJar("jar:"+jarURL.toString(), resourcePath);
+    						if (in != null) return in;
+    					}
+    				}
+    			}
+    		}
+
+			//Set<java.net.URL> urls = new java.util.HashSet<java.net.URL>();
+	        //for (Object urlString : ctx.getResourcePaths("/WEB-INF/lib")) {
+	        //    try { urls.add(ctx.getResource((String) urlString)); }
+	        //    catch (MalformedURLException e) { /* silent-fail */ }
+	        //}
+		
+		} catch (SecurityException e) {
+		} catch (NoSuchMethodException e) {
+		} catch (IllegalArgumentException e) {
+		} catch (IllegalAccessException e) {
+		} catch (InvocationTargetException e) {
+		}
+		
+		return null;
+	}
+    	
     /**
      * Creates a Chunk with no starter template and sets its tag boundary
      * markers to match the other templates in this set.  The Chunk will need
@@ -1115,6 +1178,17 @@ public class TemplateSet implements ContentSource, ChunkFactory
 		return templatePath + stub + '.' + ext;
 	}
 	
+	public String getResourcePath(String templateName, String ext)
+	{
+		String stub = truncateNameToStub(templateName);
+		if (layerName == null) {
+			return "/themes/" + stub + '.' + ext;
+		} else {
+			return "/themes/" + layerName + stub + '.' + ext;
+		}
+	}
+
+	
     public String getDefaultExtension()
     {
     	return this.defaultExtension;
@@ -1133,5 +1207,19 @@ public class TemplateSet implements ContentSource, ChunkFactory
     public void setJarContext(Class<?> classInSameJar)
     {
     	this.classInJar = classInSameJar;
+    }
+    
+    public void setJarContext(Object ctx)
+    {
+    	// an object with an InputStream getResourceAsStream(String) method
+    	this.resourceContext = ctx;
+    }
+    
+    public void setLayerName(String layerName)
+    {
+    	this.layerName = layerName;
+    	if (layerName != null && !layerName.endsWith("/")) {
+    		this.layerName = this.layerName + "/";
+    	}
     }
 }
