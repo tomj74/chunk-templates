@@ -103,12 +103,15 @@ public class TextFilter
         } else if (filter.equals("sha1base64") || filter.equals("sha1b64")) {
             // md5 hash (base64)
             return sha1Base64(text);
-        } else if (filter.equals("hex")) {
+        } else if (filter.equalsIgnoreCase("hex")) {
+            String hex = null;
             try {
-                return new java.math.BigInteger(1,text.getBytes("UTF-8")).toString(16);
+                hex = new java.math.BigInteger(1,text.getBytes("UTF-8")).toString(16);
             } catch (java.io.UnsupportedEncodingException e) {
-                return new java.math.BigInteger(1,text.getBytes()).toString(16);
+                hex = new java.math.BigInteger(1,text.getBytes()).toString(16);
             }
+            if (hex == null) return text;
+            return (filter.equals("HEX")) ? hex.toUpperCase() : hex;
         } else if (filter.equals("ordsuffix") || filter.equals("th")) {
             // 1 -> 1st, 2 -> 2nd, 3 -> 3rd etc.
             return ordinalSuffix(text);
@@ -490,7 +493,7 @@ public class TextFilter
                 if (op == '*') z = x * y;
                 if (op == '/') z = x / y;
                 if (op == '%') z = x % y;
-                if (op == '^') z = x ^ y;
+                if (op == '^') z = Math.round( Math.pow(x,y) );
                 return Long.toString(z);
             }
         } catch (NumberFormatException e) {
@@ -1165,11 +1168,17 @@ public class TextFilter
     public static String applyIndent(String text, String filter)
     {
         String[] args = parseArgs(filter);
+        if (args == null) return text;
+        
         String indent = args[0];
 
         String padChip = " ";
         if (args.length > 1) {
             padChip = args[1];
+        } else if (indent.indexOf(",") > 0) {
+            String[] args2 = indent.split(",");
+            indent = args2[0];
+            padChip = args2[1];
         }
         
         try {
@@ -1182,7 +1191,7 @@ public class TextFilter
             StringBuilder indented = new StringBuilder();
             indented.append(linePrefix);
 
-            Pattern eol = Pattern.compile("(\\r\\n|\\r|\\n)");
+            Pattern eol = Pattern.compile("(\\r\\n|\\r\\r|\\n)");
             Matcher m = eol.matcher(text);
 
             int marker = 0;

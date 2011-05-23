@@ -1,6 +1,8 @@
 package com.x5.template;
 
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import com.x5.util.DataCapsuleTable;
 import com.x5.util.TableData;
@@ -192,8 +194,8 @@ public class Loop implements BlockTagHelper
 
         StringBuilder rows = new StringBuilder();
         Chunk rowX;
-        if (isBlock) {
-            rowX = factory.makeChunk();
+        if (isBlock || factory == null) {
+            rowX = (factory == null) ? new Chunk() : factory.makeChunk();
             rowX.append(rowTemplate);
         } else {
             rowX = factory.makeChunk(rowTemplate);
@@ -288,15 +290,40 @@ public class Loop implements BlockTagHelper
         }
         
         String delim = "{~.on_empty}";
-        
+        String dividerDelim = "{~.divider}";
+
+        String divider = null;
+
         int delimPos = blockBody.indexOf(delim);
+        int dividerPos = blockBody.indexOf(dividerDelim);
+        
+        if (dividerPos > -1) {
+            if (delimPos > -1 && delimPos > dividerPos) {
+                divider = blockBody.substring(dividerPos+dividerDelim.length(),delimPos);
+                // remove divider section from block body
+                String before = blockBody.substring(0,dividerPos);
+                String after = blockBody.substring(delimPos);
+                blockBody = before + after;
+                delimPos -= divider.length() + dividerDelim.length();
+            } else {
+                divider = blockBody.substring(dividerPos+dividerDelim.length());
+                // remove divider section from block body
+                blockBody = blockBody.substring(0,dividerPos);
+            }
+            divider = doTrim ? smartTrim(divider) : divider;
+        }
+        
         if (delimPos > -1) {
             String template = blockBody.substring(0,delimPos);
             String onEmpty = blockBody.substring(delimPos+delim.length());
-            this.rowTemplate = doTrim ? template.trim() : template;
+            this.rowTemplate = doTrim ? smartTrim(template) : template;
             this.emptyTemplate = doTrim ? onEmpty.trim() : onEmpty;
         } else {
-            this.rowTemplate = doTrim ? blockBody.trim() : blockBody;
+            this.rowTemplate = doTrim ? smartTrim(blockBody) : blockBody;
+        }
+        
+        if (divider != null) {
+            registerOption("divider",divider);
         }
         
         return Loop.cookLoop(data, chunk, rowTemplate, emptyTemplate, options, isBlock);
@@ -305,6 +332,28 @@ public class Loop implements BlockTagHelper
     public String getBlockEndMarker()
     {
         return "/loop";
+    }
+    
+    private String smartTrim(String x)
+    {
+        String trimmed = x.trim();
+        
+        String trimOpt = (options != null) ? options.get("trim") : null;
+        if (trimOpt != null && trimOpt.equals("all")) {
+            // trim="all" disables smartTrim.
+            return trimmed;
+        }
+        
+        // if there were any line break chars at the end, add just one back.
+        Pattern p = Pattern.compile(".*[ \\t]*(\\r\\n|\\n|\\r\\r)[ \\t]*$");
+        Matcher m = p.matcher(x);
+        if (m.find()) {
+            m.group(0);
+            String eol = m.group(1);
+            return trimmed + eol;
+        } else {
+            return trimmed;
+        }
     }
 
 }
