@@ -242,10 +242,18 @@ public class TemplateSet implements ContentSource, ChunkFactory
                 	// file does not exist, check around in classpath/jars
                 	String resourcePath = getResourcePath(name,extension);
                 	InputStream inJar = null;
+
+                	if (classInJar == null) {
+                	    // theme resource is probably in same
+                	    // vicinity as calling class.
+                	    classInJar = grokCallerClass();
+                	}
                 	
                 	// ideally, somebody called Theme.setJarContext(this.getClass())
                 	// and we have a pointer to the jar where the templates live.
-                	if (classInJar != null) inJar = classInJar.getResourceAsStream(resourcePath);
+                	if (classInJar != null) {
+                	    inJar = classInJar.getResourceAsStream(resourcePath);
+                	}
 
                 	// last ditch effort, check in surrounding jars in classpath...
                 	if (inJar == null) inJar = fishForTemplate(resourcePath);
@@ -293,6 +301,21 @@ public class TemplateSet implements ContentSource, ChunkFactory
         }
 
         return template;
+    }
+    
+    private Class<?> grokCallerClass()
+    {
+        Throwable t = new Throwable();
+        StackTraceElement[] stackTrace = t.getStackTrace();
+        if (stackTrace == null) return null;
+        
+        // calling class is four call levels back up the stack trace.
+        // excellent candidate for where to look for theme resources.
+        for (int i=4; i<stackTrace.length; i++) {
+            StackTraceElement e = stackTrace[i];
+            return e.getClass();
+        }
+        return null;
     }
     
     // should run a benchmark and see how expensive this is...
@@ -737,6 +760,12 @@ public class TemplateSet implements ContentSource, ChunkFactory
         
         cache.put(ref, new Snippet(template.toString()));
         cacheFetch.put(ref, new Long(System.currentTimeMillis()) );
+    }
+    
+    public static String expandShorthand(String template)
+    {
+        StringBuilder x = new StringBuilder(template);
+        return expandShorthand(null,x).toString();
     }
 
     public static StringBuilder expandShorthand(String name, StringBuilder template)

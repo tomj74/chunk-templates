@@ -714,22 +714,7 @@ public class Chunk implements Map<String,Object>
     {
         String tagValue = null;
 
-        if (altSources == null && macroLibrary == null && ancestors == null) {
-            // it ain't there to fetch
-            return null;
-        }
-
-        // the includeIfPattern (defined above)
-        // matches ".includeIf" and ".include.(" <-- ie from +(cond) expansion
-        if (TextFilter.matches(tagName,includeIfPattern)) {
-            // this is either lame or very sneaky
-            this.ancestorStack = ancestors;
-            String translation = TextFilter.translateIncludeIf(tagName,tagStart,tagEnd,this);
-            this.ancestorStack = null;
-
-            return translation;
-        }
-        
+       
         /**
          * literals are intercepted higher up so theoretically we do not
          * need to handle literals here...
@@ -752,6 +737,14 @@ public class Chunk implements Map<String,Object>
             this.ancestorStack = null;
 
             return eval;
+        }
+        
+        if (tagName.startsWith(".if")) {
+            this.ancestorStack = ancestors;
+            String result = IfTag.evalIf(tagName, this);
+            this.ancestorStack = null;
+            
+            return result;
         }
 
         // the ^loop(...) fn
@@ -783,6 +776,22 @@ public class Chunk implements Map<String,Object>
         	return this.formatTagStack(format,ancestors);
         }
 
+        if (altSources == null && macroLibrary == null && ancestors == null) {
+            // it ain't there to fetch
+            return null;
+        }
+
+        // the includeIfPattern (defined above)
+        // matches ".includeIf" and ".include.(" <-- ie from +(cond) expansion
+        if (TextFilter.matches(tagName,includeIfPattern)) {
+            // this is either lame or very sneaky
+            this.ancestorStack = ancestors;
+            String translation = TextFilter.translateIncludeIf(tagName,tagStart,tagEnd,this);
+            this.ancestorStack = null;
+
+            return translation;
+        }
+        
         // parse content source "protocol"
         int delimPos = tagName.indexOf(".",1);
         int spacePos = tagName.indexOf(" ",1); // {^include abc#xyz} is ok too

@@ -1,0 +1,68 @@
+{!-- chunk_test.html contains snippets for use in the test suite --}
+
+{^include #layer_test}
+
+{!---------------------------------------------}
+{#looptest_simple_block_loop}
+{^loop data="~widgets"}
+ {~widget_id} {~widget_name}<br/>
+{^/loop}
+{#}
+
+{!---------------------------------------------}
+{#looptest_less_simple_block_loop}
+{^loop data="~widgets"}
+ {~widget_id} {~widget_name}<br/>
+{^divider}
+ <hr/>
+{^on_empty}
+ <i>No widgets!</i>
+{^/loop}
+{#}
+
+{!---------------------------------------------}
+{#looptest_ez_syntax}
+{^loop in ~widgets}
+ {~widget_id} {~widget_name}<br/>
+{^divider}
+ <hr/>
+{^on_empty}
+ <i>No widgets!</i>
+{^/loop}
+{#}
+
+{!---------------------------------------------}
+{#looptest_simple_loop_noblock}
+{^loop data="~widgets" template="#widget_row" nodata="#no_widgets" divider="<hr/>"}
+{#}
+
+{!---------------------------------------------}
+{#widget_row}
+{~widget_id} {~widget_name}<br/>
+{#}
+
+{!---------------------------------------------}
+{#no_widgets}
+<i>No widgets!</i>
+{#}
+
+{!---------------------------------------------}
+{#looptest_simple_loop_noblock_delim_tpl}
+{^loop data="~widgets" template="#widget_row" nodata="#no_widgets" divider="#delim"}
+{#}
+
+{!---------------------------------------------}
+{#delim}
+<hr/>
+{#}
+
+{!---------------------------------------------}
+{#looptest_simple_loop_noblock_bad_delim_tpl}
+{^loop data="~widgets" template="#widget_row" nodata="#no_widgets" divider="#not_exist"}
+{#}
+
+
+{!---------------------------------------------}
+{#layer_test}
+Base Layer
+{#}
