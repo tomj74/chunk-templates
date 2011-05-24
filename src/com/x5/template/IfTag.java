@@ -269,7 +269,7 @@ public class IfTag implements BlockTagHelper
         while (m.find()) {
             if (marker == 0) {
                 thenTemplate = blockBody.substring(0,m.start());
-                if (doTrim) thenTemplate = thenTemplate.trim();
+                if (doTrim) thenTemplate = smartTrim(thenTemplate);
                 if (chosenPath == 0) {
                     return thenTemplate;
                 }
@@ -280,7 +280,7 @@ public class IfTag implements BlockTagHelper
             if (cond == null) {
                 // simple if-else, else wins
                 elseTemplate = blockBody.substring(m.end());
-                if (doTrim) elseTemplate = elseTemplate.trim();
+                if (doTrim) elseTemplate = smartTrim(elseTemplate);
                 return elseTemplate;
             } else {
                 marker = m.end();
@@ -290,11 +290,28 @@ public class IfTag implements BlockTagHelper
                         altBlockEnd = m.start();
                     }
                     String altBlock = blockBody.substring(marker,altBlockEnd);
-                    if (doTrim) altBlock = altBlock.trim();
+                    if (doTrim) altBlock = smartTrim(altBlock);
                     return altBlock;
                 }
             }
         }
         return "";
+    }
+    
+    private String smartTrim(String x)
+    {
+        // if the block begins with (whitespace+) LF, trim initial line
+        // otherwise, apply regular trim.
+        Pattern p = Pattern.compile("\n|\r\n|\r\r");
+        Matcher m = p.matcher(x);
+        
+        if (m.find()) {
+            int firstLF = m.start();
+            if (x.substring(0,firstLF).trim().length() == 0) {
+                return x.substring(m.end());
+            }
+        }
+        
+        return x.trim();
     }
 }

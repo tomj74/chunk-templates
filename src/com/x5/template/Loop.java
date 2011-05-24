@@ -289,7 +289,7 @@ public class Loop implements BlockTagHelper
             doTrim = false;
         }
         
-        String delim = "{~.on_empty}";
+        String delim = "{~.onEmpty}";
         String dividerDelim = "{~.divider}";
 
         String divider = null;
@@ -344,7 +344,22 @@ public class Loop implements BlockTagHelper
             return trimmed;
         }
         
+        // if the block begins with (whitespace+) LF, trim initial line
+        // otherwise, apply standard/complete trim.
+        Pattern p = Pattern.compile("\n|\r\n|\r\r");
+        Matcher m = p.matcher(x);
+        
+        if (m.find()) {
+            int firstLF = m.start();
+            if (x.substring(0,firstLF).trim().length() == 0) {
+                return x.substring(m.end());
+            }
+        }
+        
+        return trimmed;
+        
         // if there were any line break chars at the end, add just one back.
+        /*
         Pattern p = Pattern.compile(".*[ \\t]*(\\r\\n|\\n|\\r\\r)[ \\t]*$");
         Matcher m = p.matcher(x);
         if (m.find()) {
@@ -353,7 +368,7 @@ public class Loop implements BlockTagHelper
             return trimmed + eol;
         } else {
             return trimmed;
-        }
+        }*/
     }
 
 }

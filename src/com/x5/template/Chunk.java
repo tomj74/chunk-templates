@@ -1571,7 +1571,34 @@ public class Chunk implements Map<String,Object>
         
         int endMarkerPos = template.indexOf(scanFor, blockStartPos);
         if (endMarkerPos > 0) {
-            return new int[]{endMarkerPos,endMarkerPos+scanFor.length()};
+            // keep eating whitespace, up to and including the next linefeed
+            // but barf it all back up if non-whitespace is found before next LF
+            int blockAndLF = endMarkerPos+scanFor.length();
+            for (int i=blockAndLF; i<template.length(); i++) {
+                char c = template.charAt(i);
+                if (c == ' ' || c == '\t') {
+                    // keep eating
+                    blockAndLF = i+1;
+                } else if (c == '\n') {
+                    // done eating (unix)
+                    blockAndLF = i+1;
+                    break;
+                } else if (c == '\r') {
+                    // done eating (Win/Mac)
+                    if (i+1 < template.length()) {
+                        blockAndLF = i+2;
+                    } else {
+                        blockAndLF = i+1;
+                    }
+                    break;
+                } else {
+                    // content on same line as block end!
+                    // reverse course!
+                    blockAndLF = endMarkerPos+scanFor.length();
+                    break;
+                }
+            }
+            return new int[]{endMarkerPos,blockAndLF};
         } else {
             return null;
         }
