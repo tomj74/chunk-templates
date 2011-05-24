@@ -310,7 +310,7 @@ public class TemplateSet implements ContentSource, ChunkFactory
         if (stackTrace == null) return null;
         
         // calling class is four call levels back up the stack trace.
-        // excellent candidate for where to look for theme resources.
+        // makes an excellent candidate for where to look for theme resources.
         for (int i=4; i<stackTrace.length; i++) {
             StackTraceElement e = stackTrace[i];
             return e.getClass();
@@ -357,6 +357,11 @@ public class TemplateSet implements ContentSource, ChunkFactory
 		return null;
     }
 
+    /**
+     * fishForTemplateInContext is able to use reflection to call methods
+     * in javax.http.ResourceContext without actually requiring the class
+     * to be present/loaded during compile.
+     */
     @SuppressWarnings("rawtypes")
 	private InputStream fishForTemplateInContext(String resourcePath)
     {
@@ -503,10 +508,12 @@ public class TemplateSet implements ContentSource, ChunkFactory
             int comPos = line.indexOf(COMMENT_START);
             int subPos = line.indexOf(SUB_START);
             // first, strip out any comments
+            boolean killedComment = false;
             while (comPos > -1 && (subPos < 0 || subPos > comPos)) {
                 line = stripComment(comPos,line,brTemp);
                 comPos = line.indexOf(COMMENT_START);
                 subPos = line.indexOf(SUB_START);
+                killedComment = true;
             }
             // then, strip out any subtemplates
             if (subPos > -1) {
@@ -526,8 +533,11 @@ public class TemplateSet implements ContentSource, ChunkFactory
                     }
                 }
             }
-            sbTemp.append(line);
-            if (brTemp.ready()) sbTemp.append("\n");
+            // don't append blank line where comment was stripped.
+            if (!killedComment || line.trim().length() > 0) {
+                sbTemp.append(line);
+                if (brTemp.ready()) sbTemp.append("\n");
+            }
         }
         addToCache(name,extension,sbTemp);
         return sbTemp;
@@ -573,6 +583,7 @@ public class TemplateSet implements ContentSource, ChunkFactory
         if (comEndPos > -1) {
             // easy case -- comment does not span lines
             comEndPos += COMMENT_END.length();
+            // if removing comment leaves line with only whitespace...
             return beforeComment + firstLine.substring(comEndPos);
         } else {
             // keep eating lines until the end marker is found
@@ -621,6 +632,8 @@ public class TemplateSet implements ContentSource, ChunkFactory
         int comPos     = firstLine.indexOf(COMMENT_START);
         int literalPos = findLiteralMarker(firstLine);
         
+        boolean skipFirstLine = false;
+        
         // special handling for literal blocks & comments
         while (literalPos > -1 || comPos > -1) {
 	        // if end-marker present, kick out if it's not inside a comment or a literal block
@@ -644,7 +657,12 @@ public class TemplateSet implements ContentSource, ChunkFactory
 	        }
 	        // next, strip out any comments
 	        while (comPos > -1 && (subEndPos < 0 || subEndPos > comPos) && (literalPos < 0 || literalPos > comPos)) {
+                int lenBefore = firstLine.length();
 	            firstLine = stripComment(comPos,firstLine,brTemp);
+	            int lenAfter = firstLine.length();
+	            if (lenBefore != lenAfter && firstLine.trim().length() == 0) {
+	                skipFirstLine = true;
+	            }
 	            // stripped comment lines.  re-scan for markers.
 	            comPos = firstLine.indexOf(COMMENT_START);
 	            subEndPos = firstLine.indexOf(SUB_END);
@@ -660,8 +678,10 @@ public class TemplateSet implements ContentSource, ChunkFactory
             return firstLine.substring(subEndPos+SUB_END.length());
         } else {
         	// subtemplate not finished, keep going
-            sbTemp.append(firstLine);
-            if (brTemp.ready() && firstLine.length() > 0) sbTemp.append("\n");
+            if (!skipFirstLine) {
+                sbTemp.append(firstLine);
+                if (brTemp.ready() && firstLine.length() > 0) sbTemp.append("\n");
+            }
             while (brTemp.ready()) {
             	try {
             		String line = getNextTemplateLine(name, extension, brTemp, sbTemp);
@@ -722,7 +742,13 @@ public class TemplateSet implements ContentSource, ChunkFactory
         	}
         	// next, strip out any comments
         	while (comPos > -1 && (subPos < 0 || subPos > comPos) && (subEndPos < 0 || subEndPos > comPos) && (litPos < 0 || litPos > comPos)) {
+        	    int lenBefore = line.length();
         		line = stripComment(comPos,line,brTemp);
+        		int lenAfter = line.length();
+        		if (lenBefore != lenAfter && line.trim().length() == 0) {
+        		    // if after removing comment, line is blank, don't output a blank line
+        		    return SKIP_BLANK_LINE;
+        		}
                 // re-scan for markers
                 comPos = line.indexOf(COMMENT_START);
                 subPos = line.indexOf(SUB_START);
@@ -757,9 +783,18 @@ public class TemplateSet implements ContentSource, ChunkFactory
         String ref = extension + "." + name;
         template = expandShorthand(name,template);
         if (template == null) return;
+        String tpl = removeBlockTagIndents(template.toString());
         
-        cache.put(ref, new Snippet(template.toString()));
+        cache.put(ref, new Snippet(tpl));
         cacheFetch.put(ref, new Long(System.currentTimeMillis()) );
+    }
+    
+    public static String removeBlockTagIndents(String template)
+    {
+        // this regex: s/^\s*({^\/?(...)[^}]*})\s*/$1/g removes leading and trailing whitespace
+        // from lines that only contain {^loop} ...
+        // NB: this regex will not catch {^if (~cond =~ /\/x{1,3}/)} but it's already nigh-unreadable...
+        return TextFilter.applyRegex(template, "s/^\\s*(\\{(\\^|\\~\\.)\\/?(loop|if|else|elseIf|divider|onEmpty)([^\\}]*|[^\\}]*\\/[^\\/]*\\/[^\\}]*)\\})[ \\t]*$/$1/gm");
     }
     
     public static String expandShorthand(String template)
