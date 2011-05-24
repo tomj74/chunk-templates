@@ -11,9 +11,9 @@ public class LoopTest
         Chunk c = new Chunk();
         String[] list = new String[]{"Frodo","Bilbo","Sam"};
         c.set("list", list);
-        // smart trim is the default (leave one final newline if present in template)
-        c.append("{^loop data=\"~list\"}\n{~DATA[0]}<br/>\n{^/loop}");
-        assertEquals("Frodo<br/>\nBilbo<br/>\nSam<br/>\n",c.toString());
+        // smart trim is the default (strip first line if all whitespace)
+        c.append("{^loop data=\"~list\"}  \n {~DATA[0]}<br/>\n{^/loop}");
+        assertEquals(" Frodo<br/>\n Bilbo<br/>\n Sam<br/>\n",c.toString());
     }
 
     @Test
@@ -22,7 +22,7 @@ public class LoopTest
         Chunk c = new Chunk();
         String[] list = new String[]{"Frodo","Bilbo","Sam"};
         c.set("list", list);
-        // smart trim is the default (leave one final newline if present in template)
+        // smart trim is the default (strip first line if all whitespace)
         // note, this template has no final newline.
         c.append("{^loop data=\"~list\"}\n{~DATA[0]}<br/>{^/loop}");
         assertEquals("Frodo<br/>Bilbo<br/>Sam<br/>",c.toString());
@@ -34,7 +34,7 @@ public class LoopTest
         Chunk c = new Chunk();
         String[] list = new String[]{"Frodo","Bilbo","Sam"};
         c.set("list", list);
-        c.append("{^loop data=\"~list\" trim=\"all\"}\n{~DATA[0]}<br/>\n{^/loop}");
+        c.append("{^loop data=\"~list\" trim=\"all\"}\n {~DATA[0]}<br/>\n{^/loop}");
         assertEquals("Frodo<br/>Bilbo<br/>Sam<br/>",c.toString());
     }
     
@@ -52,45 +52,37 @@ public class LoopTest
     public void testSimpleBlockLoop()
     {
         Theme theme = new Theme("themes","test/base,test/override");
-        // this will help theme find the templates...
-        theme.setJarContext(LoopTest.class);
         
         Chunk c = theme.makeChunk("chunk_test#looptest_simple_block_loop");
         String widgets = "[[widget_id,widget_name],[1,thingamabob],[2,doodad]]";
         c.set("widgets",widgets);
-        assertEquals(c.toString(),"1 thingamabob<br/>\n2 doodad<br/>\n\n");
+        assertEquals(c.toString()," 1 thingamabob<br/>\n 2 doodad<br/>\n");
     }
     
     @Test
     public void testLessSimpleBlockLoop()
     {
         Theme theme = new Theme("themes","test/base,test/override");
-        // this will help theme find the templates...
-        theme.setJarContext(LoopTest.class);
         
         Chunk c = theme.makeChunk("chunk_test#looptest_less_simple_block_loop");
         String widgets = "[[widget_id,widget_name],[1,thingamabob],[2,doodad]]";
         c.set("widgets",widgets);
-        assertEquals(c.toString(),"1 thingamabob<br/>\n<hr/>\n2 doodad<br/>\n\n");
+        assertEquals(c.toString()," 1 thingamabob<br/>\n <hr/>\n 2 doodad<br/>\n");
     }
     
     @Test
     public void testLessSimpleBlockLoopOnEmpty()
     {
         Theme theme = new Theme("themes","test/base,test/override");
-        // this will help theme find the templates...
-        theme.setJarContext(LoopTest.class);
         
         Chunk c = theme.makeChunk("chunk_test#looptest_less_simple_block_loop");
-        assertEquals(c.toString(),"<i>No widgets!</i>\n");
+        assertEquals(c.toString(),"<i>No widgets!</i>");
     }
     
     @Test
     public void testSimpleLoopNoBlock()
     {
         Theme theme = new Theme("themes","test/base,test/override");
-        // this will help theme find the templates...
-        theme.setJarContext(LoopTest.class);
         
         Chunk c = theme.makeChunk("chunk_test#looptest_simple_loop_noblock");
         String widgets = "[[widget_id,widget_name],[1,thingamabob],[2,doodad]]";
@@ -103,8 +95,6 @@ public class LoopTest
     public void testSimpleLoopNoBlockDelimTemplate()
     {
         Theme theme = new Theme("themes","test/base,test/override");
-        // this will help theme find the templates...
-        theme.setJarContext(LoopTest.class);
         
         Chunk c = theme.makeChunk("chunk_test#looptest_simple_loop_noblock_delim_tpl");
         String widgets = "[[widget_id,widget_name],[1,thingamabob],[2,doodad]]";
@@ -117,8 +107,6 @@ public class LoopTest
     public void testSimpleLoopNoBlockMissingDelimTemplate()
     {
         Theme theme = new Theme("themes","test/base,test/override");
-        // this will help theme find the templates...
-        theme.setJarContext(LoopTest.class);
         
         Chunk c = theme.makeChunk("chunk_test#looptest_simple_loop_noblock_bad_delim_tpl");
         String widgets = "[[widget_id,widget_name],[1,thingamabob],[2,doodad]]";
