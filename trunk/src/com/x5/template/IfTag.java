@@ -50,7 +50,11 @@ public class IfTag implements BlockTagHelper
         thenTemplate = options.get("then");
         elseTemplate = options.get("else");
         String trimOpt = options.get("trim");
-        if (trimOpt != null && trimOpt.equalsIgnoreCase("false")) doTrim = false;
+        if (trimOpt != null) {
+            if (trimOpt.equalsIgnoreCase("false") || trimOpt.equalsIgnoreCase("none")) {
+                doTrim = false;
+            }
+        }
     }
     
     private String parseCond(String params)
@@ -85,13 +89,13 @@ public class IfTag implements BlockTagHelper
     private Map<String,String> parseAttributes(String params)
     {
         // find and save all xyz="abc" style attributes
-        Pattern p = Pattern.compile(" ([a-zA-Z0-9_-]+)=(\"[^\"]*\"|'[^\']*')");
+        Pattern p = Pattern.compile(" ([a-zA-Z0-9_-]+)=(\"([^\"]*)\"|'([^\']*)')");
         Matcher m = p.matcher(params);
         HashMap<String,String> opts = null;
         while (m.find()) {
             m.group(0); // need to do this for subsequent number to be correct?
             String paramName = m.group(1);
-            String paramValue = m.group(2);
+            String paramValue = m.group(3);
             if (opts == null) opts = new HashMap<String,String>();
             opts.put(paramName, paramValue);
         }
@@ -295,13 +299,27 @@ public class IfTag implements BlockTagHelper
                 }
             }
         }
+        
+        if (chosenPath == 0 && marker == 0) {
+            thenTemplate = blockBody;
+            if (doTrim) thenTemplate = smartTrim(thenTemplate);
+            return thenTemplate;
+        }
+        
         return "";
     }
     
     private String smartTrim(String x)
     {
+        String trimOpt = options == null ? null : options.get("trim");
+        if (trimOpt != null) {
+            if (trimOpt.equalsIgnoreCase("all") || trimOpt.equalsIgnoreCase("true")) {
+                return x.trim();
+            }
+        }
+
         // if the block begins with (whitespace+) LF, trim initial line
-        // otherwise, apply regular trim.
+        // otherwise, apply no trim.
         Pattern p = Pattern.compile("\n|\r\n|\r\r");
         Matcher m = p.matcher(x);
         
@@ -312,6 +330,6 @@ public class IfTag implements BlockTagHelper
             }
         }
         
-        return x.trim();
+        return x;
     }
 }
