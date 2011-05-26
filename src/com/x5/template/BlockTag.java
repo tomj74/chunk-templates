@@ -1,0 +1,76 @@
+package com.x5.template;
+
+public abstract class BlockTag
+{
+    public abstract String cookBlock(String blockBody);
+    public abstract String getBlockStartMarker();
+    public abstract String getBlockEndMarker();
+    
+    public static int[] findMatchingBlockEnd(Chunk context, String template, int blockStartPos, BlockTag helper)
+    {
+        String endBlock = helper.getBlockEndMarker();
+        String scanFor = context.tagStart + "." + endBlock + context.tagEnd;
+
+        String beginBlock = helper.getBlockStartMarker();
+        String nestedScanFor = context.tagStart + "." + beginBlock;
+        
+        int nestDepth = 0;
+        int nestedBlockPos = template.indexOf(nestedScanFor, blockStartPos);
+        int endMarkerPos = template.indexOf(scanFor, blockStartPos);
+        
+        if (nestedBlockPos > -1 && nestedBlockPos < endMarkerPos) {
+            nestDepth++;
+        }
+        
+        while (nestDepth > 0 && endMarkerPos > 0) {
+            while (nestedBlockPos > -1 && nestedBlockPos < endMarkerPos) {
+                // check for another nested block starting before this end-candidate
+                nestedBlockPos = template.indexOf(nestedScanFor, nestedBlockPos + nestedScanFor.length());
+                if (nestedBlockPos > -1 && nestedBlockPos < endMarkerPos) {
+                    nestDepth++;
+                }
+            }
+            // got past end of nested block.
+            nestDepth--;
+            // locate new candidate for block end.
+            endMarkerPos = template.indexOf(scanFor, endMarkerPos+scanFor.length());
+            // check for problems with candidate
+            if (nestedBlockPos > -1 && nestedBlockPos < endMarkerPos) {
+                nestDepth++;
+            }
+        }
+        
+        if (endMarkerPos > 0) {
+            // keep eating whitespace, up to and including the next linefeed
+            // but barf it all back up if non-whitespace is found before next LF
+            int blockAndLF = endMarkerPos+scanFor.length();
+            for (int i=blockAndLF; i<template.length(); i++) {
+                char c = template.charAt(i);
+                if (c == ' ' || c == '\t') {
+                    // keep eating
+                    blockAndLF = i+1;
+                } else if (c == '\n') {
+                    // done eating (unix)
+                    blockAndLF = i+1;
+                    break;
+                } else if (c == '\r') {
+                    // done eating (Win/Mac)
+                    if (i+1 < template.length()) {
+                        blockAndLF = i+2;
+                    } else {
+                        blockAndLF = i+1;
+                    }
+                    break;
+                } else {
+                    // content on same line as block end!
+                    // reverse course!
+                    blockAndLF = endMarkerPos+scanFor.length();
+                    break;
+                }
+            }
+            return new int[]{endMarkerPos,blockAndLF};
+        } else {
+            return null;
+        }
+    }
+}

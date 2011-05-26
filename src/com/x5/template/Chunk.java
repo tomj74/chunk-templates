@@ -1535,11 +1535,11 @@ public class Chunk implements Map<String,Object>
                     }
                     marker = end + tagEndLen;
                 } catch (BlockTagException e) {
-                    BlockTagHelper helper = e.getHelper();
-                    int[] blockEnd = findBlockEnd(template,end,helper);
+                    BlockTag helper = e.getHelper();
+                    int[] blockEnd = BlockTag.findMatchingBlockEnd(this,template,end,helper);
                     if (blockEnd == null) {
                         // FAIL...
-                        buf.append("<!-- [tag expansion error! "+e.getTagFunction()+" block with no matching end marker! ] -->");
+                        buf.append("<!-- [tag expansion error! "+helper.getBlockStartMarker()+" block with no matching end marker! ] -->");
                         marker = end + tagEndLen;
                     } else {
                         String blockBody = template.substring(end+1,blockEnd[0]);
@@ -1561,46 +1561,6 @@ public class Chunk implements Map<String,Object>
         } else {
             buf.append(template.substring(marker));
             return buf.toString();
-        }
-    }
-    
-    private int[] findBlockEnd(String template, int blockStartPos, BlockTagHelper helper)
-    {
-        String endBlock = helper.getBlockEndMarker();
-        String scanFor = tagStart + "." + endBlock + tagEnd;
-        
-        int endMarkerPos = template.indexOf(scanFor, blockStartPos);
-        if (endMarkerPos > 0) {
-            // keep eating whitespace, up to and including the next linefeed
-            // but barf it all back up if non-whitespace is found before next LF
-            int blockAndLF = endMarkerPos+scanFor.length();
-            for (int i=blockAndLF; i<template.length(); i++) {
-                char c = template.charAt(i);
-                if (c == ' ' || c == '\t') {
-                    // keep eating
-                    blockAndLF = i+1;
-                } else if (c == '\n') {
-                    // done eating (unix)
-                    blockAndLF = i+1;
-                    break;
-                } else if (c == '\r') {
-                    // done eating (Win/Mac)
-                    if (i+1 < template.length()) {
-                        blockAndLF = i+2;
-                    } else {
-                        blockAndLF = i+1;
-                    }
-                    break;
-                } else {
-                    // content on same line as block end!
-                    // reverse course!
-                    blockAndLF = endMarkerPos+scanFor.length();
-                    break;
-                }
-            }
-            return new int[]{endMarkerPos,blockAndLF};
-        } else {
-            return null;
         }
     }
     

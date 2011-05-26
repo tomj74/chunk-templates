@@ -6,7 +6,7 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class IfTag implements BlockTagHelper
+public class IfTag extends BlockTag
 {
     // chosenPath simplest case: 0 is "then", -1 is "else"
     // else-if case: 0 is "then", 1 is first else-if, 2 is 2nd else-if, -1 is "else"
@@ -28,6 +28,11 @@ public class IfTag implements BlockTagHelper
     {
         this.context = context;
         parseParams(params);
+    }
+    
+    public String getBlockStartMarker()
+    {
+        return "if";
     }
     
     public String getBlockEndMarker()
@@ -113,7 +118,7 @@ public class IfTag implements BlockTagHelper
     throws BlockTagException
     {
         if (thenTemplate == null) {
-            throw new BlockTagException("if", this);
+            throw new BlockTagException(this);
         }
         
         if (isTrueExpr(primaryCond)) {
@@ -266,11 +271,34 @@ public class IfTag implements BlockTagHelper
         // locate correct block from then, else, elseIf blocks
         // trim unless trim="false"
         // return chosen block
-        Pattern p = Pattern.compile("\\{\\~\\.else[^\\}]*}");
+        Pattern p = Pattern.compile("\\{\\~\\.else[^\\}]*}"); // FIXME what about curly braces inside a regex?
         Matcher m = p.matcher(blockBody);
 
+        String nestedIf = context.tagStart+".if";
+        int nestedIfPos = blockBody.indexOf(nestedIf);
+        int nestedBlockEnd = -1;
+        
         int marker = 0;
+        
+        ElseScan:
         while (m.find()) {
+            // this else might be from a nested if -- in that case, ignore
+            while (nestedIfPos > -1 && nestedIfPos < m.start()) {
+                if (nestedBlockEnd < nestedIfPos) {
+                    int[] endSpan = findMatchingBlockEnd(context,blockBody,nestedIfPos+nestedIf.length(),this);
+                    nestedBlockEnd = endSpan == null ? -1 : endSpan[1];
+                }
+                if (m.start() < nestedBlockEnd) {
+                    // nested else, ignore
+                    continue ElseScan;
+                } else {
+                    // we are past a nested if-- check if we're inside another one
+                    if (nestedBlockEnd > 0) {
+                        nestedIfPos = blockBody.indexOf(nestedIf,nestedBlockEnd);
+                    }
+                }
+            }
+            
             if (marker == 0) {
                 thenTemplate = blockBody.substring(0,m.start());
                 if (doTrim) thenTemplate = smartTrim(thenTemplate);
