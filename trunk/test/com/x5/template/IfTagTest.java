@@ -200,4 +200,87 @@ public class IfTagTest
         c.append("{^if (~moon_material != ~cheese_type) trim=\"true\"} The moon is not made of {~cheese_type} cheese! {^else} darn! {^/if}Goobers\n");
         assertEquals("The moon is not made of stilton cheese!Goobers\n", c.toString());
     }
+    
+    @Test
+    public void testNestedIf()
+    {
+        Chunk c = new Chunk();
+        c.set("moon_material", "roquefort");
+        c.set("cheese_type", "stilton");
+        c.append("{^if (~moon_material == ~cheese_type)} {^if (~cheese_type == stilton)} Moon made of Stilton! {^/if} {^else} The moon is not made of {~cheese_type}! {^/if}");
+        assertEquals(" The moon is not made of stilton! ", c.toString());
+    }
+    
+    @Test
+    public void testNestedElse()
+    {
+        Chunk c = new Chunk();
+        c.set("moon_material", "roquefort");
+        c.set("cheese_type", "stilton");
+        c.append("{^if (~moon_material == ~cheese_type)} {^if (~cheese_type == stilton)} Moon made of Stilton! {^else} not stilton! {^/if} {^else} The moon is not made of {~cheese_type}! {^/if}");
+        assertEquals(" The moon is not made of stilton! ", c.toString());
+    }
+    
+    @Test
+    public void testSeriallyNestedElses()
+    {
+        // navigate serial nested if blocks,
+        // and ignore all "else" clauses that pop up within those nested blocks
+        Chunk c = new Chunk();
+        c.set("moon_material", "roquefort");
+        c.set("cheese_type", "stilton");
+        c.append("{^if (~moon_material == ~cheese_type)} {^if (~cheese_type == stilton)} Moon made of Stilton! {^else} not stilton! {^/if} {^if (~world_shape == round)} Heathen! {^else} Brethren! {^/if} {^else} The moon is not made of {~cheese_type}! {^/if}");
+        assertEquals(" The moon is not made of stilton! ", c.toString());
+    }
+
+    @Test
+    public void testUnmatchedIfs()
+    {
+        Chunk c = new Chunk();
+        c.set("moon_material", "roquefort");
+        c.set("cheese_type", "stilton");
+        c.append("{^if (~moon_material == ~cheese_type)} {^if (~cheese_type == stilton)} Moon made of Stilton! {^else} not stilton! {^/if} {^if (~world_shape == round)} Heathen! {^else} Brethren! {/^if} {^else} The moon is not made of {~cheese_type}! {^/if}");
+        assertTrue(c.toString().indexOf("no matching end marker") > 0);
+    }
+    
+    @Test
+    public void testDeeplyNestedElses()
+    {
+        // navigate deeply nested if blocks,
+        // and ignore all "else" clauses that pop up within those nested blocks
+        Chunk c = new Chunk();
+        c.set("moon_material", "roquefort");
+        c.set("cheese_type", "stilton");
+        c.append("{^if (~moon_material == ~cheese_type)}"
+               +  "{^if (~cheese_type == stilton)} Moon made of Stilton! "
+               +   "{^if (~world_shape == round)} Heathen! {^else} Brethren! {^/if} "
+               +  "{^else} not stilton! "
+               +   "{^if (~world_shape == round)} Heathen! {^else} Brethren! {^/if} "
+               +  "{^/if} "
+               + "{^else}"
+               + " The moon is not made of {~cheese_type}! "
+               + "{^/if}");
+        assertEquals(" The moon is not made of stilton! ", c.toString());
+    }
+    
+    @Test
+    public void testDeeplyNestedElses2()
+    {
+        // navigate deeply nested if blocks,
+        // and ignore all "else" clauses that pop up within those nested blocks
+        Chunk c = new Chunk();
+        c.set("moon_material", "roquefort");
+        c.set("cheese_type", "roquefort");
+        c.append("{^if (~moon_material == ~cheese_type)}"
+               +  "{^if (~cheese_type == stilton)} Moon made of Stilton! "
+               +   "{^if (~world_shape == round)} Heathen! {^else} Brethren! {^/if} "
+               +  "{^else} not stilton! {~cheese_type}!"
+               +   "{^if (~world_shape == round)} Heathen! {^else} Brethren! {^/if} "
+               +  "{^/if} "
+               + "{^else}"
+               + " The moon is not made of {~cheese_type}! "
+               + "{^/if}");
+        assertEquals(" not stilton! roquefort! Brethren! ", c.toString());
+    }
+
 }

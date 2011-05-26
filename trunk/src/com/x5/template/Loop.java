@@ -7,7 +7,7 @@ import java.util.regex.Pattern;
 import com.x5.util.DataCapsuleTable;
 import com.x5.util.TableData;
 
-public class Loop implements BlockTagHelper
+public class Loop extends BlockTag
 {
     private TableData data;
     private Chunk chunk;
@@ -150,7 +150,7 @@ public class Loop implements BlockTagHelper
     private String _cookLoop()
     throws BlockTagException
     {
-    	if (rowTemplate == null) throw new BlockTagException("loop",this);
+    	if (rowTemplate == null) throw new BlockTagException(this);
         return Loop.cookLoop(data, chunk, rowTemplate, emptyTemplate, options, false);
     }
 
@@ -327,6 +327,11 @@ public class Loop implements BlockTagHelper
         }
         
         return Loop.cookLoop(data, chunk, rowTemplate, emptyTemplate, options, isBlock);
+    }
+    
+    public String getBlockStartMarker()
+    {
+        return "loop";
     }
     
     public String getBlockEndMarker()
