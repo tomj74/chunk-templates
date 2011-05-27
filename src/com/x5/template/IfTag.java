@@ -141,8 +141,7 @@ public class IfTag extends BlockTag
         
         if (test.indexOf('=') < 0 && test.indexOf("!~") < 0) {
             // simplest case: no comparison, just a non-null (or null) test
-            Object tagValue = null;
-            try { tagValue = context.resolveTagValue(test); } catch(BlockTagException e) {}
+            Object tagValue = context.get(test);
             if (firstChar == '~') {
                 return (tagValue != null) ? true : false;
             } else if (firstChar == '!') {
@@ -163,8 +162,7 @@ public class IfTag extends BlockTag
                 String tagB = parts[1].trim();
 
                 // get A
-                Object tagValue = null;
-                try { tagValue = context.resolveTagValue(tagA); } catch(BlockTagException e) {}
+                Object tagValue = context.get(tagA);
                 String tagValueA = tagValue == null ? "" : tagValue.toString();
                 
                 if (tagB.charAt(0) == '~') {
@@ -172,8 +170,7 @@ public class IfTag extends BlockTag
                     // resolve both tags and compare
                     
                     // get B
-                    tagValue = null;
-                    try { tagValue = context.resolveTagValue(tagB.substring(1)); } catch (BlockTagException e) {}
+                    tagValue = context.get(tagB.substring(1));
                     String tagValueB = tagValue == null ? "" : tagValue.toString();
                     
                     if (isNeg) {
