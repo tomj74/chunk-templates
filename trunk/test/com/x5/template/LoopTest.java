@@ -114,4 +114,42 @@ public class LoopTest
 
         assertEquals(c.toString(),"1 thingamabob<br/>\nchunk_test#not_exist2 doodad<br/>\n\n");        
     }
+    
+    @Test
+    public void testNestedLoops()
+    {
+        Theme theme = new Theme("themes","test/base,test/override");
+        
+        Chunk c = theme.makeChunk("chunk_test#looptest_nested_loops");
+        String widgets = "[[widget_id,widget_name],[1,thingamabob],[2,doodad]]";
+        String wodgets = "[[wodget_id,wodget_name],[1,thingamabob],[2,doodad]]";
+        c.set("widgets",widgets);
+        c.set("wodgets",wodgets);
+        
+        assertEquals(c.toString(),"thingamabob\n thingamabob *\n --\n doodad\n==\ndoodad\n thingamabob\n --\n doodad *\n");
+    }
+    
+    @Test
+    public void testNestedLoopsEZSyntax()
+    {
+        Theme theme = new Theme("themes","test/base,test/override");
+        
+        Chunk c = theme.makeChunk("chunk_test#looptest_nested_loops_ez_syntax");
+        String widgets = "[[widget_id,widget_name],[1,thingamabob],[2,doodad]]";
+        c.set("widgets",widgets);
+        
+        assertEquals(c.toString(),"thingamabob\n thingamabob *\n --\n doodad\n==\ndoodad\n thingamabob\n --\n doodad *\n");
+    }
+    
+    @Test
+    public void testEZSyntax()
+    {
+        Theme theme = new Theme("themes","test/base,test/override");
+        
+        Chunk c = theme.makeChunk("chunk_test#looptest_ez_syntax");
+        String widgets = "[[widget_id,widget_name],[1,thingamabob],[2,doodad]]";
+        c.set("widgets",widgets);
+        
+        assertEquals(c.toString()," 1 thingamabob<br/>\n <hr/>\n 2 doodad<br/>\n");
+    }
 }

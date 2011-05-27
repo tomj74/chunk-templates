@@ -61,6 +61,35 @@
 {^loop data="~widgets" template="#widget_row" nodata="#no_widgets" divider="#not_exist"}
 {#}
 
+{!---------------------------------------------}
+{#looptest_nested_loops}
+ {^loop data="~widgets"}
+{~widget_name}
+  {^loop data="~wodgets"}
+ {~wodget_name}{~wodget_name|sel(~widget_name, *)}
+  {^divider}
+ --
+  {^/loop}
+ {^divider}
+==
+ {^/loop}
+{#}
+
+
+{!---------------------------------------------}
+{#looptest_nested_loops_ez_syntax}
+ {^loop in ~widgets as w}{!-- outer loop --}
+{~w.widget_name}
+  {^loop in ~widgets as x}{!-- inner loop over same table --}
+ {~x.widget_name}{~x.widget_name|sel(~w.widget_name, *)}
+  {^divider}
+ --
+  {^/loop}
+ {^divider}
+==
+ {^/loop}
+{#}
+
 
 {!---------------------------------------------}
 {#layer_test}

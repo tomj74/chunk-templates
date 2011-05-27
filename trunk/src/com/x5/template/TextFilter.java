@@ -173,6 +173,11 @@ public class TextFilter
         if (args == null) return token;
         
         String testValue = args[0];
+        int delimPos = testValue.indexOf(",");
+        if (delimPos > -1) {
+            token = testValue.substring(delimPos+1);
+            testValue = testValue.substring(0,delimPos);
+        }
         
         if (testValue.charAt(0) == '~') {
             // this is a sneaky way of allowing {~xyz|sel(~tag)}
