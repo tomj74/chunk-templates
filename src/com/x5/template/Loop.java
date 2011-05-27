@@ -1,5 +1,6 @@
 package com.x5.template;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -44,8 +45,27 @@ public class Loop extends BlockTag
 
         if (params.startsWith(".loop(")) {
             parseFnParams(params);
+        } else if (params.matches("\\.loop [^\" ]+ .*")) {
+            parseEZParams(params);
         } else {
             parseAttributes(params);
+        }
+    }
+    
+    // {^loop in ~data}...{^/loop} (or {^loop in ~data as x}...)
+    private void parseEZParams(String paramString)
+    {
+        String[] params = paramString.split(" ");
+        String dataVar = params[2];
+        fetchData(dataVar);
+        
+        this.options = _parseAttributes(paramString);
+        
+        if (params.length > 3) {
+            if (params[3].equals("as")) {
+                if (options == null) options = new HashMap<String,String>();
+                options.put("name",params[4]);
+            }
         }
     }
 
@@ -68,10 +88,38 @@ public class Loop extends BlockTag
             }
         }
     }
-
+    
+    private Map<String,String> _parseAttributes(String params)
+    {
+        // find and save all xyz="abc" style attributes
+        Pattern p = Pattern.compile(" ([a-zA-Z0-9_-]+)=(\"([^\"]*)\"|'([^\']*)')");
+        Matcher m = p.matcher(params);
+        HashMap<String,String> opts = null;
+        while (m.find()) {
+            m.group(0); // need to do this for subsequent number to be correct?
+            String paramName = m.group(1);
+            String paramValue = m.group(3);
+            if (opts == null) opts = new HashMap<String,String>();
+            opts.put(paramName, paramValue);
+        }
+        return opts;
+    }
+    
     // ^loop data="~data" template="#..." no_data="#..." range="..." per_page="x" page="x"
     private void parseAttributes(String params)
     {
+        Map<String,String> opts = _parseAttributes(params);
+        
+        if (opts == null) return;
+        this.options = opts;
+        
+        String dataVar = opts.get("data");
+        fetchData(dataVar);
+        
+        this.rowTemplate = opts.get("template");
+        this.emptyTemplate = opts.get("no_data");
+        
+        /*
         String dataVar = getAttribute("data", params);
         fetchData(dataVar);
         this.rowTemplate = getAttribute("template", params);
@@ -94,7 +142,7 @@ public class Loop extends BlockTag
                     registerOption("range", page + "*" + perPage);
                 }
             }
-        }
+        }*/
     }
 
     private void fetchData(String dataVar)
@@ -160,7 +208,11 @@ public class Loop extends BlockTag
     {
         if (data == null || !data.hasNext()) {
             if (emptyTemplate == null) {
-                return "[Loop Error: Empty Table - please specify no_data template parameter in ^loop tag]";
+                if (isBlock) {
+                    return "[Loop error: Empty Table - please supply ^onEmpty section in ^loop block]";
+                } else {
+                    return "[Loop Error: Empty Table - please specify no_data template parameter in ^loop tag]";
+                }
             } else if (emptyTemplate.length() == 0) {
             	return "";
             } else {
@@ -211,12 +263,20 @@ public class Loop extends BlockTag
 
             Map<String,String> record = data.nextRecord();
 
+            String prefix = null;
+            if (opt != null && opt.containsKey("name")) {
+                String name = opt.get("name");
+                prefix = TextFilter.applyRegex(name, "s/[^A-Za-z0-9_-]//g") + ".";
+            }
+                
             // loop backwards -- in case any headers are identical,
             // this ensures the first such named column will be used
             for (int i=columnLabels.length-1; i>-1; i--) {
                 String field = columnLabels[i];
                 String value = record.get(field);
-                rowX.setOrDelete(field, value);
+                // prefix with eg x. if prefix supplied
+                String fieldName = prefix == null ? field : prefix + field;
+                rowX.setOrDelete(fieldName, value);
                 if (createArrayTags) {
 	                rowX.setOrDelete("DATA["+i+"]",value);
                 }
@@ -230,7 +290,7 @@ public class Loop extends BlockTag
 
         return rows.toString();
     }
-
+    
     public static String getAttribute(String attr, String toScan)
     {
         if (toScan == null) return null;
@@ -294,8 +354,20 @@ public class Loop extends BlockTag
 
         String divider = null;
 
+        // how do we know these aren't inside a nested ^loop block?
+        // find any nested blocks and only scan for these markers *outside* the
+        // nested sections.
+        int[] nestingGrounds = demarcateNestingGrounds(blockBody);
+        
         int delimPos = blockBody.indexOf(delim);
         int dividerPos = blockBody.indexOf(dividerDelim);
+
+        while (isInsideNestingGrounds(delimPos,nestingGrounds)) {
+            delimPos = blockBody.indexOf(delim,delimPos+delim.length());
+        }
+        while (isInsideNestingGrounds(dividerPos,nestingGrounds)) {
+            dividerPos = blockBody.indexOf(dividerDelim,dividerPos+dividerDelim.length());
+        }
         
         if (dividerPos > -1) {
             if (delimPos > -1 && delimPos > dividerPos) {
@@ -327,6 +399,52 @@ public class Loop extends BlockTag
         }
         
         return Loop.cookLoop(data, chunk, rowTemplate, emptyTemplate, options, isBlock);
+    }
+    
+    private boolean isInsideNestingGrounds(int pos, int[] offLimits)
+    {
+        if (pos < 0) return false;
+        if (offLimits == null) return false;
+        
+        for (int i=0; i<offLimits.length; i+=2) {
+            int boundA = offLimits[i];
+            int boundB = offLimits[i+1];
+            if (pos < boundA) return false;
+            if (pos < boundB) return true;
+        }
+        return false;
+    }
+    
+    private int[] demarcateNestingGrounds(String blockBody)
+    {
+        String nestStart = this.chunk.tagStart + ".loop";
+        int nestPos = blockBody.indexOf(nestStart);
+        
+        // easy case, no nesting
+        if (nestPos < 0) return null;
+        
+        int[] bounds = null;
+        while (nestPos > -1) {
+            int[] endSpan = BlockTag.findMatchingBlockEnd(chunk, blockBody, nestPos+nestStart.length(), this);
+            if (endSpan != null) {
+                if (bounds == null) {
+                    bounds = new int[]{nestPos,endSpan[1]};
+                } else {
+                    // grow each time -- yep, hugely inefficient,
+                    // but hey, how often do we nest loops more than one deep?
+                    int[] newBounds = new int[bounds.length+2];
+                    System.arraycopy(bounds, 0, newBounds, 0, bounds.length);
+                    newBounds[newBounds.length-2] = nestPos;
+                    newBounds[newBounds.length-1] = endSpan[1];
+                    bounds = newBounds;
+                }
+                nestPos = blockBody.indexOf(nestStart,endSpan[1]);
+            } else {
+                break;
+            }
+        }
+        
+        return bounds;
     }
     
     public String getBlockStartMarker()
