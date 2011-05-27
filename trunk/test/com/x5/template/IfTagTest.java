@@ -111,8 +111,24 @@ public class IfTagTest
         assertEquals(" The moon is made of cheese! ", c.toString());
     }
     
-    //TODO tests for parent fallback tests for tag values in comparisons.
+    //TODO tests for parent fallback of tag values in comparisons.
     // and check that trim="false" works!
+    
+    @Test
+    public void testFallback()
+    {
+        Chunk p = new Chunk();
+        Chunk c = new Chunk();
+        p.set("child",c);
+        p.set("name","Dad");
+        p.append("P: {~child}");
+        c.append("{^if (~name)} name is {~name}. {^/if}");
+        c.append("{^if (~name == Dad)} Dad's here! {^/if}");
+
+        c.set("parent_name", "Dad");
+        c.append("{^if (~parent_name == ~name)} Dad's Dad! {^/if}");
+        assertEquals(p.toString(), "P:  name is Dad.  Dad's here!  Dad's Dad! ");
+    }
     
     @Test
     public void testRegexCond()
