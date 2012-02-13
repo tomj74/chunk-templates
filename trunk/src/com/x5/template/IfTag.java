@@ -209,8 +209,7 @@ public class IfTag extends BlockTag
         String var = parts[0].trim();
         String regex = parts[1].trim();
         
-        Object tagValue = null;
-        try { tagValue = context.resolveTagValue(var); } catch(BlockTagException e) {}
+        Object tagValue = context.get(var);
 
         boolean isMatch = isMatch(tagValue == null ? null : tagValue.toString(), regex);
         

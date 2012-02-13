@@ -114,7 +114,7 @@ public class TemplateSet implements ContentSource, ChunkFactory
     public static final String LITERAL_END_EXPANDED = "{~.}";
     
     private static final int DEFAULT_REFRESH = 15; // minutes
-    private static final String DEFAULT_EXTENSION = "html";
+    private static final String DEFAULT_EXTENSION = "chtml";
 
     private Hashtable<String,Snippet> cache = new Hashtable<String,Snippet>();
     private Hashtable<String,Long> cacheFetch = new Hashtable<String,Long>();
@@ -309,11 +309,16 @@ public class TemplateSet implements ContentSource, ChunkFactory
         StackTraceElement[] stackTrace = t.getStackTrace();
         if (stackTrace == null) return null;
         
-        // calling class is four call levels back up the stack trace.
+        // calling class is at least four call levels back up the stack trace.
         // makes an excellent candidate for where to look for theme resources.
         for (int i=4; i<stackTrace.length; i++) {
             StackTraceElement e = stackTrace[i];
-            return e.getClass();
+            if (e.getClassName().matches("^com\\.x5\\.template\\.[^\\.]*$")) {
+                continue;
+            }
+            try {
+                return Class.forName(e.getClassName());
+            } catch (ClassNotFoundException e2) {}
         }
         return null;
     }

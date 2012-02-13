@@ -143,7 +143,7 @@ public class DataCapsuleReader
 		
 		String[] altLabels = new String[bareLabels.length];
 		for (int i=0; i<altLabels.length; i++) {
-			altLabels[i] = altPrefix + "_" + bareLabels[i];
+		    altLabels[i] = altPrefix + "." + labels[i];
 		}
 		return altLabels;
 	}

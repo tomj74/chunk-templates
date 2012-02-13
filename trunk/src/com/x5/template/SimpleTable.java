@@ -12,6 +12,8 @@ public class SimpleTable implements TableData
     private ArrayList<String[]> records;
     private int cursor = -1;
     private Map<String,String> currentRecord;
+    
+    public static final String ANON_ARRAY_LABEL = "_anonymous_";
 	
 	public SimpleTable(String[] columnLabels, Vector<String[]> tableRows)
 	{
@@ -39,7 +41,7 @@ public class SimpleTable implements TableData
     public SimpleTable(String[] data)
     {
     	if (data == null) return;
-    	labels = new String[]{"anonymous"};
+    	labels = new String[]{ANON_ARRAY_LABEL};
     	// make a single-column table out of a String array.
     	records = new ArrayList<String[]>();
     	for (int i=0; i<data.length; i++) {

@@ -138,7 +138,7 @@ public class LoopTest
         String widgets = "[[widget_id,widget_name],[1,thingamabob],[2,doodad]]";
         c.set("widgets",widgets);
         
-        assertEquals(c.toString(),"thingamabob\n thingamabob *\n --\n doodad\n==\ndoodad\n thingamabob\n --\n doodad *\n");
+        assertEquals(c.toString(),"1:thingamabob\n thingamabob *\n --\n doodad\n==\n2:doodad\n thingamabob\n --\n doodad *\n");
     }
     
     @Test
@@ -151,5 +151,20 @@ public class LoopTest
         c.set("widgets",widgets);
         
         assertEquals(c.toString()," 1 thingamabob<br/>\n <hr/>\n 2 doodad<br/>\n");
+    }
+    
+    @Test
+    public void testIfRegexInsideLoop()
+    {
+        Theme theme = new Theme("themes","test/base");
+        
+        String widgets = "[[widget_id,widget_name],[1,thingamabob],[2,doodad]]";
+
+        Chunk c = theme.makeChunk("chunk_test#if_regex_inside_loop");
+        c.set("program_code","WEBATDPLUS");
+        c.set("widgets", widgets);
+
+        String output = c.toString();
+        assertEquals(output,"WEBATDPLUS\n");
     }
 }

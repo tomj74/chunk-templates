@@ -79,7 +79,9 @@
 {!---------------------------------------------}
 {#looptest_nested_loops_ez_syntax}
  {^loop in ~widgets as w}{!-- outer loop --}
-{~w.widget_name}
+{!-- can access table data via numbered array index ~w[0] ~w[1]
+     and/or object-style ~w.property_name --}
+{~w[0]}:{~w.widget_name}
   {^loop in ~widgets as x}{!-- inner loop over same table --}
  {~x.widget_name}{~x.widget_name|sel(~w.widget_name, *)}
   {^divider}
@@ -88,6 +90,21 @@
  {^divider}
 ==
  {^/loop}
+{#}
+
+
+{!---------------------------------------------}
+{#if_regex_inside_loop}
+{~program_code}
+{^loop in ~widgets as x}
+  {^if (~program_code =~ /ATD/)}
+{!-- nothing! --}
+  {^elseIf (~x.is_toaster)}
+TOASTER!
+  {^else}
+NOT A TOASTER
+  {^/if}
+{^/loop}
 {#}
 
 
