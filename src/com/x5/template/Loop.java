@@ -266,7 +266,7 @@ public class Loop extends BlockTag
             String prefix = null;
             if (opt != null && opt.containsKey("name")) {
                 String name = opt.get("name");
-                prefix = TextFilter.applyRegex(name, "s/[^A-Za-z0-9_-]//g") + ".";
+                prefix = TextFilter.applyRegex(name, "s/[^A-Za-z0-9_-]//g");
             }
                 
             // loop backwards -- in case any headers are identical,
@@ -275,11 +275,23 @@ public class Loop extends BlockTag
                 String field = columnLabels[i];
                 String value = record.get(field);
                 // prefix with eg x. if prefix supplied
-                String fieldName = prefix == null ? field : prefix + field;
+                String fieldName = prefix == null ? field : prefix + "." + field;
                 rowX.setOrDelete(fieldName, value);
                 if (createArrayTags) {
-	                rowX.setOrDelete("DATA["+i+"]",value);
+                    String idx = "["+i+"]";
+                    rowX.setOrDelete("DATA"+idx,value);
+                    if (prefix != null) {
+                        rowX.setOrDelete(prefix+idx, value);
+                    }
                 }
+            }
+            
+            // for anonymous one-column tables (aka a string array)
+            // allow loop in ~array as x to use {~x} for the value --
+            // otherwise template has to have {~x[0]} or {~x.anonymous}
+            // which is silly.
+            if (prefix != null && columnLabels.length == 1 && columnLabels[0].equals(SimpleTable.ANON_ARRAY_LABEL)) {
+                rowX.setOrDelete(prefix, record.get(SimpleTable.ANON_ARRAY_LABEL));
             }
 
             // make sure chunk tags are resolved in context

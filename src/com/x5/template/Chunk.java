@@ -796,7 +796,11 @@ public class Chunk implements Map<String,Object>
         int delimPos = tagName.indexOf(".",1);
         int spacePos = tagName.indexOf(" ",1); // {^include abc#xyz} is ok too
         if (delimPos < 0 && spacePos < 0) {
-            return "[malformed content reference: '"+tagName+"' -- missing argument]";
+            if (tagName.startsWith("./")) {
+                return "[CHUNK_ERR: extra end tag, no matching tag found for "+tagName.substring(1)+"]";
+            } else {
+                return "[CHUNK_ERR: malformed content reference: '"+tagName+"' -- missing argument]";
+            }
         }
         if (spacePos > 0 && (delimPos < 0 || spacePos < delimPos)) delimPos = spacePos;
         String srcName = tagName.substring(1,delimPos);
@@ -908,12 +912,6 @@ public class Chunk implements Map<String,Object>
     // same throughout the whole table -- rather than set it over and
     // over the same in each row, the tag is given a value once at the
     // table level.
-    protected Object resolveTagValue(String tagName)
-    throws BlockTagException
-    {
-        return resolveTagValue(tagName, null);
-    }
-
     protected Object resolveTagValue(String tagName, Vector<Chunk> ancestors)
     throws BlockTagException
     {
