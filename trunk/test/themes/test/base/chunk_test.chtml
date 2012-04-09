@@ -112,3 +112,12 @@ NOT A TOASTER
 {#layer_test}
 Base Layer
 {#}
+
+{!---------------------------------------------}
+{!-- contains unterminated literal, make sure
+     this is the last snippet in the file!
+  --}
+{#uncapped_literal}
+Scooby Doo says {~go:ruff ruff}!
+{^literal}
+{#}
