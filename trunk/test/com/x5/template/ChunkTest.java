@@ -197,4 +197,40 @@ public class ChunkTest
         
         assertEquals(c.toString(), "Hello, my name is Rob!");
     }
+    
+    @Test
+    public void testUncappedLiteral()
+    {
+        Chunk c = new Chunk();
+        c.append("Pass through! {~gronk:bubbles!} <!-- {^literal} --> passing through {~gronk:} Pass on!");
+        
+        assertEquals(c.toString(), "Pass through! bubbles! <!-- {^literal} --> passing through {~gronk:} Pass on!");
+    }
+
+    @Test
+    public void testLiteral()
+    {
+        Chunk c = new Chunk();
+        c.append("Pass through! {~gronk:bubbles!} <!-- {^literal} --> passing through {~gronk:} <!-- {^} --> Pass on {~process_me:happily}!");
+        
+        assertEquals(c.toString(), "Pass through! bubbles! <!-- {^literal} --> passing through {~gronk:} <!-- {^} --> Pass on happily!");
+    }
+
+    @Test
+    public void testLiteralAltSyntaxA()
+    {
+        Chunk c = new Chunk();
+        c.append("Pass through! {~gronk:bubbles!} <!-- {^^} --> passing through {~gronk:} <!-- {^} --> Pass on {~process_me:happily}!");
+        
+        assertEquals(c.toString(), "Pass through! bubbles! <!-- {^^} --> passing through {~gronk:} <!-- {^} --> Pass on happily!");
+    }
+
+    @Test
+    public void testLiteralAltSyntaxB()
+    {
+        Chunk c = new Chunk();
+        c.append("Pass through! {~gronk:bubbles!} <!-- {^literal} --> passing through {~gronk:} <!-- {/literal} --> Pass on {~process_me:happily}!");
+        
+        assertEquals(c.toString(), "Pass through! bubbles! <!-- {^literal} --> passing through {~gronk:} <!-- {/literal} --> Pass on happily!");
+    }
 }

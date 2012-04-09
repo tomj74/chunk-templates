@@ -48,15 +48,26 @@ public class Snippet
 			String beforeLiteral = template.substring(marker,litPos);
 			parts.add(new SnippetPart(beforeLiteral));
 			
+			int endMarkerLen = TemplateSet.LITERAL_END.length();
+			
 			int litEnd = template.indexOf(TemplateSet.LITERAL_END,litPos+TemplateSet.LITERAL_SHORTHAND.length());
+			// {^} ends a literal block, OR {/literal} -- whichever comes first.
+            int litEndLong = template.indexOf(TemplateSet.LITERAL_END_LONGHAND,litPos+TemplateSet.LITERAL_SHORTHAND.length());
+            if (litEndLong > -1 && (litEnd < 0 || litEndLong < litEnd)) {
+                litEnd = litEndLong;
+                endMarkerLen = TemplateSet.LITERAL_END_LONGHAND.length();
+            }
+            
 			if (litEnd < 0) {
 				String text = template.substring(litPos);
 				SnippetPart literal = new SnippetPart(text);
 				literal.setLiteral(true);
 				parts.add(literal);
+				// eat the whole rest of the enchilada.  burp.
+				marker = template.length();
 				break;
 			} else {
-				marker = litEnd+TemplateSet.LITERAL_END.length();
+				marker = litEnd + endMarkerLen;
 				String text = template.substring(litPos,marker);
 				SnippetPart literal = new SnippetPart(text);
 				literal.setLiteral(true);

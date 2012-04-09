@@ -113,9 +113,10 @@ public class TemplateSet implements ContentSource, ChunkFactory
     private static final String SKIP_BLANK_LINE = "";
     
     public static final String LITERAL_START = "{^literal}";
-    public static final String LITERAL_END = "{^}";
     public static final String LITERAL_SHORTHAND = "{^^}";
+    public static final String LITERAL_END = "{^}";
     public static final String LITERAL_END_EXPANDED = "{~.}";
+    public static final String LITERAL_END_LONGHAND = "{/literal}";
     
     private static final int DEFAULT_REFRESH = 15; // minutes
     private static final String DEFAULT_EXTENSION = "chtml";
@@ -623,6 +624,8 @@ public class TemplateSet implements ContentSource, ChunkFactory
 	    int litPos     = text.indexOf(LITERAL_SHORTHAND, startAt);
 	    if (litPos > -1 && literalPos > -1) {
 	    	literalPos = Math.min(literalPos, litPos);
+	    } else if (litPos > -1 || literalPos > -1) {
+	        literalPos = Math.max(literalPos, litPos);
 	    }
 	    return literalPos;
     }
