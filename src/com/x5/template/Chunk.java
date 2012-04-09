@@ -1195,6 +1195,11 @@ public class Chunk implements Map<String,Object>
             		cursor = afterLiteralBlock;
             		marker = afterLiteralBlock;
             	}
+            } else if (afterBrace == '/') {
+                // {/if} is short for {^/if} which is short for {~./if}
+                expanded.append("{~./");
+                cursor += 2;
+                marker += 2;
             } else {
                 cursor += 2;
             }

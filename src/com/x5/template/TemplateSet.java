@@ -95,6 +95,10 @@ public class TemplateSet implements ContentSource, ChunkFactory
     public static final String MACRO_LET_END = "}";
     public static final String INCLUDE_SHORTHAND = "{+";
     public static final String PROTOCOL_SHORTHAND = "{^";
+    
+    // allow {^if}...{/if} and {^loop}...{/loop} by auto-expanding these
+    public static final String BLOCKEND_SHORTHAND = "{/";
+    public static final String BLOCKEND_LONGHAND = "{~./"; // ie "{^/"
 
     private static final long oneMinuteInMillis = 60 * 1000;
     // having a minimum cache time of five seconds improves
@@ -863,6 +867,10 @@ public class TemplateSet implements ContentSource, ChunkFactory
             	} else {
             		cursor = afterLiteralBlock;
             	}
+            } else if (afterBrace == '/') {
+                // {/ is short for {^/ which is short for {~./
+                template.replace(cursor+1,cursor+2,"~./");
+                // re-process, do not advance cursor.
             } else if (afterBrace == '*') {
                 cursor = expandShorthandMacro(template,fullRef,cursor);
             } else {
