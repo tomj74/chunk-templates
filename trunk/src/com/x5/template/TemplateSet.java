@@ -597,7 +597,7 @@ public class TemplateSet implements ContentSource, ChunkFactory
         		sbTemp.append("\n");
     		}
     		// never found! appended rest of file as unterminated literal. burp.
-    		return null;
+    		return "";
     	}
     }
 
@@ -683,6 +683,7 @@ public class TemplateSet implements ContentSource, ChunkFactory
 	        		break;
 	        	}
 	        }
+	        
 	        // next, strip out any comments
 	        while (comPos > -1 && (subEndPos < 0 || subEndPos > comPos) && (literalPos < 0 || literalPos > comPos)) {
                 int lenBefore = firstLine.length();
@@ -768,6 +769,7 @@ public class TemplateSet implements ContentSource, ChunkFactory
         			break;
         		}
         	}
+        	
         	// next, strip out any comments
         	while (comPos > -1 && (subPos < 0 || subPos > comPos) && (subEndPos < 0 || subEndPos > comPos) && (litPos < 0 || litPos > comPos)) {
         	    int lenBefore = line.length();
