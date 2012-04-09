@@ -6,7 +6,7 @@
 {#looptest_simple_block_loop}
 {^loop data="~widgets"}
  {~widget_id} {~widget_name}<br/>
-{^/loop}
+{/loop}
 {#}
 
 {!---------------------------------------------}
@@ -17,7 +17,7 @@
  <hr/>
 {^onEmpty}
  <i>No widgets!</i>
-{^/loop}
+{/loop}
 {#}
 
 {!---------------------------------------------}
@@ -28,7 +28,7 @@
  <hr/>
 {^onEmpty}
  <i>No widgets!</i>
-{^/loop}
+{/loop}
 {#}
 
 {!---------------------------------------------}
@@ -69,10 +69,10 @@
  {~wodget_name}{~wodget_name|sel(~widget_name, *)}
   {^divider}
  --
-  {^/loop}
+  {/loop}
  {^divider}
 ==
- {^/loop}
+ {/loop}
 {#}
 
 
@@ -86,10 +86,10 @@
  {~x.widget_name}{~x.widget_name|sel(~w.widget_name, *)}
   {^divider}
  --
-  {^/loop}
+  {/loop}
  {^divider}
 ==
- {^/loop}
+ {/loop}
 {#}
 
 
@@ -103,8 +103,8 @@
 TOASTER!
   {^else}
 NOT A TOASTER
-  {^/if}
-{^/loop}
+  {/if}
+{/loop}
 {#}
 
 

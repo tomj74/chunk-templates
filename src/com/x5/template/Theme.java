@@ -6,16 +6,24 @@ import java.util.HashSet;
 public class Theme implements ContentSource, ChunkFactory
 {
 	private ArrayList<TemplateSet> themeLayers = new ArrayList<TemplateSet>();
+	
 	private String themesFolder;
+	private String themeLayerNames;
+	private String fileExtension;
 	
 	private String tagStart = TemplateSet.DEFAULT_TAG_START;
 	private String tagEnd = TemplateSet.DEFAULT_TAG_END;
 	
 	private static final String DEFAULT_THEMES_FOLDER = "themes";
 	
+	public Theme()
+	{
+	    this(null, null, null);
+	}
+	
 	public Theme(String themeLayerNames)
 	{
-	    this(DEFAULT_THEMES_FOLDER, themeLayerNames, null);
+	    this(null, themeLayerNames, null);
 	}
 	
 	public Theme(String themesFolder, String themeLayerNames)
@@ -25,6 +33,23 @@ public class Theme implements ContentSource, ChunkFactory
 	
 	public Theme(String themesFolder, String themeLayerNames, String ext)
 	{
+        this.themesFolder = themesFolder;
+        this.themeLayerNames = themeLayerNames;
+        this.fileExtension = ext;
+	}
+	
+	public void setDefaultFileExtension(String ext)
+	{
+	    if (this.themeLayers.size() > 0) {
+	        throw new java.lang.IllegalStateException("Must specify extension before lazy init.");
+	    } else {
+	        this.fileExtension = ext;
+	    }
+	}
+	
+	private void init()
+	{
+	    if (themesFolder == null) themesFolder = DEFAULT_THEMES_FOLDER;
         // ensure trailing fileseparator
         char lastChar = themesFolder.charAt(themesFolder.length()-1);
         char fs = System.getProperty("file.separator").charAt(0);
@@ -35,11 +60,11 @@ public class Theme implements ContentSource, ChunkFactory
 		
 		String[] layerNames = parseLayerNames(themeLayerNames);
 		if (layerNames == null) {
-			TemplateSet simple = new TemplateSet(themesFolder,ext,0);
+			TemplateSet simple = new TemplateSet(themesFolder,fileExtension,0);
 			themeLayers.add(simple);
 		} else {
 			for (int i=0; i<layerNames.length; i++) {
-				TemplateSet x = new TemplateSet(this.themesFolder + layerNames[i],ext,0);
+				TemplateSet x = new TemplateSet(this.themesFolder + layerNames[i],fileExtension,0);
 				x.setLayerName(layerNames[i]);
 				// important: do not return pretty HTML-formatted error strings
 				// when template can not be located.
@@ -47,6 +72,13 @@ public class Theme implements ContentSource, ChunkFactory
 				themeLayers.add(x);
 			}
 		}
+	}
+	
+	private ArrayList<TemplateSet> getThemeLayers()
+	{
+	    // funneling all access through here to enable lazy init.
+	    if (themeLayers.size() < 1) { init(); }
+	    return themeLayers;
 	}
 	
 	private String[] parseLayerNames(String themeLayerNames)
@@ -59,16 +91,17 @@ public class Theme implements ContentSource, ChunkFactory
 	public void setDirtyInterval(int minutes)
 	{
 		// propagate setting down to each layer
-		for (TemplateSet layer: themeLayers) {
+		for (TemplateSet layer: getThemeLayers()) {
 			layer.setDirtyInterval(minutes);
 		}
 	}
 	
 	public Snippet getSnippet(String templateName, String ext)
 	{
+	    ArrayList<TemplateSet> layers = getThemeLayers();
 		// later layers have precedence if they provide the item
-		for (int i=themeLayers.size()-1; i>=0; i--) {
-			TemplateSet x = themeLayers.get(i);
+		for (int i=layers.size()-1; i>=0; i--) {
+			TemplateSet x = layers.get(i);
 			Snippet template = x.getSnippet(templateName, ext);
 			if (template != null) {
 				return template;
@@ -79,9 +112,10 @@ public class Theme implements ContentSource, ChunkFactory
 
 	public Snippet getSnippet(String itemName)
 	{
+        ArrayList<TemplateSet> layers = getThemeLayers();
 		// later layers have precedence if they provide the item
-		for (int i=themeLayers.size()-1; i>=0; i--) {
-			TemplateSet x = themeLayers.get(i);
+		for (int i=layers.size()-1; i>=0; i--) {
+			TemplateSet x = layers.get(i);
 			if (x.provides(itemName)) {
 				return x.getSnippet(itemName);
 			}
@@ -156,8 +190,8 @@ public class Theme implements ContentSource, ChunkFactory
 
     /**
      * Creates a Chunk with a starting template.  If templateName contains one
-     * or more dots it is assumed that the template definition is nested inside
-     * another template.  Everything up to the first dot is part of the filename
+     * or more hashes (#) it is assumed that the template definition is nested inside
+     * another template.  Everything up to the first hash is part of the filename
      * (appends the DEFAULT extension to find the file) and everything after
      * refers to a location within the file where the template contents are
      * defined.
@@ -177,8 +211,8 @@ public class Theme implements ContentSource, ChunkFactory
 
     /**
      * Creates a Chunk with a starting template.  If templateName contains one
-     * or more dots it is assumed that the template definition is nested inside
-     * another template.  Everything up to the first dot is part of the filename
+     * or more hashes (#) it is assumed that the template definition is nested inside
+     * another template.  Everything up to the first hash is part of the filename
      * (appends the PASSED extension to find the file) and everything after
      * refers to a location within the file where the template contents are
      * defined.
@@ -227,7 +261,7 @@ public class Theme implements ContentSource, ChunkFactory
      *
 	 * Chunk might still be able to find your templates but it will work a
 	 * lot harder.  Without this info, it has to peek into every jar in the
-	 * classpath every time.
+	 * classpath every time it loads a new template.
 	 * 
 	 * @param classInSameJar
 	 */
