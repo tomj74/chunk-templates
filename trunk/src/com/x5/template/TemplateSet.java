@@ -556,10 +556,19 @@ public class TemplateSet implements ContentSource, ChunkFactory
     private String getLiteralLines(int litBegin, String firstLine, BufferedReader brTemp, StringBuilder sbTemp)
     	throws IOException
     {
-    	int litEnd = firstLine.indexOf(LITERAL_END);
+    	int litEnd = firstLine.indexOf(LITERAL_END,litBegin+2);
+    	int endMarkerLen = LITERAL_END.length();
+    	
+        // {^} ends a literal block, OR {/literal} -- whichever comes first.
+        int litEndLong = firstLine.indexOf(LITERAL_END_LONGHAND,litBegin+2);
+        if (litEndLong > -1 && (litEnd < 0 || litEndLong < litEnd)) {
+            litEnd = litEndLong;
+            endMarkerLen = TemplateSet.LITERAL_END_LONGHAND.length();
+        }
+    	
     	if (litEnd > -1) {
     		// easy case -- literal does not span lines
-    		litEnd += LITERAL_END.length();
+    		litEnd += endMarkerLen;
     		sbTemp.append(firstLine.substring(0,litEnd));
     		return firstLine.substring(litEnd);
     	} else {
@@ -572,8 +581,15 @@ public class TemplateSet implements ContentSource, ChunkFactory
     			if (line == null) break;
     			
     			litEnd = line.indexOf(LITERAL_END);
+    	        // {^} ends a literal block, OR {/literal} -- whichever comes first.
+    			litEndLong = line.indexOf(LITERAL_END_LONGHAND);
+    			if (litEndLong > -1 && (litEnd < 0 || litEndLong < litEnd)) {
+    			    litEnd = litEndLong;
+    			    endMarkerLen = TemplateSet.LITERAL_END_LONGHAND.length();
+    			}
+    			
     			if (litEnd > -1) {
-    				litEnd += LITERAL_END.length();
+    				litEnd += endMarkerLen;
     				sbTemp.append(line.substring(0,litEnd));
     				return line.substring(litEnd);
     			}
