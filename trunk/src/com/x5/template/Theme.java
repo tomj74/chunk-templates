@@ -11,6 +11,13 @@ public class Theme implements ContentSource, ChunkFactory
 	private String tagStart = TemplateSet.DEFAULT_TAG_START;
 	private String tagEnd = TemplateSet.DEFAULT_TAG_END;
 	
+	private static final String DEFAULT_THEMES_FOLDER = "themes";
+	
+	public Theme(String themeLayerNames)
+	{
+	    this(DEFAULT_THEMES_FOLDER, themeLayerNames, null);
+	}
+	
 	public Theme(String themesFolder, String themeLayerNames)
 	{
 		this(themesFolder, themeLayerNames, null);
