@@ -206,6 +206,15 @@ public class ChunkTest
         
         assertEquals(c.toString(), "Pass through! bubbles! <!-- {^literal} --> passing through {~gronk:} Pass on!");
     }
+    
+    @Test
+    public void testUncappedLiteralInFile()
+    {
+        Theme theme = new Theme("test/base");
+        Chunk c = theme.makeChunk("chunk_test#uncapped_literal");
+        
+        assertEquals(c.toString(), "Scooby Doo says ruff ruff!\n{^literal}\n{#}\n");
+    }
 
     @Test
     public void testLiteral()
