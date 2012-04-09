@@ -10,7 +10,7 @@ public class IfTagTest
     {
         Chunk c = new Chunk();
         c.set("moon_material", "cheese");
-        c.append("{^if (~moon_material == cheese)} The moon is made of cheese! {^else} The moon is not made of cheese :( {^/if}");
+        c.append("{^if (~moon_material == cheese)} The moon is made of cheese! {^else} The moon is not made of cheese :( {/if}");
         assertEquals(" The moon is made of cheese! ", c.toString());
     }
     
@@ -19,7 +19,7 @@ public class IfTagTest
     {
         Chunk c = new Chunk();
         c.set("moon_material", "legos");
-        c.append("{^if (~moon_material == cheese)} The moon is made of cheese! {^else} The moon is not made of cheese :( {^/if}");
+        c.append("{^if (~moon_material == cheese)} The moon is made of cheese! {^else} The moon is not made of cheese :( {/if}");
         assertEquals(" The moon is not made of cheese :( ", c.toString());
     }
     
@@ -28,7 +28,7 @@ public class IfTagTest
     {
         Chunk c = new Chunk();
         c.set("moon_material", "something");
-        c.append("{^if (~moon_material)} The moon is made of something! {^else} The moon is not made of anything :( {^/if}");
+        c.append("{^if (~moon_material)} The moon is made of something! {^else} The moon is not made of anything :( {/if}");
         assertEquals(" The moon is made of something! ", c.toString());
     }
     
@@ -36,7 +36,7 @@ public class IfTagTest
     public void testIfDefinedElsePath()
     {
         Chunk c = new Chunk();
-        c.append("{^if (~moon_material)} The moon is made of something! {^else} The moon is not made of anything :( {^/if}");
+        c.append("{^if (~moon_material)} The moon is made of something! {^else} The moon is not made of anything :( {/if}");
         assertEquals(" The moon is not made of anything :( ", c.toString());
     }
 
@@ -44,7 +44,7 @@ public class IfTagTest
     public void testIfNotDefined()
     {
         Chunk c = new Chunk();
-        c.append("{^if (!moon_material)} The moon is not made of anything! {^else} The moon is made of something :) {^/if}");
+        c.append("{^if (!moon_material)} The moon is not made of anything! {^else} The moon is made of something :) {/if}");
         assertEquals(" The moon is not made of anything! ", c.toString());
     }
 
@@ -52,7 +52,7 @@ public class IfTagTest
     public void testIfNotDefinedNoElse()
     {
         Chunk c = new Chunk();
-        c.append("{^if (!moon_material)} The moon is not made of anything! {^/if}");
+        c.append("{^if (!moon_material)} The moon is not made of anything! {/if}");
         assertEquals(" The moon is not made of anything! ", c.toString());
     }
     
@@ -60,7 +60,7 @@ public class IfTagTest
     public void testElsePathNoElse()
     {
         Chunk c = new Chunk();
-        c.append("{^if (~moon_material)} The moon is made of something! {^/if}");
+        c.append("{^if (~moon_material)} The moon is made of something! {/if}");
         assertEquals("", c.toString());
     }
 
@@ -69,7 +69,7 @@ public class IfTagTest
     {
         Chunk c = new Chunk();
         c.set("moon_material", "something");
-        c.append("{^if (!moon_material)} The moon is not made of anything! {^else} The moon is made of something :) {^/if}");
+        c.append("{^if (!moon_material)} The moon is not made of anything! {^else} The moon is made of something :) {/if}");
         assertEquals(" The moon is made of something :) ", c.toString());
     }
     
@@ -79,7 +79,7 @@ public class IfTagTest
         // this also tests trimming first line break.
         Chunk c = new Chunk();
         c.set("moon_material", "stilton");
-        c.append("{^if (~moon_material == cheese)}\n The moon is made of cheese! \n{^elseIf (~moon_material == stilton)}\n The moon is made of Stilton! \n{^else}\n The moon is not made of cheese :( \n{^/if}\n");
+        c.append("{^if (~moon_material == cheese)}\n The moon is made of cheese! \n{^elseIf (~moon_material == stilton)}\n The moon is made of Stilton! \n{^else}\n The moon is not made of cheese :( \n{/if}\n");
         assertEquals(" The moon is made of Stilton! \n", c.toString());
     }
     
@@ -89,7 +89,7 @@ public class IfTagTest
         // this also tests trimming first line break.
         Chunk c = new Chunk();
         c.set("moon_material", "stilton");
-        c.append("{^if (~moon_material == cheese) trim=\"false\"}\n The moon is made of cheese! \n{^elseIf (~moon_material == stilton)}\n The moon is made of Stilton! \n{^else}\n The moon is not made of cheese :( \n{^/if}\n");
+        c.append("{^if (~moon_material == cheese) trim=\"false\"}\n The moon is made of cheese! \n{^elseIf (~moon_material == stilton)}\n The moon is made of Stilton! \n{^else}\n The moon is not made of cheese :( \n{/if}\n");
         assertEquals("\n The moon is made of Stilton! \n", c.toString());
     }
     
@@ -98,7 +98,7 @@ public class IfTagTest
     {
         Chunk c = new Chunk();
         c.set("moon_material", "rock");
-        c.append("{^if (~moon_material == cheese)} The moon is made of cheese! {^elseIf (~moon_material == stilton)} The moon is made of Stilton! {^else} The moon is not made of cheese :( {^/if}");
+        c.append("{^if (~moon_material == cheese)} The moon is made of cheese! {^elseIf (~moon_material == stilton)} The moon is made of Stilton! {^else} The moon is not made of cheese :( {/if}");
         assertEquals(" The moon is not made of cheese :( ", c.toString());
     }
     
@@ -107,7 +107,7 @@ public class IfTagTest
     {
         Chunk c = new Chunk();
         c.set("moon_material", "cheese");
-        c.append("{^if (~moon_material == cheese)} The moon is made of cheese! {^elseIf (~moon_material == cheese)} The moon is made of Stilton! {^else} The moon is not made of cheese :( {^/if}");
+        c.append("{^if (~moon_material == cheese)} The moon is made of cheese! {^elseIf (~moon_material == cheese)} The moon is made of Stilton! {^else} The moon is not made of cheese :( {/if}");
         assertEquals(" The moon is made of cheese! ", c.toString());
     }
     
@@ -122,11 +122,11 @@ public class IfTagTest
         p.set("child",c);
         p.set("name","Dad");
         p.append("P: {~child}");
-        c.append("{^if (~name)} name is {~name}. {^/if}");
-        c.append("{^if (~name == Dad)} Dad's here! {^/if}");
+        c.append("{^if (~name)} name is {~name}. {/if}");
+        c.append("{^if (~name == Dad)} Dad's here! {/if}");
 
         c.set("parent_name", "Dad");
-        c.append("{^if (~parent_name == ~name)} Dad's Dad! {^/if}");
+        c.append("{^if (~parent_name == ~name)} Dad's Dad! {/if}");
         assertEquals(p.toString(), "P:  name is Dad.  Dad's here!  Dad's Dad! ");
     }
     
@@ -135,7 +135,7 @@ public class IfTagTest
     {
         Chunk c = new Chunk();
         c.set("moon_material", "stilton");
-        c.append("{^if (~moon_material =~ /cheese|stilton/)} The moon is made of cheese! {^else} nope. {^/if}");
+        c.append("{^if (~moon_material =~ /cheese|stilton/)} The moon is made of cheese! {^else} nope. {/if}");
         assertEquals(" The moon is made of cheese! ", c.toString());
     }
     
@@ -144,7 +144,7 @@ public class IfTagTest
     {
         Chunk c = new Chunk();
         c.set("moon_material", "rocks");
-        c.append("{^if (~moon_material =~ /cheese|stilton/)} The moon is made of cheese! {^else} nope. {^/if}");
+        c.append("{^if (~moon_material =~ /cheese|stilton/)} The moon is made of cheese! {^else} nope. {/if}");
         assertEquals(" nope. ", c.toString());
     }
 
@@ -153,7 +153,7 @@ public class IfTagTest
     {
         Chunk c = new Chunk();
         c.set("moon_material", "rocks");
-        c.append("{^if (~moon_material !~ /cheese|stilton/)} The moon is not made of cheese! {^else} cheese! {^/if}");
+        c.append("{^if (~moon_material !~ /cheese|stilton/)} The moon is not made of cheese! {^else} cheese! {/if}");
         assertEquals(" The moon is not made of cheese! ", c.toString());
     }
     
@@ -163,7 +163,7 @@ public class IfTagTest
         Chunk c = new Chunk();
         c.set("moon_material", "stilton");
         c.set("cheese_type", "stilton");
-        c.append("{^if (~moon_material == ~cheese_type)} The moon is made of {~cheese_type} cheese! {^else} darn! {^/if}");
+        c.append("{^if (~moon_material == ~cheese_type)} The moon is made of {~cheese_type} cheese! {^else} darn! {/if}");
         assertEquals(" The moon is made of stilton cheese! ", c.toString());
     }
 
@@ -173,7 +173,7 @@ public class IfTagTest
         Chunk c = new Chunk();
         c.set("moon_material", "roquefort");
         c.set("cheese_type", "stilton");
-        c.append("{^if (~moon_material == ~cheese_type)} The moon is made of {~cheese_type} cheese! {^else} darn! {^/if}");
+        c.append("{^if (~moon_material == ~cheese_type)} The moon is made of {~cheese_type} cheese! {^else} darn! {/if}");
         assertEquals(" darn! ", c.toString());
     }
     
@@ -183,7 +183,7 @@ public class IfTagTest
         Chunk c = new Chunk();
         c.set("moon_material", "roquefort");
         c.set("cheese_type", "stilton");
-        c.append("{^if (~moon_material != ~cheese_type)} The moon is not made of {~cheese_type} cheese! {^else} darn! {^/if}");
+        c.append("{^if (~moon_material != ~cheese_type)} The moon is not made of {~cheese_type} cheese! {^else} darn! {/if}");
         assertEquals(" The moon is not made of stilton cheese! ", c.toString());
     }
 
@@ -193,7 +193,7 @@ public class IfTagTest
         Chunk c = new Chunk();
         c.set("moon_material", "roquefort");
         c.set("cheese_type", "stilton");
-        c.append("{^if (~moon_material != ~cheese_type)} The moon is not made of {~cheese_type} cheese! {^else} darn! {^/if}\n");
+        c.append("{^if (~moon_material != ~cheese_type)} The moon is not made of {~cheese_type} cheese! {^else} darn! {/if}\n");
         assertEquals(" The moon is not made of stilton cheese! ", c.toString());
     }
 
@@ -203,7 +203,7 @@ public class IfTagTest
         Chunk c = new Chunk();
         c.set("moon_material", "roquefort");
         c.set("cheese_type", "stilton");
-        c.append("{^if (~moon_material != ~cheese_type)} The moon is not made of {~cheese_type} cheese! {^else} darn! {^/if}Goobers\n");
+        c.append("{^if (~moon_material != ~cheese_type)} The moon is not made of {~cheese_type} cheese! {^else} darn! {/if}Goobers\n");
         assertEquals(" The moon is not made of stilton cheese! Goobers\n", c.toString());
     }
     
@@ -213,7 +213,7 @@ public class IfTagTest
         Chunk c = new Chunk();
         c.set("moon_material", "roquefort");
         c.set("cheese_type", "stilton");
-        c.append("{^if (~moon_material != ~cheese_type) trim=\"true\"} The moon is not made of {~cheese_type} cheese! {^else} darn! {^/if}Goobers\n");
+        c.append("{^if (~moon_material != ~cheese_type) trim=\"true\"} The moon is not made of {~cheese_type} cheese! {^else} darn! {/if}Goobers\n");
         assertEquals("The moon is not made of stilton cheese!Goobers\n", c.toString());
     }
     
@@ -223,7 +223,7 @@ public class IfTagTest
         Chunk c = new Chunk();
         c.set("moon_material", "roquefort");
         c.set("cheese_type", "stilton");
-        c.append("{^if (~moon_material == ~cheese_type)} {^if (~cheese_type == stilton)} Moon made of Stilton! {^/if} {^else} The moon is not made of {~cheese_type}! {^/if}");
+        c.append("{^if (~moon_material == ~cheese_type)} {^if (~cheese_type == stilton)} Moon made of Stilton! {^/if} {^else} The moon is not made of {~cheese_type}! {/if}");
         assertEquals(" The moon is not made of stilton! ", c.toString());
     }
     
@@ -233,7 +233,7 @@ public class IfTagTest
         Chunk c = new Chunk();
         c.set("moon_material", "roquefort");
         c.set("cheese_type", "stilton");
-        c.append("{^if (~moon_material == ~cheese_type)} {^if (~cheese_type == stilton)} Moon made of Stilton! {^else} not stilton! {^/if} {^else} The moon is not made of {~cheese_type}! {^/if}");
+        c.append("{^if (~moon_material == ~cheese_type)} {^if (~cheese_type == stilton)} Moon made of Stilton! {^else} not stilton! {/if} {^else} The moon is not made of {~cheese_type}! {/if}");
         assertEquals(" The moon is not made of stilton! ", c.toString());
     }
     
@@ -245,7 +245,7 @@ public class IfTagTest
         Chunk c = new Chunk();
         c.set("moon_material", "roquefort");
         c.set("cheese_type", "stilton");
-        c.append("{^if (~moon_material == ~cheese_type)} {^if (~cheese_type == stilton)} Moon made of Stilton! {^else} not stilton! {^/if} {^if (~world_shape == round)} Heathen! {^else} Brethren! {^/if} {^else} The moon is not made of {~cheese_type}! {^/if}");
+        c.append("{^if (~moon_material == ~cheese_type)} {^if (~cheese_type == stilton)} Moon made of Stilton! {^else} not stilton! {/if} {^if (~world_shape == round)} Heathen! {^else} Brethren! {/if} {^else} The moon is not made of {~cheese_type}! {/if}");
         assertEquals(" The moon is not made of stilton! ", c.toString());
     }
 
@@ -255,7 +255,7 @@ public class IfTagTest
         Chunk c = new Chunk();
         c.set("moon_material", "roquefort");
         c.set("cheese_type", "stilton");
-        c.append("{^if (~moon_material == ~cheese_type)} {^if (~cheese_type == stilton)} Moon made of Stilton! {^else} not stilton! {^/if} {^if (~world_shape == round)} Heathen! {^else} Brethren! {/^if} {^else} The moon is not made of {~cheese_type}! {^/if}");
+        c.append("{^if (~moon_material == ~cheese_type)} {^if (~cheese_type == stilton)} Moon made of Stilton! {^else} not stilton! {/if} {^if (~world_shape == round)} Heathen! {^else} Brethren! {/fi} {^else} The moon is not made of {~cheese_type}! {/if}");
         assertTrue(c.toString().indexOf("no matching end marker") > 0);
     }
     
@@ -269,13 +269,13 @@ public class IfTagTest
         c.set("cheese_type", "stilton");
         c.append("{^if (~moon_material == ~cheese_type)}"
                +  "{^if (~cheese_type == stilton)} Moon made of Stilton! "
-               +   "{^if (~world_shape == round)} Heathen! {^else} Brethren! {^/if} "
+               +   "{^if (~world_shape == round)} Heathen! {^else} Brethren! {/if} "
                +  "{^else} not stilton! "
-               +   "{^if (~world_shape == round)} Heathen! {^else} Brethren! {^/if} "
-               +  "{^/if} "
+               +   "{^if (~world_shape == round)} Heathen! {^else} Brethren! {/if} "
+               +  "{/if} "
                + "{^else}"
                + " The moon is not made of {~cheese_type}! "
-               + "{^/if}");
+               + "{/if}");
         assertEquals(" The moon is not made of stilton! ", c.toString());
     }
     
@@ -289,13 +289,13 @@ public class IfTagTest
         c.set("cheese_type", "roquefort");
         c.append("{^if (~moon_material == ~cheese_type)}"
                +  "{^if (~cheese_type == stilton)} Moon made of Stilton! "
-               +   "{^if (~world_shape == round)} Heathen! {^else} Brethren! {^/if} "
+               +   "{^if (~world_shape == round)} Heathen! {^else} Brethren! {/if} "
                +  "{^else} not stilton! {~cheese_type}!"
-               +   "{^if (~world_shape == round)} Heathen! {^else} Brethren! {^/if} "
-               +  "{^/if} "
+               +   "{^if (~world_shape == round)} Heathen! {^else} Brethren! {/if} "
+               +  "{/if} "
                + "{^else}"
                + " The moon is not made of {~cheese_type}! "
-               + "{^/if}");
+               + "{/if}");
         assertEquals(" not stilton! roquefort! Brethren! ", c.toString());
     }
 
