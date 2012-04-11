@@ -10,9 +10,9 @@ public class LocaleTag extends BlockTag
     private String[] args;
     private String body = null;
     
-    public static String LOCALE_TAG_OPEN = "{&[";
+    public static String LOCALE_TAG_OPEN = "{%[";
     public static String LOCALE_TAG_CLOSE = "}";
-    public static String LOCALE_SIMPLE_OPEN = "&[";
+    public static String LOCALE_SIMPLE_OPEN = "%[";
     public static String LOCALE_SIMPLE_CLOSE = "]";
     
     public LocaleTag(String params, Chunk context)
@@ -80,11 +80,11 @@ public class LocaleTag extends BlockTag
 
     private static String convertToChunkTag(String ezSyntax, Chunk ctx)
     {
-        if (ezSyntax.startsWith("&[")) {
+        if (ezSyntax.startsWith(LOCALE_SIMPLE_OPEN)) {
             // simple case, no args
             int bodyA = 2;
             int bodyB = ezSyntax.length();
-            if (ezSyntax.endsWith("]")) bodyB--;
+            if (ezSyntax.endsWith(LOCALE_SIMPLE_CLOSE)) bodyB--;
             String body = ezSyntax.substring(bodyA,bodyB);
             
             String blockStart = ctx.makeTag(".loc");
@@ -93,9 +93,9 @@ public class LocaleTag extends BlockTag
             return blockStart + body + blockEnd;
         }
         
-        if (ezSyntax.startsWith("{&[")) {
+        if (ezSyntax.startsWith(LOCALE_TAG_OPEN)) {
             int bodyA = 3;
-            int bodyB = ezSyntax.lastIndexOf(']');
+            int bodyB = ezSyntax.lastIndexOf(LOCALE_SIMPLE_CLOSE);
             if (bodyB < 0) {
                 return convertToChunkTag(ezSyntax.substring(1),ctx);
             }
@@ -103,7 +103,7 @@ public class LocaleTag extends BlockTag
             
             int argsA = bodyB+1;
             int argsB = ezSyntax.length();
-            if (ezSyntax.endsWith("}")) argsB--;
+            if (ezSyntax.endsWith(LOCALE_TAG_CLOSE)) argsB--;
             
             String params = ezSyntax.substring(argsA,argsB);
             
