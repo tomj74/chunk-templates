@@ -10,9 +10,9 @@ public class LocaleTag extends BlockTag
     private String[] args;
     private String body = null;
     
-    public static String LOCALE_TAG_OPEN = "{%[";
+    public static String LOCALE_TAG_OPEN = "{_[";
     public static String LOCALE_TAG_CLOSE = "}";
-    public static String LOCALE_SIMPLE_OPEN = "%[";
+    public static String LOCALE_SIMPLE_OPEN = "_[";
     public static String LOCALE_SIMPLE_CLOSE = "]";
     
     public LocaleTag(String params, Chunk context)
