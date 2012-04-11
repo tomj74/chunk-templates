@@ -13,6 +13,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.charset.Charset;
 import java.util.Hashtable;
 import java.util.HashSet;
 import java.util.Set;
@@ -78,12 +79,12 @@ import java.util.zip.ZipFile;
  * //
  * </PRE>
  *
- * Copyright: Copyright (c) 2003<BR>
+ * Copyright: waived, free to use<BR>
  * Company: <A href="http://www.x5software.com/">X5 Software</A><BR>
- * Updates: <A href="http://www.dagblastit.com/">www.dagblastit.com</A><BR>
+ * Updates: <A href="http://www.x5software.com/chunk/wiki/">Chunk Documentation</A><BR>
  *
  * @author Tom McClure
- * @version 2.0
+ * @version 1.5
  */
 
 public class TemplateSet implements ContentSource, ChunkFactory
@@ -137,7 +138,7 @@ public class TemplateSet implements ContentSource, ChunkFactory
     private Object resourceContext = null;
     
     private boolean prettyFail = true;
-    private String expectedEncoding = "UTF-8";
+    private String expectedEncoding = getDefaultEncoding();
 
     public TemplateSet() {}
 
@@ -1342,5 +1343,23 @@ public class TemplateSet implements ContentSource, ChunkFactory
     public void setEncoding(String encoding)
     {
         this.expectedEncoding = encoding;
+    }
+    
+    private String getDefaultEncoding()
+    {
+        // can use system env var to specify default encoding
+        // other than UTF-8
+        String override = System.getProperty("chunk.template.charset");
+        if (override != null) {
+            if (override.equalsIgnoreCase("SYSTEM")) {
+                // use system default charset
+                return Charset.defaultCharset().toString();
+            } else {
+                return override;
+            }
+        } else {
+            // default is UTF-8
+            return "UTF-8";
+        }
     }
 }
