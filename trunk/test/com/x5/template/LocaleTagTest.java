@@ -131,7 +131,7 @@ public class LocaleTagTest
         Chunk c = new Chunk();
         c.setLocale("fr_FR");
         c.append("Bla bla bla _[A new car!] bla bla");
-        assertEquals("Bla bla bla Un neuf auto! bla bla", c.toString());
+        assertEquals("Bla bla bla Un nouveau auto! bla bla", c.toString());
     }
 
 }
