@@ -972,7 +972,7 @@ public class Chunk implements Map<String,Object>
 
             	// tagValue could be some complex entity --
                 // delay filter application until it has been expanded into a string
-                Chunk filterMeLater = (chunkFactory == null) ? new Chunk() : chunkFactory.makeChunk();
+                Chunk filterMeLater = makeChildChunk();
 
                 // set up filters to be applied from the inside out
                 String filter = parseTagTokens(tagName, pipePos, colonPos)[0];
@@ -1080,7 +1080,7 @@ public class Chunk implements Map<String,Object>
     {
         // then subsequent filters each wrap a new layer
         for (int i=1; i<filters.length; i++) {
-            Chunk wrapper = (chunkFactory == null) ? new Chunk() : chunkFactory.makeChunk();
+            Chunk wrapper = makeChildChunk();
             wrapper.set("oneTag",filterMeLater,"");
             wrapper.append("{~oneTag}");
             wrapper.delayedFilter = filters[i];
@@ -1088,6 +1088,18 @@ public class Chunk implements Map<String,Object>
         }
     
         return filterMeLater;
+    }
+    
+    private Chunk makeChildChunk()
+    {
+        if (chunkFactory == null) {
+            Chunk child = new Chunk();
+            child.setLocale(this.localeCode);
+            return child;
+        } else {
+            // presumably, chunkFactory will carry over correct locale
+            return chunkFactory.makeChunk();
+        }
     }
     
     private Object makeFilterOnion(Object tagValue, Chunk filterMeLater, String[] filters)

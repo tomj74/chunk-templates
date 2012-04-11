@@ -72,6 +72,9 @@ public class TextFilter
             } catch (java.io.UnsupportedEncodingException e) {
                 return text;
             }
+        } else if (filter.equals("translate") || filter.equals("xlate") || filter.equals("__") || filter.equals("_")) {
+            // surround with translate tags, escape brackets
+            return markForTranslation(text);
         } else if (filter.startsWith("sprintf")) {
             // apply sprintf formatting, target string should be a number
             // (if not, filter will be skipped)
@@ -140,6 +143,14 @@ public class TextFilter
             // ?? unknown filter, do nothing
             return text;
         }
+    }
+    
+    private static String markForTranslation(String text)
+    {
+        if (text == null) return null;
+        text = Chunk.findAndReplace(text,"[","\\[");
+        text = Chunk.findAndReplace(text,"]","\\]");
+        return LocaleTag.LOCALE_SIMPLE_OPEN + text + LocaleTag.LOCALE_SIMPLE_CLOSE;
     }
     
     private static String defang(String text)
