@@ -15,7 +15,7 @@ import com.x5.util.TableData;
 
 // Project Title: Chunk
 // Description: Template Util
-// Copyright: Copyright (c) 2007
+// Copyright: Waived. Use freely.
 // Author: Tom McClure
 
 /**
@@ -255,12 +255,12 @@ import com.x5.util.TableData;
  * {#}
  * </PRE>
  *
- * Copyright: Copyright (c) 2003<BR>
+ * Copyright: waived, free to use<BR>
  * Company: <A href="http://www.x5software.com/">X5 Software</A><BR>
- * Updates: <A href="http://www.dagblastit.com/">www.dagblastit.com</A><BR>
+ * Updates: <A href="http://www.x5software.com/chunk/wiki/">Chunk Documentation</A><BR>
  *
  * @author Tom McClure
- * @version 3.0
+ * @version 1.5
  */
 
 public class Chunk implements Map<String,Object>
