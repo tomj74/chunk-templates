@@ -16,6 +16,8 @@ public class Theme implements ContentSource, ChunkFactory
 	
 	private static final String DEFAULT_THEMES_FOLDER = "themes";
 	
+	private String localeCode = null;
+	
 	public Theme()
 	{
 	    this(null, null, null);
@@ -45,6 +47,29 @@ public class Theme implements ContentSource, ChunkFactory
 	    } else {
 	        this.fileExtension = ext;
 	    }
+	}
+	
+	public void setLocale(String localeCode)
+	{
+	    this.localeCode = localeCode;
+	}
+	
+	public String getLocale()
+	{
+	    return this.localeCode;
+	}
+	
+	/**
+	 * What encoding do this theme's template files use?
+	 * If not UTF-8, make sure to set this explicitly.
+	 */
+	public void setEncoding(String encoding)
+	{
+        if (getThemeLayers() != null) {
+            for (TemplateSet layer : getThemeLayers()) {
+                layer.setEncoding(encoding);
+            }
+        }
 	}
 	
 	private void init()
@@ -185,6 +210,7 @@ public class Theme implements ContentSource, ChunkFactory
         c.setTagBoundaries(tagStart,tagEnd);
         c.setMacroLibrary(this,this);
         shareContentSources(c);
+        c.setLocale(localeCode);
         return c;
     }
 
@@ -206,6 +232,7 @@ public class Theme implements ContentSource, ChunkFactory
         c.setMacroLibrary(this,this);
         c.append( getSnippet(templateName) );
         shareContentSources(c);
+        c.setLocale(localeCode);
         return c;
     }
 
@@ -228,6 +255,7 @@ public class Theme implements ContentSource, ChunkFactory
         c.setMacroLibrary(this,this);
         c.append( getSnippet(templateName, extension) );
         shareContentSources(c);
+        c.setLocale(localeCode);
         return c;
     }
 
@@ -267,8 +295,8 @@ public class Theme implements ContentSource, ChunkFactory
 	 */
 	public void setJarContext(Class<?> classInSameJar)
 	{
-		if (themeLayers != null) {
-			for (TemplateSet layer : themeLayers) {
+		if (getThemeLayers() != null) {
+			for (TemplateSet layer : getThemeLayers()) {
 				layer.setJarContext(classInSameJar);
 			}
 		}
@@ -276,8 +304,8 @@ public class Theme implements ContentSource, ChunkFactory
 	
 	public void setJarContext(Object ctx)
 	{
-		if (themeLayers != null) {
-			for (TemplateSet layer : themeLayers) {
+		if (getThemeLayers() != null) {
+			for (TemplateSet layer : getThemeLayers()) {
 				layer.setJarContext(ctx);
 			}
 		}

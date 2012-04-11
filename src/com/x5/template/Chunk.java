@@ -282,6 +282,9 @@ public class Chunk implements Map<String,Object>
     private ContentSource macroLibrary = null;
     private ChunkFactory chunkFactory = null;
 
+    private String localeCode = null;
+    private ChunkLocale locale = null;
+    
     public void setTagBoundaries(String tagStart, String tagEnd)
     {
         this.tagStart = tagStart;
@@ -755,6 +758,15 @@ public class Chunk implements Map<String,Object>
             this.ancestorStack = null;
 
             return table;
+        }
+        
+        // the ^loc locale tag
+        if (tagName.startsWith(".loc")) {
+            this.ancestorStack = ancestors;
+            String translation = LocaleTag.translate(tagName,this);
+            this.ancestorStack = null;
+            
+            return translation;
         }
 
         // the ^grid(...) fn
@@ -1247,7 +1259,12 @@ public class Chunk implements Map<String,Object>
     
     private String expandMacros(String template)
     {
+        // Before we tackle the macros, let's
+        // pre-process (1) include shorthand tags
+        // and (2) ez-locale-tag syntax
+        // to make them easier to parse.
         template = expandIncludes(template);
+        template = LocaleTag.expandLocaleTags(template, this);
 
         int macroTagBegin = template.indexOf(TemplateSet.MACRO_START);
         if (macroTagBegin < 0) return template;
@@ -1881,6 +1898,20 @@ public class Chunk implements Map<String,Object>
         return tagStart + tagName + tagEnd;
     }
     
+    public void setLocale(String localeCode)
+    {
+        this.localeCode = localeCode;
+    }
+    
+    public ChunkLocale getLocale()
+    {
+        if (localeCode == null) return null;
+        if (locale == null) {
+            locale = ChunkLocale.getInstance(localeCode,this);
+        }
+        return locale;
+    }
+    
     public boolean isConforming()
     {
     	if (tagStart.equals(TemplateSet.DEFAULT_TAG_START)) return true;
@@ -1910,5 +1941,5 @@ public class Chunk implements Map<String,Object>
         sb.append(toSearch.substring(marker));
         return sb.toString();
     }
-
+    
 }

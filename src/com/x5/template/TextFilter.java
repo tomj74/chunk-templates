@@ -195,7 +195,7 @@ public class TextFilter
             // resolution, this is not so simple.
             //
             String xlation = testValue + "|onmatch(/^"
-                + makeSafe(text) + "$/," + token + ")";
+                + escapeRegex(text) + "$/," + token + ")";
             return magicBraces(context, xlation);
         }
         
@@ -1006,11 +1006,11 @@ public class TextFilter
                     if (tagValue == null) tagValue = "";
                     if (isNeg) {
                         xlation = open + tagB.substring(1)
-                            + "|onmatch(/^" + makeSafe(tagValue) + "$/,)nomatch(+"
+                            + "|onmatch(/^" + escapeRegex(tagValue) + "$/,)nomatch(+"
                             + includeTemplate + ")" + close;
                     } else {
                         xlation = open + tagB.substring(1)
-                            + "|onmatch(/^" + makeSafe(tagValue) + "$/,+"
+                            + "|onmatch(/^" + escapeRegex(tagValue) + "$/,+"
                             + includeTemplate + ")nomatch()" + close;
                     }
                 } else {
@@ -1023,11 +1023,11 @@ public class TextFilter
                     }
                     if (isNeg) {
                         // include the template if the value does not match
-                        xlation = open + tagA + "|onmatch(/^" + makeSafe(match) + "$/,)nomatch(+"
+                        xlation = open + tagA + "|onmatch(/^" + escapeRegex(match) + "$/,)nomatch(+"
                             + includeTemplate + ")" + close;
                     } else {
                         // include the template if the value matches
-                        xlation = open + tagA + "|onmatch(/^" + makeSafe(match) + "$/,+"
+                        xlation = open + tagA + "|onmatch(/^" + escapeRegex(match) + "$/,+"
                             + includeTemplate + ")nomatch()" + close;
                     }
                 }
@@ -1061,7 +1061,7 @@ public class TextFilter
         return xlation;
     }
 
-    private static String makeSafe(String x)
+    public static String escapeRegex(String x)
     {
         if (matches(x,"^[-A-Za-z0-9_ <>\"']*$")) return x;
         // nothing should leave this sub with its special regex meaning preserved
