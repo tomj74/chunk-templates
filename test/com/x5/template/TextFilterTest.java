@@ -376,6 +376,19 @@ public class TextFilterTest
         assertEquals(c.toString(),"regex braces test: Moon M---n Mon M---n T---gan");
     }
     
+    @Test
+    public void testTranslation()
+    {
+        ChunkLocale.registerLocale("de_DE", new String[]{"blue","blau"});
+        
+        Chunk c = new Chunk();
+        c.setLocale("de_DE");
+        c.set("color","blue");
+        c.append(c.makeTag("color|xlate"));
+        
+        assertEquals("blau",c.toString());
+    }
+    
     //TODO add tests for |hex and |HEX and |sel(string)
     // and |sel(~tag) and |checked(string) and |checked(~tag)
 }
