@@ -1,5 +1,6 @@
 package com.x5.template;
 
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.FileReader;
 import java.io.BufferedReader;
@@ -15,6 +16,8 @@ import java.net.URL;
 import java.util.Hashtable;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
 
 // Project Title: Chunk
 // Description: Template Util
@@ -134,6 +137,7 @@ public class TemplateSet implements ContentSource, ChunkFactory
     private Object resourceContext = null;
     
     private boolean prettyFail = true;
+    private String expectedEncoding = "UTF-8";
 
     public TemplateSet() {}
 
@@ -238,8 +242,9 @@ public class TemplateSet implements ContentSource, ChunkFactory
             try {
                 File templateFile = new File(filename);
                 if (templateFile.exists()) {
-                    FileReader in = new FileReader(templateFile);
-                    BufferedReader brTemp = new BufferedReader(in);
+                    FileInputStream in = new FileInputStream(templateFile);
+                    InputStreamReader reader = new InputStreamReader(in,expectedEncoding );
+                    BufferedReader brTemp = new BufferedReader(reader);
                     readAndCacheTemplate(stub,extension,brTemp);
                     in.close();
                     template = getFromCache(name, extension);
@@ -264,7 +269,7 @@ public class TemplateSet implements ContentSource, ChunkFactory
                 	if (inJar == null) inJar = fishForTemplate(resourcePath);
                 	
                 	if (inJar != null) {
-	                	BufferedReader brTemp = new BufferedReader(new InputStreamReader(inJar));
+	                	BufferedReader brTemp = new BufferedReader(new InputStreamReader(inJar,expectedEncoding));
 	                	readAndCacheTemplate(stub,extension,brTemp);
 	                	inJar.close();
 	                	template = getFromCache(name, extension);
@@ -363,6 +368,19 @@ public class TemplateSet implements ContentSource, ChunkFactory
 		} catch (MalformedURLException e) {
 		} catch (IOException e) {
 		}
+		
+        try {
+            // strip URL nonsense to get valid local path
+            String zipPath = jar.replaceFirst("^jar:file:", "");
+            // strip leading slash from resource path
+            String zipResourcePath = resourcePath.replaceFirst("^/","");
+            ZipFile zipFile = new ZipFile(zipPath);
+            ZipEntry entry = zipFile.getEntry(zipResourcePath);
+            if (entry != null) {
+                return zipFile.getInputStream(entry);
+            }
+        } catch (java.io.IOException e) {
+        }
 		
 		return null;
     }
@@ -1319,5 +1337,10 @@ public class TemplateSet implements ContentSource, ChunkFactory
     	if (layerName != null && !layerName.endsWith("/")) {
     		this.layerName = this.layerName + "/";
     	}
+    }
+    
+    public void setEncoding(String encoding)
+    {
+        this.expectedEncoding = encoding;
     }
 }
