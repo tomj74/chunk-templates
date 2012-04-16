@@ -74,6 +74,15 @@ public class Snippet
 	
 	private static final String MAGIC_CHARS = "#^~=*+/_";
 	
+	/**
+	 * Second pass over the string.  Identify all dynamic tags and slice into
+	 * parts - literals will pass directly into output, dynamic SnippetTag parts
+	 * will get interpreted.
+	 * 
+	 * Third step is to nest block tags properly.
+	 * 
+	 * @param template
+	 */
 	private void parseParts2(String template)
 	{
 	    // pre-compile template -- slice and dice ALL tags as separate parts.
@@ -84,23 +93,31 @@ public class Snippet
 
 	    // oh yeah -- we're going old-school
 	    char[] chars = template.toCharArray();
-	    char c, c2;
+	    char c, c2, regexPrefix;
+	    // how many regex delims left before tag parser has to wake up again
+	    int regexDelimCount = 0;
 	    
-	    int marker = 0;
-	    int tagStart = -1;
-	    int trailingBackslashes = 0;
+	    int marker = 0; // beginning of latest static span
+	    int tagStart = -1; // beginning of latest tag span
+	    int trailingBackslashes = 0; // track escape chars so we can ignore escapes
+	    
+	    // the parser has to ignore certain chars when in various states
 	    boolean insideRegex = false;
 	    boolean insideTrToken = false;
         boolean insideComment = false;
+        
+        // magicChar determines what sort of tag are we forming
 	    char magicChar = 0;
 	    
 	    for (int i=0; i<chars.length; i++) {
 	        c = chars[i];
 	        
 	        if (tagStart < 0) {
-	            // can't start a tag on final char of sequence
+	            
+	            // edge case - can't start a tag on final char of sequence
 	            if (i+1 >= chars.length) break;
-	            // collecting literal junk until tag comes along
+	            
+	            // collecting static until tag comes along
 	            if (c == '{') {
     	            c2 = chars[i+1];
     	            if (MAGIC_CHARS.indexOf(c2) > -1) {
@@ -116,8 +133,11 @@ public class Snippet
     	            insideTrToken = true;
     	            i++;
 	            }
+	            
 	        } else {
-	            // collecting tag, scanning for tag-end
+	            
+	            // tagStart is positive value -- scan for tag-end
+	            
 	            if (insideTrToken && c == ']') {
 	                if (trailingBackslashes % 2 == 0) {
     	                // FOUND TOKEN END
@@ -135,70 +155,60 @@ public class Snippet
                         tagStart = -1;
 	                }
 	            } else if (c == '}') {
-	                if (trailingBackslashes % 2 == 0 && !insideRegex) {
-    	                // FOUND TAG END
-                        if (parts == null) parts = new ArrayList<SnippetPart>();
-                        if (marker < tagStart) {
-                            SnippetPart literal = new SnippetPart(template.substring(marker,tagStart));
-                            literal.setLiteral(true);
-                            parts.add(literal);
-                        }
-                        String wholeTag = template.substring(tagStart,i+1);
-                        if (magicChar == '~') {
-                            String gooeyCenter = template.substring(tagStart+2,i);
-                            SnippetTag tag = new SnippetTag(wholeTag,gooeyCenter);
-                            parts.add(tag);
-                        } else if (magicChar == '^') {
-                            String gooeyCenter = template.substring(tagStart+2,i);
-                            // expand ^ to ~.
-                            SnippetTag tag = new SnippetTag(wholeTag,"."+gooeyCenter);
-                            parts.add(tag);
-                        } else if (magicChar == '/') {
-                            String gooeyCenter = template.substring(tagStart+1,i);
-                            // expand {/ to {^/ to {~./
-                            SnippetTag tag = new SnippetTag(wholeTag,"."+gooeyCenter);
-                            parts.add(tag);
-                        } else if (magicChar == '*') {
-                            if (wholeTag.length() == 3) {
-                                // this marks the end of the macro block {*}
-                                SnippetTag tag = new SnippetTag(wholeTag,"."+MacroTag.MACRO_END_MARKER);
-                                parts.add(tag);
-                            } else {
-                                int refEnd = i;
-                                if (chars[i-1] == '*') refEnd--;
-                                String macroTemplate = template.substring(tagStart+2,refEnd).trim();
-                                SnippetTag macroHead = new SnippetTag(wholeTag,"."+MacroTag.MACRO_MARKER+" "+macroTemplate);
-                                parts.add(macroHead);
-                            }
-                        } else if (magicChar == '=') {
-                            if (wholeTag.length() == 3) {
-                                // this marks the end of a macro def {=}
-                                SnippetTag tag = new SnippetTag(wholeTag,"=");
-                                parts.add(tag);
-                            }
-                        } else if (magicChar == '_') {
-                            SnippetToken token = SnippetToken.parseTokenWithArgs(wholeTag);
-                            parts.add(token);
-                        } else if (magicChar == '!') {
+	                if (!insideRegex && trailingBackslashes % 2 == 0) {
+	                    if (magicChar == '!') {
                             char c0 = chars[i-1];
                             char c00 = chars[i-2];
-                            if (c0 != '-' || c00 != '-') {
-                                // no dice, keep looking
+                            if (c0 == '-' && c00 == '-') {
+                                // FOUND COMMENT END
+                                // discard comment and reset scan mode
+                                tagStart = -1;
+                                marker = i+1;
+                                insideComment = false;
+                            } else {
+                                // this curly brace is not the end of the comment
+                                // keep scanning
                                 insideComment = true;
                             }
-                        } else {
-                            SnippetPart wackyTag = new SnippetPart(wholeTag);
-                            parts.add(wackyTag);
-                        }
-                        if (!insideComment) {
+	                    } else {
+	                        //////////////////////////////////////////////////////////
+                            // FOUND TAG END, extract and add to sequence along with
+	                        // preceding static content, if any.
+                            //////////////////////////////////////////////////////////
+    	                    extractTag(magicChar,template,chars,marker,tagStart,i);
+    	                    
                             // reset scan mode
-                            marker = i+1;
                             tagStart = -1;
-                        }
+                            marker = i+1;
+	                    }
 	                }
-	            } else if (c == '/') {
+	            } else if (c == '/' && trailingBackslashes % 2 == 0) {
 	                // MIGHT BE INSIDE REGEX...
-	                // TODO steal regex-curlybrace code from Chunk.findMatchingEndBrace
+	                // ignore curly braces until we get past this regex span
+	                if (regexDelimCount > 0) {
+	                    regexDelimCount--;
+	                    if (regexDelimCount < 1) {
+	                        // found END of this regex
+	                        insideRegex = false;
+	                    }
+	                } else {
+    	                char c0 = chars[i-1];
+    	                char c00 = chars[i-2];
+    	                if (c0 == 's' && c00 == '|') {
+    	                    // found {~tag|s/.../.../}
+    	                    // need to find two more
+    	                    regexDelimCount = 2;
+    	                    insideRegex = true;
+    	                } else if (c0 == 'm' && (c00 == ',' || c00 == '(')) {
+    	                    // found {~tag|...(m/.../,...,m/.../,...)}
+    	                    regexDelimCount = 1;
+    	                    insideRegex = true;
+    	                } else if (c0 == ',' || c00 == '(') {
+                            // found {~tag|...(/regex/,...,/regex/,...)}
+    	                    regexDelimCount = 1;
+    	                    insideRegex = true;
+    	                }
+	                }
 	            } else if (c == '\\') {
                     trailingBackslashes++;
                 } else if (trailingBackslashes > 0) {
@@ -221,7 +231,67 @@ public class Snippet
         
 	}
 	
-	private int eatRestOfLineAfterBlockEndTag(char[] chars, int startAt)
+    private void extractTag(char magicChar, String template, char[] chars,
+            int marker, int tagStart, int i)
+    {
+        // FOUND TAG END
+        // extract and add to part sequence
+        if (parts == null) parts = new ArrayList<SnippetPart>();
+        
+        // any static content leading up to tag?  capture static part.
+        if (marker < tagStart) {
+            SnippetPart literal = new SnippetPart(template.substring(marker,tagStart));
+            literal.setLiteral(true);
+            parts.add(literal);
+        }
+        
+        // and now focus on the tag...
+        String wholeTag = template.substring(tagStart,i+1);
+        if (magicChar == '~') {
+            String gooeyCenter = template.substring(tagStart+2,i);
+            SnippetTag tag = new SnippetTag(wholeTag,gooeyCenter);
+            parts.add(tag);
+        } else if (magicChar == '^') {
+            String gooeyCenter = template.substring(tagStart+2,i);
+            // expand ^ to ~.
+            SnippetTag tag = new SnippetTag(wholeTag,"."+gooeyCenter);
+            parts.add(tag);
+        } else if (magicChar == '/') {
+            String gooeyCenter = template.substring(tagStart+1,i);
+            // expand {/ to {^/ to {~./
+            SnippetTag tag = new SnippetTag(wholeTag,"."+gooeyCenter);
+            parts.add(tag);
+        } else if (magicChar == '*') {
+            // convert macro syntax to internal macro block-tag
+            if (wholeTag.length() == 3) {
+                // this marks the end of the macro block {*}
+                SnippetTag tag = new SnippetTag(wholeTag,"."+MacroTag.MACRO_END_MARKER);
+                parts.add(tag);
+            } else {
+                int refEnd = i;
+                if (chars[i-1] == '*') refEnd--;
+                String macroTemplate = template.substring(tagStart+2,refEnd).trim();
+                SnippetTag macroHead = new SnippetTag(wholeTag,"."+MacroTag.MACRO_MARKER+" "+macroTemplate);
+                parts.add(macroHead);
+            }
+        } else if (magicChar == '=') {
+            if (wholeTag.length() == 3) {
+                // this marks the end of a macro def {=}
+                SnippetTag tag = new SnippetTag(wholeTag,"=");
+                parts.add(tag);
+            }
+        } else if (magicChar == '_') {
+            // for example: {_[token %s %s],~with,~args}
+            SnippetToken token = SnippetToken.parseTokenWithArgs(wholeTag);
+            parts.add(token);
+        } else {
+            // huh?
+            SnippetPart wackyTag = new SnippetPart(wholeTag);
+            parts.add(wackyTag);
+        }
+    }
+
+    private int eatRestOfLineAfterBlockEndTag(char[] chars, int startAt)
 	{
 	    int cutPoint = startAt;
 	    for (int i=startAt; i<chars.length; i++) {
@@ -246,11 +316,19 @@ public class Snippet
 	    }
 	    return cutPoint;
 	}
-	
-	// FIXME, anything that's not a tag should be made into a literal!!!
-	// this should have a huge payout in speed, basically pre-compiling
-	// the template.
-	
+
+	/**
+	 * First pass over string, pull out {^literal}...{/literal} blocks.
+	 * 
+	 * It might be worth combining this step with the second step which
+	 * basically pre-compiles the whole template into a linked list of
+	 * SnippetPart objects.
+	 * 
+	 * The current strategy still walks the string twice, first here
+	 * and then again in parseParts2().
+	 * 
+	 * @param template
+	 */
 	private void parseParts(String template)
 	{
 		// cut literal blocks out of template
@@ -331,6 +409,16 @@ public class Snippet
 	                    bodyParts.add(i,blockTag);
 	                    
 	                    smartTrimAfterBlockEnd(bodyParts,i+1);
+	                } else {
+	                    // unmatched block tag!!  output error notice.
+	                    // TODO should create a SnippetErrorPart class
+	                    // and offer options wrt, exclude errors
+	                    // in final output, etc.
+	                    String errMsg = "[ERROR in template! "+helper.getBlockStartMarker()+" block with no matching end marker! ]";
+	                    SnippetPart errorPart = new SnippetPart(errMsg);
+	                    errorPart.setLiteral(true);
+	                    bodyParts.add(i+1,errorPart);
+	                    i++;
 	                }
 	            }
 	        }
