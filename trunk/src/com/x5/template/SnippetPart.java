@@ -54,7 +54,17 @@ public class SnippetPart
 	    if (isLiteral) {
 	        out.append(snippetText);
 	    } else {
-	        // ... ?
+	        // ... ? shouldn't ever get here, pure SnippetPart's are now
+	        // static/literal content only.  subclasses of SnippetPart
+	        // do their dynamic rendering here by overriding the render method.
 	    }
+	}
+	
+	/**
+	 * toString() returns the un-interpreted content for this part
+	 */
+	public String toString()
+	{
+	    return snippetText;
 	}
 }

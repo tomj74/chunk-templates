@@ -166,7 +166,7 @@ public abstract class BlockTag
         }*/
     }
     
-    public static boolean hasBody(String openingTag)
+    public boolean hasBody(String openingTag)
     {
         return true;
     }

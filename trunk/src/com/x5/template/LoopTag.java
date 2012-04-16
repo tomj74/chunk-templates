@@ -381,7 +381,7 @@ public class LoopTag extends BlockTag
         //return rows.toString();
     }
     
-    public static boolean hasBody(String openingTag)
+    public boolean hasBody(String openingTag)
     {
         // loop has a body if there is no template="xxx" param
         if (openingTag != null && openingTag.indexOf("template=") < 0) {
