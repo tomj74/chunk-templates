@@ -44,4 +44,9 @@ public class SnippetBlockTag extends SnippetTag
         if (renderer == null) return;
         renderer.renderBlock(out,context,depth);
     }
+    
+    public String toString()
+    {
+        return snippetText + body.toString() + tagClose.toString();
+    }
 }

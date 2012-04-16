@@ -955,7 +955,7 @@ public class TextFilter
     // this is really just /includeIf([!~].*).[^)]*$/
     // with some groupers to parse out the variable pieces
     private static final Pattern parsePattern =
-        Pattern.compile("includeIf\\(([\\!\\~])(.*)\\)\\.([^\\)]*)$");
+        Pattern.compile("includeIf\\(([\\!\\~])(.*)\\)\\.?([^\\)]*)$");
     // this is really just /include.([!~].*)[^)]*$/
     // with some groupers to parse out the variable pieces
     private static final Pattern parsePatternAlt =
@@ -994,6 +994,7 @@ public class TextFilter
         String negater = parseMatcher.group(1);
         String test = parseMatcher.group(2);
         String includeTemplate = parseMatcher.group(3);
+        //if (includeTemplate.equals(".")) includeTemplate = parseMatcher.group(4);
         includeTemplate = includeTemplate.replaceAll("[\\|:].*$", "");
         
         if (test.indexOf('=') < 0 && test.indexOf("!~") < 0) {

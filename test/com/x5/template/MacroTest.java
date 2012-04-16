@@ -30,4 +30,16 @@ public class MacroTest
                 + "<tr><td>knife</td><td>$1.03</td></tr>\n"
                 + "</table>\n",c.toString());
     }
+    
+    @Test
+    public void dontFallForTheIfTest()
+    {
+        Theme theme = new Theme("test/base");
+        
+        Chunk c = theme.makeChunk("macro_test#assignment_trick_test");
+        c.set("host_name", "Bob");
+        
+        assertEquals("Once I ate a burrito and drank some sangria at Jane's house and I had awful indigestion afterwards.\n",
+                c.toString());
+    }
 }

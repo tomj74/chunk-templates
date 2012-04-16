@@ -34,3 +34,13 @@ Once I ate a {~kind_of_food} and drank some {~kind_of_drink} at {~host}'s house 
 {/loop}
 </table>
 {#}
+
+
+{!---------------------------------------------}
+{#assignment_trick_test}
+{* #SIMPLE_TEST_MACRO *}
+ {~kind_of_food = burrito}
+ {~kind_of_drink=}sangria{=}
+ {~host=}{^if (~kind_of_food == burrito)}Jane{^else}{~host_name}{/if}{=}
+{*}
+{#}

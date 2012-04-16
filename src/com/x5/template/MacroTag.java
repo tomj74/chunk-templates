@@ -38,12 +38,15 @@ public class MacroTag extends BlockTag
                     Snippet def = new Snippet(parts,i+1,j);
                     String varName = tagText.substring(0,tagText.length()-1);
                     saveDef(varName,def);
-                    SnippetPart partJ = parts.get(j);
                     // skip to next def
-                    if (partJ.getText().equals("{=}")) {
-                        i = j+1;
-                    } else {
-                        i = j;
+                    i = j;
+                    
+                    if (j < parts.size()) {
+                        SnippetPart partJ = parts.get(j);
+                        if (partJ.getText().equals("{=}")) {
+                            // skip over endDef tag
+                            i = j+1;
+                        }
                     }
                 } else {
                     // some vars are defined simply, like so {~name=Bob} or {~name = Bob}
@@ -75,15 +78,20 @@ public class MacroTag extends BlockTag
                 if (eqPos < 0) continue;
                 if (tagText.length() == 1) return i; // found explicit def-cap {=}
                 
-                if (tagText.contains("=")) {
-                    // we're good as long as ".|:(" do not appear to the left of the =
-                    char[] tagChars = tagText.toCharArray();
-                    for (int x=0; x<eqPos; x++) {
-                        char c = tagChars[x];
-                        if (c == '.' || c == '|' || c == ':' || c == '(') {
-                            continue;
-                        }
+                // we're good as long as ".|:(" do not appear to the left of the =
+                char[] tagChars = tagText.toCharArray();
+                char c = '=';
+                for (int x=0; x<eqPos; x++) {
+                    c = tagChars[x];
+                    if (c == '.' || c == '|' || c == ':' || c == '(') {
+                        // signal failure
+                        c = 0;
+                        break;
                     }
+                }
+                if (c == 0) {
+                    continue; // fail, keep looking
+                } else {
                     // made it to the = safely!  this is the next assignment, close def off
                     return i;
                 }

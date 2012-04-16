@@ -72,7 +72,7 @@ public class Snippet
 		return parts;
 	}
 	
-	private static final String MAGIC_CHARS = "#^~=*+/_";
+	private static final String MAGIC_CHARS = "~^/*=+_";
 	
 	/**
 	 * Second pass over the string.  Identify all dynamic tags and slice into
@@ -284,6 +284,17 @@ public class Snippet
             // for example: {_[token %s %s],~with,~args}
             SnippetToken token = SnippetToken.parseTokenWithArgs(wholeTag);
             parts.add(token);
+        } else if (magicChar == '+') {
+            // include shorthand: {+template#ref} or {+(cond)template#ref}
+            if (wholeTag.startsWith("{+(")) {
+                String includeIfTag = ".includeIf(" + template.substring(tagStart+3,i);
+                SnippetTag condInclude = new SnippetTag(wholeTag,includeIfTag);
+                parts.add(condInclude);
+            } else {
+                String includeTag = ".include " + template.substring(tagStart+2,i);
+                SnippetTag include = new SnippetTag(wholeTag,includeTag);
+                parts.add(include);
+            }
         } else {
             // huh?
             SnippetPart wackyTag = new SnippetPart(wholeTag);
@@ -450,9 +461,10 @@ public class Snippet
 		if (simpleText != null) return simpleText;
 		if (parts == null) return null;
 		
+		// reassemble parts back into original template
 		StringBuilder sb = new StringBuilder();
 		for (SnippetPart part : parts) {
-			sb.append(part.getText());
+			sb.append(part.toString());
 		}
 		return sb.toString();
 	}
