@@ -112,4 +112,8 @@ public class DataCapsuleTable implements TableData
 		fish.overrideColumnLabels(labels);
 	}
 
+	public void reset()
+	{
+	    this.cursor = -1;
+	}
 }

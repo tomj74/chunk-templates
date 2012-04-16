@@ -9,4 +9,5 @@ public interface TableData
     public String[] getRow();
     public boolean hasNext();
     public Map<String,String> nextRecord();
+    public void reset();
 }

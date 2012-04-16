@@ -1,0 +1,36 @@
+{!-- macro_test.chtml contains test suite snippets for
+  -- checking macro functionality --}
+
+
+{!---------------------------------------------}
+{#simple_test}
+{* #SIMPLE_TEST_MACRO *}
+ {~kind_of_food = burrito}
+ {~kind_of_drink=}sangria{=}
+ {~host=}{~host_name}{=}
+{*}
+{#}
+
+
+{!---------------------------------------------}
+{#SIMPLE_TEST_MACRO}
+Once I ate a {~kind_of_food} and drank some {~kind_of_drink} at {~host}'s house and I had awful indigestion afterwards.
+{#}
+
+
+{!---------------------------------------------}
+{#table_test}
+{* #TABLE *}
+ {~some_data=}[[item,price],[spoon,.2],[fork,.3],[knife,1.03]]{=}
+{*}
+{#}
+
+
+{!---------------------------------------------}
+{#TABLE}
+<table>
+{^loop in ~some_data as i}
+<tr><td>{~i.item}</td><td>{~i.price|sprintf($%,.2f)}</td></tr>
+{/loop}
+</table>
+{#}

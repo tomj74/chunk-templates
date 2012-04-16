@@ -1,5 +1,7 @@
 package com.x5.template;
 
+import java.io.IOException;
+import java.io.Writer;
 import java.util.StringTokenizer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -21,6 +23,15 @@ public class LocaleTag extends BlockTag
         parseParams(params);
     }
     
+    public LocaleTag()
+    {
+    }
+    
+    public LocaleTag(String params, Snippet body)
+    {
+        this.body = body.toString();
+    }
+
     private void parseParams(String params)
     {
         if (params == null) return;
@@ -139,20 +150,26 @@ public class LocaleTag extends BlockTag
         return buf.toString();
     }
     
+    private static final Pattern OPEN_TAG_PATTERN
+        = Pattern.compile(TextFilter.escapeRegex(LOCALE_TAG_OPEN) + "|" + TextFilter.escapeRegex(LOCALE_SIMPLE_OPEN));
+    
     private static int[] scanForMarkers(String template)
     {
+        if (template.indexOf(LOCALE_SIMPLE_OPEN) < 0) {
+            return null;
+        }
+        
         boolean isSimple = true;
 
         String markers = "";
         int len = template.length();
         
-        String regex = TextFilter.escapeRegex(LOCALE_TAG_OPEN) + "|" + TextFilter.escapeRegex(LOCALE_SIMPLE_OPEN);
-        Matcher m = Pattern.compile(regex).matcher(template);
+        Matcher m = OPEN_TAG_PATTERN.matcher(template);
         
         int tagPos = m.find() ? m.start() : -1;
         
         while (tagPos > -1) {
-            // is simple &[...] or not simple {&[...%s...],~x}
+            // is simple _[...] or not simple {_[...%s...],~x}
             String whatMatched = m.group();
             isSimple = whatMatched.equals(LOCALE_SIMPLE_OPEN) ? true : false;
 
@@ -187,5 +204,17 @@ public class LocaleTag extends BlockTag
             markers[i] = Integer.parseInt(tokens.nextToken());
         }
         return markers;
+    }
+
+    @Override
+    public void renderBlock(Writer out, Chunk context, int depth)
+        throws IOException
+    {
+        if (body == null) return;
+        
+        this.context = context;
+        
+        String translated = cookBlock(this.body);
+        out.append( translated );
     }
 }

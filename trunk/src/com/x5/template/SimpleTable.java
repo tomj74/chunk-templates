@@ -100,4 +100,9 @@ public class SimpleTable implements TableData
 
         return currentRecord;
 	}
+	
+	public void reset()
+	{
+	    this.cursor = -1;
+	}
 }
