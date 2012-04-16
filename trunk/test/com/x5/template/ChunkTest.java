@@ -242,4 +242,31 @@ public class ChunkTest
         
         assertEquals(c.toString(), "Pass through! bubbles! <!-- {^literal} --> passing through {~gronk:} <!-- {/literal} --> Pass on happily!");
     }
+    
+    @Test
+    public void testIncludeShorthand()
+    {
+        Theme theme = new Theme("test/base");
+        Chunk c = theme.makeChunk();
+        c.append("{+chunk_test#no_widgets}");
+        assertEquals("<i>No widgets!</i>\n",c.toString());
+    }
+
+    @Test
+    public void testIncludeIfShorthand()
+    {
+        Theme theme = new Theme("test/base");
+        Chunk c = theme.makeChunk();
+        c.append("{+(!widgets)chunk_test#no_widgets}");
+        assertEquals("<i>No widgets!</i>\n",c.toString());
+    }
+    
+    @Test
+    public void testSnippetRoundTrip()
+    {
+        String tpl = "xyz {~xyz:} {* MACRO *} {*} {^loop} {/loop}";
+        Snippet testSnippet = new Snippet(tpl);
+        String recombobulated = testSnippet.toString();
+        assertEquals(tpl,recombobulated);
+    }
 }
