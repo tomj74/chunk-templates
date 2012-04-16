@@ -1,8 +1,10 @@
 package com.x5.template;
 
+import java.io.Writer;
+
 public class SnippetPart
 {
-	private String snippetText;
+	protected String snippetText;
 	private boolean isLiteral = false;
 
 	public SnippetPart(String text)
@@ -15,7 +17,12 @@ public class SnippetPart
 		return snippetText;
 	}
 	
-	public void setLiteral(boolean isLiteral)
+    public void setText(String text)
+    {
+        this.snippetText = text;
+    }
+
+    public void setLiteral(boolean isLiteral)
 	{
 		this.isLiteral = isLiteral;
 	}
@@ -25,4 +32,29 @@ public class SnippetPart
 		return this.isLiteral;
 	}
 	
+	public boolean isTag()
+	{
+	    return false;
+	}
+	
+	public boolean depthCheckFails(int depth, Writer out)
+	throws java.io.IOException
+	{
+	    if (depth >= Chunk.DEPTH_LIMIT) {
+            out.append("[**ERR** max template recursions: "+Chunk.DEPTH_LIMIT+"]");
+	        return true;
+	    } else {
+	        return false;
+	    }
+	}
+	
+	public void render(Writer out, Chunk rules, int depth)
+	throws java.io.IOException
+	{
+	    if (isLiteral) {
+	        out.append(snippetText);
+	    } else {
+	        // ... ?
+	    }
+	}
 }

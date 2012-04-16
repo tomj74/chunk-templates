@@ -215,6 +215,6 @@ public class Grid
 
     private String getAttribute(String attr, String toScan)
     {
-        return Loop.getAttribute(attr,toScan);
+        return LoopTag.getAttribute(attr,toScan);
     }
 }

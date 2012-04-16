@@ -153,13 +153,17 @@ public class TextFilter
         return LocaleTag.LOCALE_SIMPLE_OPEN + text + LocaleTag.LOCALE_SIMPLE_CLOSE;
     }
     
+    private static final Pattern NOT_HARMLESS_CHAR = Pattern.compile("[^A-Za-z0-9@\\!\\?\\*\\#\\$\\(\\)\\+\\=\\:\\;\\,\\~\\/\\._-]");
+    
     private static String defang(String text)
     {
         // keep only a very restrictive set of harmless
         // characters, eg when quoting back user input
         // in a server-generated page, to prevent xss
         // injection attacks.
-        return applyRegex(text, "s/[^A-Za-z0-9@\\!\\?\\*\\#\\$\\(\\)\\+\\=\\:\\;\\,\\~\\/\\._-]//g");
+        if (text == null) return null;
+        Matcher m = NOT_HARMLESS_CHAR.matcher(text);
+        return m.replaceAll("");
     }
     
     private static final String SELECTED_TOKEN = " selected=\"selected\" ";

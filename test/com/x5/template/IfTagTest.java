@@ -256,7 +256,8 @@ public class IfTagTest
         c.set("moon_material", "roquefort");
         c.set("cheese_type", "stilton");
         c.append("{^if (~moon_material == ~cheese_type)} {^if (~cheese_type == stilton)} Moon made of Stilton! {^else} not stilton! {/if} {^if (~world_shape == round)} Heathen! {^else} Brethren! {/fi} {^else} The moon is not made of {~cheese_type}! {/if}");
-        assertTrue(c.toString().indexOf("no matching end marker") > 0);
+        String output = c.toString();
+        assertTrue(output.indexOf("no matching end marker") > 0);
     }
     
     @Test
@@ -289,10 +290,10 @@ public class IfTagTest
         c.set("cheese_type", "roquefort");
         c.append("{^if (~moon_material == ~cheese_type)}"
                +  "{^if (~cheese_type == stilton)} Moon made of Stilton! "
-               +   "{^if (~world_shape == round)} Heathen! {^else} Brethren! {/if} "
+               +   "{^if (~world_shape == round)} Heathen! {^else} Brethren! {/if}"
                +  "{^else} not stilton! {~cheese_type}!"
-               +   "{^if (~world_shape == round)} Heathen! {^else} Brethren! {/if} "
-               +  "{/if} "
+               +   "{^if (~world_shape == round)} Heathen! {^else} Brethren! {/if}"
+               +  "{/if}"
                + "{^else}"
                + " The moon is not made of {~cheese_type}! "
                + "{/if}");

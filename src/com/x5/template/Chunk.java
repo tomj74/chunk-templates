@@ -1,5 +1,9 @@
 package com.x5.template;
 
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Hashtable;
@@ -277,6 +281,8 @@ public class Chunk implements Map<String,Object>
     protected String tagStart = TemplateSet.DEFAULT_TAG_START;
     protected String tagEnd = TemplateSet.DEFAULT_TAG_END;
 
+    private Vector<Vector<Chunk>> contextStack = null;
+    
     private String delayedFilter = null;
 
     private ContentSource macroLibrary = null;
@@ -321,6 +327,7 @@ public class Chunk implements Map<String,Object>
         if (templateRoot == null && template == null) {
             templateRoot = toAdd;
         } else {
+            // FIXME just add more parts to the root snippet.
             if (template == null) {
                 template = new Vector<Object>();
                 template.addElement(templateRoot);
@@ -590,85 +597,338 @@ public class Chunk implements Map<String,Object>
      */
     public String toString()
     {
-        return explodeForParent(null);
+        StringWriter out = new StringWriter();
+        try {
+            render(out);
+            out.flush();
+            return out.toString();
+        } catch (IOException e) {
+            return e.getLocalizedMessage();
+        }
     }
-
+    
     public String toString(Chunk context)
     {
-        // sometimes orphaned chunks need to be reunited with their ancestry
-        Vector<Chunk> ancestors = new Vector<Chunk>();
-        if (context.ancestorStack != null) {
-            ancestors.addAll(context.ancestorStack);
+        StringWriter out = new StringWriter();
+        try {
+            render(out,context);
+            out.flush();
+            return out.toString();
+        } catch (IOException e) {
+            return e.getLocalizedMessage();
         }
-        ancestors.addElement(context);
-        return explodeForParent(ancestors);
+    }
+    
+    public void render(Writer out)
+    throws IOException
+    {
+        explodeForParentToPrinter(out, null);
+    }
+    
+    public void render(Writer out, Chunk context)
+    throws IOException
+    {
+        // sometimes orphaned chunks need to be reunited with their ancestry
+        Vector<Chunk> parentContext = context.prepareParentContext();
+        explodeForParentToPrinter(out, parentContext);
+    }
+    
+    private void pushContextStack(Vector<Chunk> parentContext)
+    {
+        if (contextStack == null) {
+            contextStack = new Vector<Vector<Chunk>>();
+        }
+        contextStack.insertElementAt(parentContext, 0);
+    }
+    
+    private void popContextStack()
+    {
+        if (contextStack == null || contextStack.size() == 0) return;
+        contextStack.removeElementAt(0);
+    }
+    
+    private void explodeForParentToPrinter(Writer out, Vector<Chunk> ancestors)
+    throws IOException
+    {
+        if (template == null && templateRoot == null) return;
+        
+        if (ancestors != null) {
+            // PUSH ANCESTORS ONTO STACK AND LOCK DOWN
+            synchronized(this) {
+                pushContextStack(ancestors);
+                if (delayedFilter != null) {
+                    Writer wrappedOut = new FilteredPrinter(out, this, delayedFilter);
+                    renderForParentToPrinter(wrappedOut);
+                    wrappedOut.flush();
+                } else {
+                    renderForParentToPrinter(out);
+                }
+                
+                /*
+                String output = renderToStringForParent();
+                if (delayedFilter != null) {
+                    String postFilter = TextFilter.applyTextFilter(this, delayedFilter, output);
+                    // re-process, post-filter output may contain un-processed tags
+                    StringBuilder buf = new StringBuilder();
+                    explodeAndAppend(postFilter, buf, 1);
+                    output = buf.toString();
+                }*/
+                popContextStack();
+            }
+        } else {
+            if (delayedFilter != null) {
+                Writer wrappedOut = new FilteredPrinter(out, this, delayedFilter);
+                renderForParentToPrinter(wrappedOut);
+                wrappedOut.flush();
+            } else {
+                renderForParentToPrinter(out);
+                /*
+                String postFilter = TextFilter.applyTextFilter(this, delayedFilter, output);
+                // re-process, post-filter output may contain un-processed tags
+                StringBuilder buf = new StringBuilder();
+                explodeAndAppend(postFilter, buf, 1);
+                output = buf.toString();
+                */
+            }
+        }        
     }
 
+    /* DEPRECATED see explodeForParentToPrinter
     private String explodeForParent(Vector<Chunk> ancestors)
     {
         if (template == null && templateRoot == null) return "";
-        StringBuilder buf = new StringBuilder();
+        
+        if (ancestors != null) {
+            // PUSH ANCESTORS ONTO STACK AND LOCK DOWN
+            synchronized(this) {
+                pushContextStack(ancestors);
+                String output = renderForParentToString();
+                if (delayedFilter != null) {
+                    String postFilter = TextFilter.applyTextFilter(this, delayedFilter, output);
+                    // re-process, post-filter output may contain un-processed tags
+                    StringBuilder buf = new StringBuilder();
+                    explodeAndAppend(postFilter, buf, 1);
+                    output = buf.toString();
+                }
+                popContextStack();
+                return output;
+            }
+        } else {
+            String output = renderForParentToString();
+            if (delayedFilter != null) {
+                String postFilter = TextFilter.applyTextFilter(this, delayedFilter, output);
+                // re-process, post-filter output may contain un-processed tags
+                StringBuilder buf = new StringBuilder();
+                explodeAndAppend(postFilter, buf, 1);
+                output = buf.toString();
+            }
+            return output;
+        }
+
+
+    }*/
+    
+    private void renderForParentToPrinter(Writer out)
+    throws IOException
+    {
         if (template == null) {
-    		explodeAndAppend(templateRoot, buf, ancestors, 1);
+            explodeToPrinter(out, templateRoot, 1);
         } else {
             for (int i=0; i < template.size(); i++) {
                 Object obj = template.elementAt(i);
-                explodeAndAppend(obj, buf, ancestors, 1);
+                explodeToPrinter(out, obj, 1);
             }
         }
-        //        return TextFilter.applyTextFilter(delayedFilter, buf.toString());
-
-        // not sure if this is right, but it had the desired effect...
-        if (delayedFilter == null) {
-            return buf.toString();
-        } else {
-            // ick, the post-filter output may contain explodable tags
-            String postFilter = TextFilter.applyTextFilter(this, delayedFilter, buf.toString());
-            StringBuilder buf2 = new StringBuilder();
-            // re-process (hopefully this won't have any weird side-effects)
-            explodeAndAppend(postFilter, buf2, ancestors, 1);
-            return buf2.toString();
-        }
     }
-
-    private void explodeAndAppend(Object obj, StringBuilder buf, Vector<Chunk> ancestors, int depth)
+    
+    /* DEPRECATED see renderForParentToPrinter()
+    private String renderForParentToString()
+    {
+        StringBuilder buf = new StringBuilder();
+        
+        if (template == null) {
+            explodeAndAppend(templateRoot, buf, 1);
+        } else {
+            for (int i=0; i < template.size(); i++) {
+                Object obj = template.elementAt(i);
+                explodeAndAppend(obj, buf, 1);
+            }
+        }
+        
+        return buf.toString();
+    }*/
+    
+    void explodeToPrinter(Writer out, Object obj, int depth)
+    throws IOException
     {
         if (depth >= DEPTH_LIMIT) {
-            buf.append("[**ERR** max template recursions: "+DEPTH_LIMIT+"]");
+            
+            out.append("[**ERR** max template recursions: "+DEPTH_LIMIT+"]");
+            
         } else if (obj instanceof Snippet) {
+            
+            Snippet snippet = (Snippet)obj;
+            // soon to be... snippet.render(out, this, depth);
+            snippet.render(out,this,depth);
+            
+            /*
+            if (snippet.isSimple()) {
+                // most snippets are simple (ie don't contain literals)
+                explodeStringToPrinter(out, snippet.getSimpleText(), depth);
+            } else {
+                ArrayList<SnippetPart> parts = snippet.getParts();
+                if (parts == null) return;
+                for (SnippetPart part : parts) {
+                    if (part.isLiteral()) {
+                        // DO NOT INTERPOLATE. literal block.
+                        out.append( part.getText() );
+                    } else if (part.isSimpleTag()) {
+                        try {
+                            String tag = ((SnippetTag)part).getTag();
+                            renderTag(out,tag,depth);
+                        } catch (BlockTagException e) {
+                            System.err.println("Unexpected Block Tag.");
+                            //- FIXME should find matching block end among the snippet parts.
+                            BlockTag helper = e.getHelper();
+                            int[] blockEnd = BlockTag.findMatchingBlockEnd(this,template,end,helper);
+                            if (blockEnd == null) {
+                                // FAIL...
+                                buf.append("<!-- [tag expansion error! "+helper.getBlockStartMarker()+" block with no matching end marker! ] -->");
+                                marker = end + tagEndLen;
+                            } else {
+                                String blockBody = template.substring(end+1,blockEnd[0]);
+                                String cooked = helper.cookBlock(blockBody);
+                                explodeAndAppend(cooked, buf, ancestors, depth+1);
+                                marker = blockEnd[1];
+                            }
+                            -/
+                        }
+                    } else {
+                        explodeStringToPrinter(out, part.getText(), depth);
+                    }
+                }
+            }*/
+            
+        } else if (obj instanceof String) {
+            
+            // snippet-ify to catch/skip literal blocks
+            Snippet snippet = new Snippet((String)obj);
+            explodeToPrinter(out, snippet, depth);
+            
+        } else if (obj instanceof Chunk) {
+            
+            Vector<Chunk> parentContext = prepareParentContext();
+            Chunk c = (Chunk) obj;
+            c.explodeForParentToPrinter(out, parentContext);
+            
+        } else if (obj instanceof DataCapsule[]) {
+            
+            // auto-expand?
+            DataCapsuleReader reader = DataCapsuleReader.getReader((DataCapsule[])obj);
+            out.append("[LIST("+reader.getDataClassName()+") - Use a loop construct such as ^loop or ^grid to display list data.]");
+            
+        } else if (obj instanceof String[]) {
+            
+            out.append("[LIST(java.lang.String) - Use a loop construct such as ^loop to display list data, or pipe to join().]");
+            
+        }        
+    }
+
+    /* DEPRECATED see explodeToPrinter
+    private void explodeAndAppend(Object obj, StringBuilder buf, int depth)
+    {
+        if (depth >= DEPTH_LIMIT) {
+            
+            buf.append("[**ERR** max template recursions: "+DEPTH_LIMIT+"]");
+            
+        } else if (obj instanceof Snippet) {
+            
         	Snippet snippet = (Snippet)obj;
         	if (snippet.isSimple()) {
         		// most snippets are simple (ie don't contain literals)
-        		buf.append(explodeString(snippet.getSimpleText(), ancestors, depth));
+        		buf.append(explodeString(snippet.getSimpleText(), depth));
         	} else {
             	ArrayList<SnippetPart> parts = snippet.getParts();
             	if (parts == null) return;
         		for (SnippetPart part : parts) {
                 	if (part.isLiteral()) {
-                		buf.append(part.getText()); // DO NOT INTERPOLATE literal block
+                	    // DO NOT INTERPOLATE. literal block.
+                		buf.append( part.getText() );
+                	} else if (part.isSimpleTag()) {
+                	    try {
+                            String tag = ((SnippetTag)part).getTag();
+                	        renderTag(buf,tag,depth);
+                	    } catch (BlockTagException e) {
+                	        System.err.println("Unexpected Block Tag.");
+                	        //- FIXME should find matching block end among the snippet parts.
+                            BlockTag helper = e.getHelper();
+                            int[] blockEnd = BlockTag.findMatchingBlockEnd(this,template,end,helper);
+                            if (blockEnd == null) {
+                                // FAIL...
+                                buf.append("<!-- [tag expansion error! "+helper.getBlockStartMarker()+" block with no matching end marker! ] -->");
+                                marker = end + tagEndLen;
+                            } else {
+                                String blockBody = template.substring(end+1,blockEnd[0]);
+                                String cooked = helper.cookBlock(blockBody);
+                                explodeAndAppend(cooked, buf, ancestors, depth+1);
+                                marker = blockEnd[1];
+                            }
+                            -/
+                        }
                 	} else {
-                        buf.append(explodeString(part.getText(), ancestors, depth));
+                        buf.append( explodeString(part.getText(), depth) );
                 	}
         		}
         	}
+        	
         } else if (obj instanceof String) {
+            
         	// snippet-ify to catch/skip literal blocks
         	Snippet snippet = new Snippet((String)obj);
-			explodeAndAppend(snippet,buf,ancestors,depth);
+			explodeAndAppend(snippet,buf,depth);
             ///buf.append(explodeString((String)obj, ancestors, depth));
+			
         } else if (obj instanceof Chunk) {
-            if (ancestors == null) ancestors = new Vector<Chunk>();
-            ancestors.addElement(this);
+            
+            Vector<Chunk> parentContext = prepareParentContext();
             Chunk c = (Chunk) obj;
-            buf.append(c.explodeForParent(ancestors));
-            // pull self off the stack (wasn't doing this before, amazing no bugs until now)
-            if (ancestors.size() > 1) ancestors.removeElementAt(ancestors.size()-1);
+            buf.append(c.explodeForParent(parentContext));
+            
         } else if (obj instanceof DataCapsule[]) {
+            
         	// auto-expand?
         	DataCapsuleReader reader = DataCapsuleReader.getReader((DataCapsule[])obj);
         	buf.append("[LIST("+reader.getDataClassName()+") - Use a loop construct such as ^loop or ^grid to display list data.]");
+        	
         } else if (obj instanceof String[]) {
-        	buf.append("[LIST(java.util.String) - Use a loop construct such as ^loop to display list data, or pipe to join().]");
+            
+        	buf.append("[LIST(java.lang.String) - Use a loop construct such as ^loop to display list data, or pipe to join().]");
+        	
+        }
+    }*/
+    
+    private Vector<Chunk> prepareParentContext()
+    {
+        if (contextStack == null) {
+            Vector<Chunk> parentContext = new Vector<Chunk>();
+            parentContext.add(this);
+            return parentContext;
+        } else {
+            // current context is first element on stack
+            Vector<Chunk> parentContext = contextStack.firstElement();
+            parentContext = (Vector<Chunk>)parentContext.clone();
+            parentContext.insertElementAt(this,0);
+            return parentContext;
+        }
+    }
+    
+    private Vector<Chunk> getCurrentParentContext()
+    {
+        if (contextStack == null || contextStack.size() == 0) {
+            return null;
+        } else {
+            // current context is first element on stack
+            return contextStack.firstElement();
         }
     }
 
@@ -709,10 +969,16 @@ public class Chunk implements Map<String,Object>
         altSources.put(protocol,src);
     }
 
-    private static final java.util.regex.Pattern includeIfPattern =
+    private Object altFetch(String tagName)
+    throws BlockTagException
+    {
+        return altFetch(tagName, false);
+    }
+    
+    private static final java.util.regex.Pattern INCLUDEIF_PATTERN =
         java.util.regex.Pattern.compile("^\\.include(If|\\.\\()");
 
-    private Object altFetch(String tagName, Vector<Chunk> ancestors)
+    private Object altFetch(String tagName, boolean ignoreParentContext)
     throws BlockTagException
     {
         String tagValue = null;
@@ -729,52 +995,39 @@ public class Chunk implements Map<String,Object>
         
         // the ^calc(...) fn
         if (tagName.startsWith(".calc(")) {
-            // FIXME this is not threadsafe (synchronize call/block?)
-            this.ancestorStack = ancestors;
             String eval = null;
             try {
                 eval = Calc.evalCalc(tagName,this);
             } catch (NoClassDefFoundError e) {
             	eval = "[ERROR: jeplite jar missing from classpath! ^calc special requires jeplite library]";
             }
-            this.ancestorStack = null;
 
             return eval;
         }
         
         if (tagName.startsWith(".if")) {
-            this.ancestorStack = ancestors;
             String result = IfTag.evalIf(tagName, this);
-            this.ancestorStack = null;
             
             return result;
         }
 
         // the ^loop(...) fn
         if (tagName.startsWith(".loop")) {
-            // FIXME this is not threadsafe (synchronize call/block?)
-            this.ancestorStack = ancestors;
-            String table = Loop.expandLoop(tagName,this);
-            this.ancestorStack = null;
+            String table = LoopTag.expandLoop(tagName,this);
 
             return table;
         }
         
         // the ^loc locale tag
         if (tagName.startsWith(".loc")) {
-            this.ancestorStack = ancestors;
             String translation = LocaleTag.translate(tagName,this);
-            this.ancestorStack = null;
             
             return translation;
         }
 
         // the ^grid(...) fn
         if (tagName.startsWith(".grid")) {
-            // FIXME this is not threadsafe (synchronize call/block?)
-            this.ancestorStack = ancestors;
             String table = Grid.expandGrid(tagName,this);
-            this.ancestorStack = null;
 
             return table;
         }
@@ -785,21 +1038,19 @@ public class Chunk implements Map<String,Object>
     		if (tagName.contains("html")) {
     			format = "html";
     		}
-        	return this.formatTagStack(format,ancestors);
+        	return this.formatTagStack(format);
         }
 
-        if (altSources == null && macroLibrary == null && ancestors == null) {
+        if (altSources == null && macroLibrary == null && getCurrentParentContext() == null) {
             // it ain't there to fetch
             return null;
         }
 
         // the includeIfPattern (defined above)
         // matches ".includeIf" and ".include.(" <-- ie from +(cond) expansion
-        if (TextFilter.matches(tagName,includeIfPattern)) {
+        if (TextFilter.matches(tagName,INCLUDEIF_PATTERN)) {
             // this is either lame or very sneaky
-            this.ancestorStack = ancestors;
             String translation = TextFilter.translateIncludeIf(tagName,tagStart,tagEnd,this);
-            this.ancestorStack = null;
 
             return translation;
         }
@@ -848,13 +1099,15 @@ public class Chunk implements Map<String,Object>
             }
         }
 
-        if (tagValue == null && ancestors != null) {
+        if (tagValue == null && !ignoreParentContext) {
             // still null? maybe an ancestor knows how to grok
-            for (int i=ancestors.size()-1; i>=0; i--) {
-                Chunk ancestor = (Chunk)ancestors.elementAt(i);
-                // lazy... should repeat if/else above to avoid re-parsing the tag
-                Object x = ancestor.altFetch(tagName, null);
-                if (x != null) return x;
+            Vector<Chunk> parentContext = getCurrentParentContext();
+            if (parentContext != null) {
+                for (Chunk ancestor : parentContext) {
+                    // lazy... should repeat if/else above to avoid re-parsing the tag
+                    Object x = ancestor.altFetch(tagName, true);
+                    if (x != null) return x;
+                }
             }
         }
 
@@ -885,7 +1138,7 @@ public class Chunk implements Map<String,Object>
         return tagName.indexOf("|",nextParen+1);
     }
     
-    private String resolveBackticks(String lookupName, Vector<Chunk> ancestors)
+    private String resolveBackticks(String lookupName)
     {
     	int backtickA = lookupName.indexOf('`');
     	if (backtickA < 0) return lookupName;
@@ -903,16 +1156,22 @@ public class Chunk implements Map<String,Object>
     	
     	try {
         	String dynLookupName = lookupName.substring(0,backtickA)
-        	  + resolveTagValue(embeddedTag,ancestors)
+        	  + resolveTagValue(embeddedTag)
         	  + lookupName.substring(backtickB+1);
         	
         	// there may be more...
-        	return resolveBackticks(dynLookupName,ancestors);
+        	return resolveBackticks(dynLookupName);
     	} catch (BlockTagException e) {
     	    // should never, ever happen.
     	    e.printStackTrace(System.err);
     	    return null;
     	}
+    }
+    
+    protected Object resolveTagValue(String tagName)
+    throws BlockTagException
+    {
+        return _resolveTagValue(tagName, false);
     }
 
     // resolveTagValue responds in the context of an explosion tree.
@@ -924,11 +1183,11 @@ public class Chunk implements Map<String,Object>
     // same throughout the whole table -- rather than set it over and
     // over the same in each row, the tag is given a value once at the
     // table level.
-    protected Object resolveTagValue(String tagName, Vector<Chunk> ancestors)
+    protected Object _resolveTagValue(String tagName, boolean ignoreParentContext)
     throws BlockTagException
     {
     	if (tagName.indexOf('`') > -1) {
-    		tagName = resolveBackticks(tagName, ancestors);
+    		tagName = resolveBackticks(tagName);
     	}
         String lookupName = tagName;
 
@@ -949,15 +1208,18 @@ public class Chunk implements Map<String,Object>
 
         if (lookupName.charAt(0) == '.') {
             // if the tag starts with a period, we need to delegate
-            tagValue = altFetch(tagName,ancestors);
+            tagValue = altFetch(tagName);
         } else if (hasValue(lookupName)) {
             // first look in this chunk's own tags
             tagValue = getTag(lookupName);
-        } else if (ancestors != null) {
-            // now look in ancestors (iteration, not recursion, so sue me)
-            for (int i=ancestors.size()-1; i>=0 && tagValue == null; i--) {
-                Chunk ancestor = (Chunk)ancestors.elementAt(i);
-                tagValue = ancestor.resolveTagValue(lookupName, null);
+        } else {
+            Vector<Chunk> parentContext = getCurrentParentContext();
+            if (parentContext != null) {
+                // now look in ancestors (iteration, not recursion, so sue me)
+                for (Chunk ancestor : parentContext) {
+                    tagValue = ancestor._resolveTagValue(lookupName, true);
+                    if (tagValue != null) break;
+                }
             }
         }
 
@@ -1319,7 +1581,7 @@ public class Chunk implements Map<String,Object>
             // no assignments
         	// altFetch returns String or Snippet
             try {
-                Object theTemplate = altFetch(".include."+templateRef,null);
+                Object theTemplate = altFetch(".include."+templateRef, true);
                 if (theTemplate != null) {
                 	expanded.append( expandMacros(theTemplate.toString()) );
                 }
@@ -1530,9 +1792,99 @@ public class Chunk implements Map<String,Object>
             return findMatchingEndBrace(template, regexEnd+1);
         }
     }
+    
+    private void renderTag(Writer out, String tagName, int depth)
+    throws BlockTagException, IOException
+    {
+        Object tagValue = resolveTagValue(tagName);
+        // unresolved tags get put back the way we found
+        // them in case the final String which explode() returns
+        // is then fed into another Chunk which *does* have
+        // a value.
+        if (tagValue == null) {
+            out.append(tagStart);
+            out.append(tagName);
+            out.append(tagEnd);
+        } else {
+            explodeToPrinter(out, tagValue, depth+1);
+        }
+    }
+    
+    /* DEPRECATED see renderTag(Writer...)
+    private void renderTag(StringBuilder buf, String tagName, int depth)
+    throws BlockTagException
+    {
+        Object tagValue = resolveTagValue(tagName);
+        // unresolved tags get put back the way we found
+        // them in case the final String which explode() returns
+        // is then fed into another Chunk which *does* have
+        // a value.
+        if (tagValue == null) {
+            buf.append(tagStart);
+            buf.append(tagName);
+            buf.append(tagEnd);
+        } else {
+            explodeAndAppend(tagValue, buf, depth+1);
+        }
+    }*/
 
     // the core search-and-replace routine
-    private String explodeString(String template, Vector<Chunk> ancestors, int depth)
+    void explodeStringToPrinter(Writer out, String template, int depth)
+    throws IOException
+    {
+        template = expandMacros(template);
+
+        int begin, end;
+        int tagStartLen = tagStart.length();
+        int tagEndLen = tagEnd.length();
+
+        int marker = 0;
+        while ((begin = template.indexOf(tagStart,marker)) > -1) {
+            // found a tag.  everything up to here has no more tags,
+            // so... put in the can!
+            if (begin > marker) out.append(template,marker,begin);
+            //if (begin > marker) out.append(template.substring(marker, begin));
+
+            begin += tagStartLen;
+            // find end of tag
+            if ((end = findMatchingEndBrace(template,begin)) > -1) {
+                String tagName = template.substring(begin,end);
+                try {
+                    renderTag(out, tagName, depth);
+                    marker = end + tagEndLen;
+                } catch (BlockTagException e) {
+                    BlockTag helper = e.getHelper();
+                    int[] blockEnd = BlockTag.findMatchingBlockEnd(this,template,end,helper);
+                    if (blockEnd == null) {
+                        // FAIL...
+                        out.append("<!-- [tag expansion error! "+helper.getBlockStartMarker()+" block with no matching end marker! ] -->");
+                        marker = end + tagEndLen;
+                    } else {
+                        String blockBody = template.substring(end+1,blockEnd[0]);
+                        String cooked = helper.cookBlock(blockBody);
+                        explodeStringToPrinter(out, cooked, depth+1);
+                        marker = blockEnd[1];
+                    }
+                }
+            } else {
+                // somebody didn't end a tag...
+                // leave broken tagstart and move along
+                out.append(tagStart);
+                marker = begin;
+            }
+        }
+        if (marker == 0) {
+            // no tags found
+            out.append(template);
+        } else {
+            out.append(template,marker,template.length());
+            //out.append(template.substring(marker));
+        }        
+    }
+    
+    // the core search-and-replace routine
+    /* DEPRECATED see explodeStringToPrinter
+    private String explodeString(String template, int depth)
     {
         template = expandMacros(template);
 
@@ -1553,18 +1905,7 @@ public class Chunk implements Map<String,Object>
             if ((end = findMatchingEndBrace(template,begin)) > -1) {
                 String tagName = template.substring(begin,end);
                 try {
-                    Object tagValue = resolveTagValue(tagName, ancestors);
-                    // unresolved tags get put back the way we found
-                    // them in case the final String which explode() returns
-                    // is then fed into another Chunk which *does* have
-                    // a value.
-                    if (tagValue == null) {
-                        buf.append(tagStart);
-                        buf.append(tagName);
-                        buf.append(tagEnd);
-                    } else {
-                        explodeAndAppend(tagValue, buf, ancestors, depth+1);
-                    }
+                    renderTag(buf, tagName, depth);
                     marker = end + tagEndLen;
                 } catch (BlockTagException e) {
                     BlockTag helper = e.getHelper();
@@ -1576,7 +1917,7 @@ public class Chunk implements Map<String,Object>
                     } else {
                         String blockBody = template.substring(end+1,blockEnd[0]);
                         String cooked = helper.cookBlock(blockBody);
-                        explodeAndAppend(cooked, buf, ancestors, depth+1);
+                        explodeAndAppend(cooked, buf, depth+1);
                         marker = blockEnd[1];
                     }
                 }
@@ -1594,7 +1935,7 @@ public class Chunk implements Map<String,Object>
             buf.append(template.substring(marker));
             return buf.toString();
         }
-    }
+    }*/
     
     /**
      * literals are now caught higher up the chain
@@ -1668,12 +2009,12 @@ public class Chunk implements Map<String,Object>
         return tags.equals(o);
     }
 
-    private Vector<Chunk> ancestorStack = null;
+    //private Vector<Chunk> ancestorStack = null;
 
     public Object get(Object key)
     {
         try {
-            return resolveTagValue((String)key,ancestorStack);
+            return resolveTagValue((String)key);
         } catch (BlockTagException e) {
             return null;
         }
@@ -1751,12 +2092,11 @@ public class Chunk implements Map<String,Object>
      * Assumes keys are strings and values are either type String
      * or type Chunk.
      */
-    public void setMultiple(Hashtable<String,Object> rules)
+    public void setMultiple(Map<String,Object> rules)
     {
         if (rules == null || rules.size() <= 0) return;
-        Enumeration<String> e = rules.keys();
-        while (e.hasMoreElements()) {
-            String tagName = e.nextElement();
+        Set<String> keys = rules.keySet();
+        for (String tagName : keys) {
             set(tagName,rules.get(tagName),"");
         }
     }
@@ -1810,7 +2150,7 @@ public class Chunk implements Map<String,Object>
      * @param format
      * @return
      */
-    private String formatTagStack(String format, Vector<Chunk> ancestors)
+    private String formatTagStack(String format)
     {
 		StringBuilder stack = new StringBuilder();
 		
@@ -1829,9 +2169,9 @@ public class Chunk implements Map<String,Object>
 		this.outputTags(stack,lineFeed,indent,indentLevel);
 		indentLevel++;
 		
-		if (ancestors != null) {
-			for (int i=ancestors.size()-1; i>=0; i--) {
-				Chunk ancestor = ancestors.get(i);
+		Vector<Chunk> parentContext = getCurrentParentContext();
+		if (parentContext != null) {
+			for (Chunk ancestor : parentContext) {
 				ancestor.outputTags(stack,lineFeed,indent,indentLevel);
 				indentLevel++;
 			}

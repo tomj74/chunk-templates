@@ -1,6 +1,8 @@
 package com.x5.template;
 
-import java.util.ArrayList;
+import java.io.IOException;
+import java.io.Writer;
+import java.util.List;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -20,6 +22,7 @@ public class IfTag extends BlockTag
     //private String[] altTemplates;
     
     private Chunk context;
+    private Snippet body;
     private boolean doTrim = true;
     
     private Map<String,String> options;
@@ -30,6 +33,16 @@ public class IfTag extends BlockTag
         parseParams(params);
     }
     
+    public IfTag(String params, Snippet body)
+    {
+        parseParams(params);
+        initBody(body);
+    }
+
+    public IfTag()
+    {
+    }
+
     public String getBlockStartMarker()
     {
         return "if";
@@ -40,14 +53,22 @@ public class IfTag extends BlockTag
         return "/if";
     }
     
+    private void initBody(Snippet body)
+    {
+        // FIXME pre-scan body to identify all ^else and ^elseIf blocks
+        this.body = body;
+    }
+    
     private void parseParams(String params)
     {
         String cond = parseCond(params);
         primaryCond = cond;
-        if (isTrueExpr(primaryCond)) {
-            chosenPath = 0;
-        } else {
-            chosenPath = -1;
+        if (context != null) {
+            if (isTrueExpr(primaryCond, context)) {
+                chosenPath = 0;
+            } else {
+                chosenPath = -1;
+            }
         }
         options = parseAttributes(params);
         if (options == null) return;
@@ -121,14 +142,14 @@ public class IfTag extends BlockTag
             throw new BlockTagException(this);
         }
         
-        if (isTrueExpr(primaryCond)) {
+        if (isTrueExpr(primaryCond,context)) {
             return snippetOrValue(thenTemplate);
         } else {
             return snippetOrValue(elseTemplate);
         }
     }
     
-    private boolean isTrueExpr(String test)
+    private boolean isTrueExpr(String test, Chunk context)
     {
         if (test == null) return false;
         test = test.trim();
@@ -312,7 +333,7 @@ public class IfTag extends BlockTag
                 return elseTemplate;
             } else {
                 marker = m.end();
-                if (isTrueExpr(cond)) {
+                if (isTrueExpr(cond,context)) {
                     int altBlockEnd = blockBody.length();
                     if (m.find()) {
                         altBlockEnd = m.start();
@@ -333,19 +354,81 @@ public class IfTag extends BlockTag
         return "";
     }
     
-    private String smartTrim(String x)
+    private void smartTrim(List<SnippetPart> subParts)
     {
-        String trimOpt = options == null ? null : options.get("trim");
-        if (trimOpt != null) {
-            if (trimOpt.equalsIgnoreCase("all") || trimOpt.equalsIgnoreCase("true")) {
-                return x.trim();
+        if (subParts != null && subParts.size() > 0) {
+            SnippetPart firstPart = subParts.get(0);
+            if (firstPart.isLiteral()) {
+                String trimmed = isTrimAll() ? trimLeft(firstPart.getText())
+                        : smartTrim(firstPart.getText(), true);
+                firstPart.setText(trimmed);
+            }
+            if (isTrimAll()) {
+                SnippetPart lastPart = subParts.get(subParts.size()-1);
+                if (lastPart.isLiteral()) {
+                    String trimmed = trimRight(lastPart.getText());
+                    lastPart.setText(trimmed);
+                }
             }
         }
-
+    }
+    
+    private String trimLeft(String x)
+    {
+        if (x == null) return null;
+        int i = 0;
+        char c = x.charAt(i);
+        while (c == '\n' || c == ' ' || c == '\r' || c == '\t') {
+            i++;
+            if (i == x.length()) break;
+            c = x.charAt(i);
+        }
+        if (i == 0) return x;
+        return x.substring(i);
+    }
+    
+    private String trimRight(String x)
+    {
+        if (x == null) return null;
+        int i = x.length()-1;
+        char c = x.charAt(i);
+        while (c == '\n' || c == ' ' || c == '\r' || c == '\t') {
+            i--;
+            if (i == -1) break;
+            c = x.charAt(i);
+        }
+        i++;
+        if (i >= x.length()) return x;
+        return x.substring(0,i);
+    }
+    
+    private boolean isTrimAll()
+    {
+        String trimOpt = (options != null) ? (String)options.get("trim") : null;
+        if (trimOpt != null && (trimOpt.equals("all") || trimOpt.equals("true"))) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+    
+    private String smartTrim(String x)
+    {
+        return smartTrim(x, false);
+    }
+    
+    private static final Pattern UNIVERSAL_LF = Pattern.compile("\n|\r\n|\r\r");
+    
+    private String smartTrim(String x, boolean ignoreAll)
+    {
+        if (!ignoreAll && isTrimAll()) {
+            // trim="all" disables smartTrim.
+            return x.trim();
+        }
+        
         // if the block begins with (whitespace+) LF, trim initial line
-        // otherwise, apply no trim.
-        Pattern p = Pattern.compile("\n|\r\n|\r\r");
-        Matcher m = p.matcher(x);
+        // otherwise, apply standard/complete trim.
+        Matcher m = UNIVERSAL_LF.matcher(x);
         
         if (m.find()) {
             int firstLF = m.start();
@@ -355,5 +438,115 @@ public class IfTag extends BlockTag
         }
         
         return x;
+    }
+
+    private int nextElseTag(List<SnippetPart> bodyParts, int startAt)
+    {
+        for (int i=startAt; i<bodyParts.size(); i++) {
+            SnippetPart part = bodyParts.get(i);
+            if (part instanceof SnippetTag) {
+                SnippetTag tag = (SnippetTag)part;
+                if (tag.getTag().startsWith(".else")) {
+                    return i;
+                }
+            }
+        }
+        return -1;
+    }
+    
+    public void renderBlock(Writer out, Chunk context, int depth)
+    throws IOException
+    {
+        
+        List<SnippetPart> bodyParts = body.getParts();
+        int nextElseTag = nextElseTag(bodyParts,0);
+        
+        int path = 0;
+        
+        if (isTrueExpr(primaryCond, context)) {
+            chosenPath = 0;
+            if (nextElseTag < 0) nextElseTag = bodyParts.size();
+            renderChosenParts(out, context, depth, bodyParts, 0, nextElseTag);
+        } else {
+            // locate next {^else} or {^elseIf} tag, or output nothing
+            while (nextElseTag > -1) {
+                path++;
+                String elseTag = ((SnippetTag)bodyParts.get(nextElseTag)).getTag();
+                if (elseTag.equals(".else")) {
+                    chosenPath = path;
+                    renderChosenParts(out, context, depth, bodyParts, nextElseTag+1, bodyParts.size());
+                    break;
+                } else {
+                    String elseIfCond = parseCond(elseTag);
+                    if (isTrueExpr(elseIfCond, context)) {
+                        chosenPath = path;
+                        int nextBoundary = nextElseTag(bodyParts,nextElseTag+1);
+                        if (nextBoundary == -1) nextBoundary = bodyParts.size();
+                        renderChosenParts(out, context, depth, bodyParts, nextElseTag+1, nextBoundary);
+                        break;
+                    }
+                    nextElseTag = nextElseTag(bodyParts,nextElseTag+1);
+                }
+            }
+        }
+    }
+    
+    public void renderChosenParts(Writer out, Chunk context, int depth,
+            List<SnippetPart> parts, int a, int b)
+    throws IOException
+    {
+        if (!doTrim) {
+            for (int i=a; i<b; i++) {
+                SnippetPart part = parts.get(i);
+                part.render(out, context, depth);
+            }
+        } else if (b > a) {
+            if (isTrimAll()) {
+                // trim front and back
+                if (a + 1 == b) {
+                    // only one part, easy to trim
+                    SnippetPart onlyPart = parts.get(a);
+                    if (onlyPart.isLiteral()) {
+                        String trimmed = onlyPart.getText().trim();
+                        out.append(trimmed);
+                    } else {
+                        onlyPart.render(out, context, depth);
+                    }
+                } else {
+                    // output first part (left-trimmed)
+                    SnippetPart partA = parts.get(a);
+                    if (partA.isLiteral()) {
+                        String trimmed = trimLeft(partA.getText());
+                        out.append(trimmed);
+                    }
+                    // output middle (untouched)
+                    for (int i=a+1; i<b-1; i++) {
+                        SnippetPart part = parts.get(i);
+                        part.render(out, context, depth);
+                    }
+                    // output last part (right-trimmed)
+                    SnippetPart partB = parts.get(b-1);
+                    if (partB.isLiteral()) {
+                        String trimmed = trimRight(partB.getText());
+                        out.append(trimmed);
+                    }
+                }
+            } else {
+                // trim only first blank line
+                // output first part (smart-trimmed)
+                SnippetPart partA = parts.get(a);
+                if (partA.isLiteral()) {
+                    String smartTrimmed = smartTrim(partA.getText());
+                    out.append(smartTrimmed);
+                } else {
+                    partA.render(out,context,depth);
+                }
+                // output rest (untouched)
+                for (int i=a+1; i<b; i++) {
+                    SnippetPart part = parts.get(i);
+                    part.render(out, context, depth);
+                }
+            }
+        }
     }
 }

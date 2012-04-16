@@ -56,7 +56,7 @@ public class LoopTest
         Chunk c = theme.makeChunk("chunk_test#looptest_simple_block_loop");
         String widgets = "[[widget_id,widget_name],[1,thingamabob],[2,doodad]]";
         c.set("widgets",widgets);
-        assertEquals(c.toString()," 1 thingamabob<br/>\n 2 doodad<br/>\n");
+        assertEquals(" 1 thingamabob<br/>\n 2 doodad<br/>\n", c.toString());
     }
     
     @Test
@@ -67,7 +67,7 @@ public class LoopTest
         Chunk c = theme.makeChunk("chunk_test#looptest_less_simple_block_loop");
         String widgets = "[[widget_id,widget_name],[1,thingamabob],[2,doodad]]";
         c.set("widgets",widgets);
-        assertEquals(c.toString()," 1 thingamabob<br/>\n <hr/>\n 2 doodad<br/>\n");
+        assertEquals(" 1 thingamabob<br/>\n <hr/>\n 2 doodad<br/>\n",c.toString());
     }
     
     @Test
@@ -76,7 +76,7 @@ public class LoopTest
         Theme theme = new Theme("themes","test/base,test/override");
         
         Chunk c = theme.makeChunk("chunk_test#looptest_less_simple_block_loop");
-        assertEquals(c.toString(),"<i>No widgets!</i>");
+        assertEquals(" <i>No widgets!</i>\n",c.toString());
     }
     
     @Test
@@ -88,7 +88,7 @@ public class LoopTest
         String widgets = "[[widget_id,widget_name],[1,thingamabob],[2,doodad]]";
         c.set("widgets",widgets);
 
-        assertEquals(c.toString(),"1 thingamabob<br/>\n<hr/>2 doodad<br/>\n\n");
+        assertEquals("1 thingamabob<br/>\n<hr/>2 doodad<br/>\n\n",c.toString());
     }
     
     @Test
@@ -100,7 +100,7 @@ public class LoopTest
         String widgets = "[[widget_id,widget_name],[1,thingamabob],[2,doodad]]";
         c.set("widgets",widgets);
 
-        assertEquals(c.toString(),"1 thingamabob<br/>\n<hr/>\n2 doodad<br/>\n\n");        
+        assertEquals("1 thingamabob<br/>\n<hr/>\n2 doodad<br/>\n\n",c.toString());        
     }
     
     @Test
@@ -112,7 +112,7 @@ public class LoopTest
         String widgets = "[[widget_id,widget_name],[1,thingamabob],[2,doodad]]";
         c.set("widgets",widgets);
 
-        assertEquals(c.toString(),"1 thingamabob<br/>\nchunk_test#not_exist2 doodad<br/>\n\n");        
+        assertEquals("1 thingamabob<br/>\nchunk_test#not_exist2 doodad<br/>\n\n",c.toString());        
     }
     
     @Test
@@ -126,7 +126,8 @@ public class LoopTest
         c.set("widgets",widgets);
         c.set("wodgets",wodgets);
         
-        assertEquals(c.toString(),"thingamabob\n thingamabob *\n --\n doodad\n==\ndoodad\n thingamabob\n --\n doodad *\n");
+        assertEquals("thingamabob\n thingamabob *\n --\n doodad\n==\ndoodad\n thingamabob\n --\n doodad *\n",
+                c.toString());
     }
     
     @Test
@@ -138,7 +139,8 @@ public class LoopTest
         String widgets = "[[widget_id,widget_name],[1,thingamabob],[2,doodad]]";
         c.set("widgets",widgets);
         
-        assertEquals(c.toString(),"1:thingamabob\n thingamabob *\n --\n doodad\n==\n2:doodad\n thingamabob\n --\n doodad *\n");
+        assertEquals("1:thingamabob\n thingamabob *\n --\n doodad\n==\n2:doodad\n thingamabob\n --\n doodad *\n",
+                c.toString());
     }
     
     @Test
