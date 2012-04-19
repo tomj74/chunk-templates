@@ -6,6 +6,8 @@ import java.util.StringTokenizer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import com.x5.template.filters.RegexFilter;
+
 public class LocaleTag extends BlockTag
 {
     private Chunk context;
@@ -151,7 +153,7 @@ public class LocaleTag extends BlockTag
     }
     
     private static final Pattern OPEN_TAG_PATTERN
-        = Pattern.compile(TextFilter.escapeRegex(LOCALE_TAG_OPEN) + "|" + TextFilter.escapeRegex(LOCALE_SIMPLE_OPEN));
+        = Pattern.compile(RegexFilter.escapeRegex(LOCALE_TAG_OPEN) + "|" + RegexFilter.escapeRegex(LOCALE_SIMPLE_OPEN));
     
     private static int[] scanForMarkers(String template)
     {

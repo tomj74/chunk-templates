@@ -10,6 +10,7 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import com.x5.template.filters.RegexFilter;
 import com.x5.util.DataCapsuleTable;
 import com.x5.util.TableData;
 
@@ -180,7 +181,7 @@ public class LoopTag extends BlockTag
             }
             if (dataVar.charAt(0) == '^') {
                 // expand "external" shortcut syntax eg ^wiki becomes ~.wiki
-                dataVar = TextFilter.applyRegex(dataVar, "s/^\\^/~./");
+                dataVar = RegexFilter.applyRegex(dataVar, "s/^\\^/~./");
             }
             if (dataVar.startsWith("~")) {
                 // tag reference (eg, tag assigned to query result table)

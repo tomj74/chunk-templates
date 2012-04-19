@@ -11,8 +11,11 @@ import java.util.Set;
 import java.util.Vector;
 import java.util.Enumeration;
 import java.util.Map;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import com.x5.template.filters.Calc;
+import com.x5.template.filters.RegexFilter;
 import com.x5.util.DataCapsule;
 import com.x5.util.DataCapsuleReader;
 import com.x5.util.TableData;
@@ -1048,7 +1051,8 @@ public class Chunk implements Map<String,Object>
 
         // the includeIfPattern (defined above)
         // matches ".includeIf" and ".include.(" <-- ie from +(cond) expansion
-        if (TextFilter.matches(tagName,INCLUDEIF_PATTERN)) {
+        Matcher m = INCLUDEIF_PATTERN.matcher(tagName);
+        if (m.find()) {
             // this is either lame or very sneaky
             String translation = TextFilter.translateIncludeIf(tagName,tagStart,tagEnd,this);
 
@@ -1132,7 +1136,7 @@ public class Chunk implements Map<String,Object>
         if (nextSlash < 0 || nextParen < 0) return pipePos;
         if (nextParen < nextSlash) return pipePos;
         // okay, we found a regex. find the end of the regex.
-        int regexEnd = TextFilter.nextRegexDelim(tagName,nextSlash+1);
+        int regexEnd = RegexFilter.nextRegexDelim(tagName,nextSlash+1);
         nextParen = tagName.indexOf(")",regexEnd+1);
         if (nextParen < 0 || nextParen < pipePos) return pipePos;
         return tagName.indexOf("|",nextParen+1);
@@ -1781,8 +1785,8 @@ public class Chunk implements Map<String,Object>
         if (regexPos == 0) return endPos;
 
         // found regex? find end, make sure this end brace is not inside the regex.
-        int regexMid = TextFilter.nextRegexDelim(template,regexPos+2);
-        int regexEnd = (isMatchOnly) ? regexMid : TextFilter.nextRegexDelim(template,regexMid+1);
+        int regexMid = RegexFilter.nextRegexDelim(template,regexPos+2);
+        int regexEnd = (isMatchOnly) ? regexMid : RegexFilter.nextRegexDelim(template,regexMid+1);
 
         if (endPos > regexEnd) {
             // brace is outside the regex, valid endpoint

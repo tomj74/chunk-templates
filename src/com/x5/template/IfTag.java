@@ -8,6 +8,8 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import com.x5.template.filters.RegexFilter;
+
 public class IfTag extends BlockTag
 {
     // chosenPath simplest case: 0 is "then", -1 is "else"
@@ -249,7 +251,7 @@ public class IfTag extends BlockTag
         int cursor = 0;
         if (regex.charAt(cursor) == 'm') cursor++;
         if (regex.charAt(cursor) == '/') cursor++;
-        int regexEnd = TextFilter.nextRegexDelim(regex,cursor);
+        int regexEnd = RegexFilter.nextRegexDelim(regex,cursor);
         if (regexEnd < 0) return false; // fatal, unmatched regex boundary
 
         String pattern = regex.substring(cursor,regexEnd);
@@ -270,7 +272,9 @@ public class IfTag extends BlockTag
         if (ignoreCase) pattern = "(?i)" + pattern;
         if (dotAll) pattern = "(?s)" + pattern;
 
-        return TextFilter.matches(text,pattern);
+        Pattern p = Pattern.compile(pattern);
+        Matcher m = p.matcher(text);
+        return m.find();
     }
     
     private String snippetOrValue(String result)

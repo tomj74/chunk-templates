@@ -2,7 +2,12 @@ package com.x5.template;
 
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
+import java.util.HashMap;
 import java.util.Map;
+
+import com.x5.template.filters.BasicFilter;
+import com.x5.template.filters.ChunkFilter;
+import com.x5.template.filters.RegexFilter;
 
 /* TextFilter provides a library of text filtering functions
    to support in-template presentation transformations. */
@@ -11,7 +16,17 @@ public class TextFilter
 {
     public static String FILTER_FIRST = "FILTER_FIRST";
     public static String FILTER_LAST  = "FILTER_LAST";
+    
+    private static Map<String,ChunkFilter> filters = registerStockFilters();
 
+    private static Map<String,ChunkFilter> registerStockFilters()
+    {
+        if (filters == null) {
+            filters = BasicFilter.getStockFilters();
+        }
+        return filters;
+    }
+    
     public static String applyTextFilter(Chunk context, String filter, String text)
     {
         if (filter == null) return text;
@@ -25,6 +40,7 @@ public class TextFilter
             return applyTextFilter(context, nextFilters, text);
         }
 
+        /*
         if (text == null) {
             if (filter.startsWith("onmatch")) {
                 // onmatch is special wrt null text
@@ -33,202 +49,75 @@ public class TextFilter
             } else {
                 return null;
             }
+        }*/
+        
+        String filterName = filter;
+        String[] filterArgs = null;
+        
+        int parenPos = filter.indexOf('(');
+        int slashPos = filter.indexOf('/');
+        if (slashPos > -1 && (parenPos < 0 || parenPos > slashPos)) {
+            // regex special case
+            filterName = filter.substring(0,slashPos);
+            filterArgs = new String[]{filter.substring(slashPos)};
+        } else if (parenPos > -1) {
+            // standard args(x,y,z) case
+            filterName = filter.substring(0,parenPos);
+            filterArgs = parseArgs(filter.substring(parenPos+1));
+        }
+        
+        // if custom filter is registered with this name, it takes precedence
+        Map<String,ChunkFilter> customFilters = null;
+        
+        ChunkFactory userTheme = context.getChunkFactory();
+        if (userTheme != null) customFilters = userTheme.getFilters();
+        
+        if (customFilters != null) {
+            ChunkFilter userFilter = customFilters.get(filterName);
+            if (userFilter != null) {
+                return userFilter.transformText(context, text, filterArgs);
+            }
         }
 
+        // provide a few basic filters without making a whole class for each one.
+        
         if (filter.equals("trim")) {
             // trim leading and trailing whitespace
-            return text.trim(); //text.replaceAll("^\\s+","").replaceAll("\\s+$","");
+            return text == null ? null : text.trim(); //text.replaceAll("^\\s+","").replaceAll("\\s+$","");
         } else if (filter.equals("qs") || filter.equals("quoted") || filter.equals("quotedstring")) {
             // qs is a quoted string - escape " and ' with backslashes
-            text = Chunk.findAndReplace(text,"\"","\\\"");
-            text = Chunk.findAndReplace(text,"'","\\'");
+            if (text != null) {
+                text = Chunk.findAndReplace(text,"\"","\\\"");
+                text = Chunk.findAndReplace(text,"'","\\'");
+            }
             return text;
         } else if (filter.equals("uc")) {
             // uppercase
-            return text.toUpperCase();
+            return text == null ? null : text.toUpperCase();
         } else if (filter.equals("lc")) {
             // lowercase
-            return text.toLowerCase();
-        } else if (filter.equals("html") || filter.equals("htmlescape") || filter.equals("htmlesc")
-        		|| filter.equals("xml") || filter.equals("xmlescape") || filter.equals("xmlesc")) {
-            // html-escape
-            text = Chunk.findAndReplace(text,"&","&amp;");
-            text = Chunk.findAndReplace(text,"<","&lt;");
-            text = Chunk.findAndReplace(text,">","&gt;");
-            text = Chunk.findAndReplace(text,"\"","&quot;");
-            text = Chunk.findAndReplace(text,"'","&apos;");
+            return text == null ? null : text.toLowerCase();
+        }
+        
+        ChunkFilter stockFilter = filters.get(filterName);
+        if (stockFilter == null) {
             return text;
-        } else if (filter.equals("url") || filter.equals("urlencode")) {
-            // url-encode
-            try {
-                return java.net.URLEncoder.encode(text,"UTF-8");
-            } catch (java.io.UnsupportedEncodingException e) {
-                return text;
-            }
-        } else if (filter.equals("urldecode")) {
-            // url-decode
-            try {
-                return java.net.URLDecoder.decode(text, "UTF-8");
-            } catch (java.io.UnsupportedEncodingException e) {
-                return text;
-            }
-        } else if (filter.equals("translate") || filter.equals("xlate") || filter.equals("__") || filter.equals("_")) {
-            // surround with translate tags, escape brackets
-            return markForTranslation(text);
-        } else if (filter.startsWith("sprintf")) {
-            // apply sprintf formatting, target string should be a number
-            // (if not, filter will be skipped)
-            return applyFormatString(text, filter);
-        } else if (filter.startsWith("ondefined")) {
-            // direct transform if text is defined
-            return (text.trim().equals("")) ? "" : applyDirectTransform(context,filter);
-        } else if (filter.startsWith("onmatch")) {
-            // case-style transform with optional nomatch postfix
-            return applyMatchTransform(context, text,filter);
-        } else if (filter.startsWith("s/")) {
-            // regular expression (regex)
-            return applyRegex(text,filter);
-        } else if (filter.equals("base64") || filter.equals("base64encode")) {
-            // base64-encode
-            return base64(text);
-        } else if (filter.equals("base64decode")) {
-            // base64-decode
-            return base64Decode(text);
-        } else if (filter.equals("md5") || filter.equals("md5hex")) {
-            // md5 hash (hex)
-            return md5Hex(text);
-        } else if (filter.equals("md5base64") || filter.equals("md5b64")) {
-            // md5 hash (base64)
-            return md5Base64(text);
-        } else if (filter.equals("sha1") || filter.equals("sha1hex")) {
-            // md5 hash (hex)
-            return sha1Hex(text);
-        } else if (filter.equals("sha1base64") || filter.equals("sha1b64")) {
-            // md5 hash (base64)
-            return sha1Base64(text);
-        } else if (filter.equalsIgnoreCase("hex")) {
-            String hex = null;
-            try {
-                hex = new java.math.BigInteger(1,text.getBytes("UTF-8")).toString(16);
-            } catch (java.io.UnsupportedEncodingException e) {
-                hex = new java.math.BigInteger(1,text.getBytes()).toString(16);
-            }
-            if (hex == null) return text;
-            return (filter.equals("HEX")) ? hex.toUpperCase() : hex;
-        } else if (filter.equals("ordsuffix") || filter.equals("th")) {
-            // 1 -> 1st, 2 -> 2nd, 3 -> 3rd etc.
-            return ordinalSuffix(text);
-        } else if (filter.equals("defang") || filter.equals("neuter") || filter.equals("noxss")) {
-            return defang(text);
-        } else if (filter.startsWith("sel")) {
-            // selected(value) is convenience syntax for
-            // onmatch(/^value$/, selected="selected" )
-            // supports comparing two tags eg {~tagA|select(~tagB)}
-            return selected(context, text, filter);
-        } else if (filter.startsWith("check")) {
-            // checked(value) is convenience syntax for
-            // onmatch(/^value$/, checked="checked" )
-            // supports comparing two tags eg {~tagA|check(~tagB)}
-            return checked(context, text, filter);
-        } else if (filter.startsWith("qcalc")) {
-            // simple x+y addition, subtraction, etc.
-            return applyQuickCalc(text, filter);
-        } else if (filter.startsWith("calc")) {
-            // exec simple eval
-            return easyCalc(text,filter);
-        } else if (filter.startsWith("indent")) {
-            // indent
-            return applyIndent(text,filter);
         } else {
-            // ?? unknown filter, do nothing
-            return text;
-        }
-    }
-    
-    private static String markForTranslation(String text)
-    {
-        if (text == null) return null;
-        text = Chunk.findAndReplace(text,"[","\\[");
-        text = Chunk.findAndReplace(text,"]","\\]");
-        return LocaleTag.LOCALE_SIMPLE_OPEN + text + LocaleTag.LOCALE_SIMPLE_CLOSE;
-    }
-    
-    private static final Pattern NOT_HARMLESS_CHAR = Pattern.compile("[^A-Za-z0-9@\\!\\?\\*\\#\\$\\(\\)\\+\\=\\:\\;\\,\\~\\/\\._-]");
-    
-    private static String defang(String text)
-    {
-        // keep only a very restrictive set of harmless
-        // characters, eg when quoting back user input
-        // in a server-generated page, to prevent xss
-        // injection attacks.
-        if (text == null) return null;
-        Matcher m = NOT_HARMLESS_CHAR.matcher(text);
-        return m.replaceAll("");
-    }
-    
-    private static final String SELECTED_TOKEN = " selected=\"selected\" ";
-    private static final String CHECKED_TOKEN = " checked=\"checked\" ";
-    
-    private static String selected(Chunk context, String text, String filter)
-    {
-        return selected(context, text, filter, SELECTED_TOKEN);
-    }
-    
-    private static String checked(Chunk context, String text, String filter)
-    {
-        return selected(context, text, filter, CHECKED_TOKEN);
-    }
-    
-    private static String selected(Chunk context, String text, String filter, String token)
-    {
-        if (text == null) return "";
-
-        String[] args = parseArgs(filter);
-        // no arg!!  so, just return token if text is non-null
-        if (args == null) return token;
-        
-        String testValue = args[0];
-        int delimPos = testValue.indexOf(",");
-        if (delimPos > -1) {
-            token = testValue.substring(delimPos+1);
-            testValue = testValue.substring(0,delimPos);
-        }
-        
-        if (testValue.charAt(0) == '~') {
-            // this is a sneaky way of allowing {~xyz|sel(~tag)}
-            // -- flip it into an onmatch, and let it get re-eval'ed:
-            //
-            // {~tag|onmatch(/^[text]$/,SELECTED_TOKEN)}
-            //
-            // I think this means that this would have to be the
-            // final filter in the chain, but I can't imagine
-            // wanting to filter the output token.
-            //
-            // The more crazy crap like this that I do, the more
-            // I think the Chunk tag table needs to just get passed
-            // into applyTextFilter -- but, alas, with recursion
-            // resolution, this is not so simple.
-            //
-            String xlation = testValue + "|onmatch(/^"
-                + escapeRegex(text) + "$/," + token + ")";
-            return magicBraces(context, xlation);
-        }
-        
-        // simple case, compare to static text string
-        if (text.equals(testValue)) {
-            return token;
-        } else {
-            return "";
+            return stockFilter.transformText(context, text, filterArgs);
         }
     }
     
     private static String[] parseArgs(String filter)
     {
+        return parseArgs(filter, true);
+    }
+        
+    private static String[] parseArgs(String filter, boolean splitOnComma)
+    {
         int quote1 = filter.indexOf("\"");
         int quote2;
         boolean isQuoted = true;
         if (quote1 < 0) {
-            quote1 = filter.indexOf("(");
             quote2 = filter.lastIndexOf(")");
             if (quote2 < 0) return null;
                 
@@ -251,75 +140,115 @@ public class TextFilter
             }
         }
         
-        if (arg1 == null) {
+        if (arg1 != null) {
+            // some bizarre special case a la ("xyz","abc")
+            // with a guarantee of no escaped double quotes
+            // tracked this down, being used by calc("expr","%2f")
+            // to pass optional 2nd format str arg.
+            // probably (?) isn't breaking anything.
+            return new String[]{filter,arg0,arg1};
+        } else if (isQuoted || !splitOnComma || arg0.indexOf(",") < 0) {
             return new String[]{arg0};
         } else {
-            return new String[]{arg0,arg1};
+            return parseCommaDelimitedArgs(arg0);
         }
     }
-
-    private static String easyCalc(String text, String filter)
+    
+    private static String[] parseCommaDelimitedArgs(String argStr)
     {
-        String[] args = parseArgs(filter);
-        String expr = args[0];
-
-        // optional -- format string; only possible when args are quoted
-        String fmt = null;
-        if (args.length > 1) {
-            fmt = args[1];
+        String[] args = new String[15];
+        // always pass pre-split args string in position 0
+        args[0] = argStr;
+        int argX = 1;
+        
+        int marker = 0;
+        
+        while (argX < args.length) {
+            int commaPos = nextArgDelim(argStr,marker);
+            if (commaPos < 0) break;
+            
+            int quotePos = nextUnescapedDelim("\"", argStr, marker);
+            if (quotePos > -1 && quotePos < commaPos) {
+                // arg must start with quote to be considered quoted
+                if (argStr.substring(marker,quotePos).trim().length() == 0) {
+                    int endQuotePos = nextUnescapedDelim("\"",argStr,quotePos+1);
+                    if (endQuotePos > 0) {
+                        String arg = argStr.substring(quotePos+1,endQuotePos);
+                        args[argX] = arg;
+                        argX++;
+                        commaPos = nextArgDelim(argStr,endQuotePos+1);
+                        if (commaPos > 0) {
+                            marker = commaPos + 1;
+                        } else {
+                            marker = argStr.length();
+                        }
+                        continue;
+                    }
+                }
+            }
+            int regexPos = RegexFilter.nextRegexDelim(argStr, marker);
+            if (regexPos > -1 && regexPos < commaPos) {
+                // arg must start with / or m/ to be considered regex
+                String regexOpen = argStr.substring(marker,regexPos).trim();
+                if (regexOpen.length() == 0 || regexOpen.equals("m")) {
+                    int endRegexPos = RegexFilter.nextRegexDelim(argStr, regexPos+1);
+                    if (endRegexPos > 0) {
+                        commaPos = nextArgDelim(argStr,endRegexPos+1);
+                        int endArgPos = commaPos;
+                        if (commaPos < 0) {
+                            // no more args
+                            endArgPos = argStr.length();
+                            marker = endArgPos;
+                        } else {
+                            marker = commaPos+1;
+                        }
+                        String arg = argStr.substring(regexPos,endArgPos);
+                        args[argX] = arg;
+                        argX++;
+                        continue;
+                    }
+                }
+            }
+            
+            String arg = argStr.substring(marker,commaPos);
+            args[argX] = arg;
+            argX++;
+            marker = commaPos+1;
+            commaPos = nextArgDelim(argStr,marker);
         }
-
-        if (expr.indexOf("x") < 0) expr = "x"+expr;
-        expr = expr.replace("\\$","");
-        try {
-            return Calc.evalExpression(expr,fmt,new String[]{"x"},new String[]{text});
-        } catch (NumberFormatException e) {
-            // not a number?  no-op
-            return text;
-        } catch (NoClassDefFoundError e) {
-        	return "[ERROR: jeplite jar missing from classpath! calc filter requires jeplite library]";
+        if (argX == args.length) return args; // maxed out
+        
+        // got here? no more commas...
+        int closeParenPos = nextUnescapedDelim(")",argStr,marker);
+        int finalArgEnd = argStr.length();
+        if (closeParenPos > 0) {
+            finalArgEnd = closeParenPos;
         }
-    }
-
-    private static String ordinalSuffix(String num)
-    {
-        if (num == null) return null;
-        int x = Integer.parseInt(num);
-        int mod100 = x % 100;
-        int mod10 = x % 10;
-        if (mod100 - mod10 == 10) {
-            return num + "th";
-        } else {
-            switch (mod10) {
-              case 1: return num + "st";
-              case 2: return num + "nd";
-              case 3: return num + "rd";
-              default: return num + "th";
+        String finalArg = argStr.substring(marker,finalArgEnd);
+        args[argX] = finalArg;
+        argX++;
+        
+        // check for nomatch(...) args
+        if (argX+1 < args.length && closeParenPos > 0 && closeParenPos + 1 < argStr.length()) {
+            int nextParen = argStr.indexOf('(',closeParenPos+1);
+            if (nextParen > 0) {
+                String appendixTag = argStr.substring(closeParenPos+1,nextParen);
+                args[argX] = "|"+appendixTag+"|";
+                argX++;
+                int endPos = argStr.length();
+                if (argStr.endsWith(")")) endPos--;
+                String appendixArg = argStr.substring(nextParen+1,endPos);
+                args[argX] = appendixArg;
+                argX++;
             }
         }
+        
+        String[] truncated = new String[argX];
+        System.arraycopy(args, 0, truncated, 0, argX);
+        return truncated;
     }
 
-    private static String applyDirectTransform(Chunk context, String formatString)
-    {
-        int parenPos = formatString.indexOf("(");
-        int finalParen = formatString.lastIndexOf(")");
-
-        String output;
-        if (parenPos > 0) {
-            if (finalParen == parenPos + 1) return "";
-            if (finalParen > 0) {
-                output = formatString.substring(parenPos+1,finalParen);
-            } else {
-                output = formatString.substring(parenPos+1);
-            }
-            // add braces if necessary
-            return magicBraces(context, output);
-        } else {
-            return "";
-        }
-    }
-
-    private static String magicBraces(Chunk context, String output)
+    public static String magicBraces(Chunk context, String output)
     {
         char firstChar = output.charAt(0);
         if (firstChar == '~' || firstChar == '+') {
@@ -327,7 +256,7 @@ public class TextFilter
         		return "{"+output+"}";
         	} else {
         		String tagOpen = context.makeTag("XXX");
-        		tagOpen = TextFilter.applyRegex(tagOpen, "s/XXX.*//");
+        		tagOpen = RegexFilter.applyRegex(tagOpen, "s/XXX.*//");
         		
         		String tag = context.makeTag(output);
         		
@@ -348,338 +277,9 @@ public class TextFilter
         }
     }
 
-    private static String applyMatchTransform(Chunk context, String text, String formatString)
-    {
-        // scan for next regex, check for match, kick out on first match
-        int cursor = 8;
-        while (text != null && cursor < formatString.length() && formatString.charAt(cursor) != ')') {
-            if (formatString.charAt(cursor) == ',') cursor++;
-            if (formatString.charAt(cursor) == 'm') cursor++;
-            if (formatString.charAt(cursor) == '/') cursor++;
-            int regexEnd = nextRegexDelim(formatString,cursor);
-            if (regexEnd < 0) return text; // fatal, unmatched regex boundary
-
-            String pattern = formatString.substring(cursor,regexEnd);
-
-            // check for modifiers between regex end and comma
-            int commaPos = formatString.indexOf(",",regexEnd+1);
-            if (commaPos < 0) return text; // fatal, missing argument delimiter
-
-            boolean ignoreCase = false;
-            boolean multiLine = false;
-            boolean dotAll = false;
-
-            for (int i=commaPos-1; i>regexEnd; i--) {
-                char option = formatString.charAt(i);
-                if (option == 'i') ignoreCase = true;
-                if (option == 'm') multiLine = true;
-                if (option == 's') dotAll = true; // dot matches newlines too
-            }
-
-            if (multiLine) pattern = "(?m)" + pattern;
-            if (ignoreCase) pattern = "(?i)" + pattern;
-            if (dotAll) pattern = "(?s)" + pattern;
-
-            // scan for a comma not preceded by a backslash
-            int nextMatchPos = nextArgDelim(formatString,commaPos+1);
-            if (nextMatchPos > 0) {
-                cursor = nextMatchPos;
-            } else {
-                // scan for close-paren
-                int closeParen = nextUnescapedDelim(")",formatString,commaPos+1);
-                if (closeParen > 0) {
-                    cursor = closeParen;
-                } else {
-                    cursor = formatString.length();
-                }
-            }
-
-            if (matches(text,pattern)) {
-                if (cursor == commaPos + 1) return "";
-                String output = formatString.substring(commaPos+1,cursor);
-                return magicBraces(context,output);
-            }
-        }
-
-        // reached here?  no match
-        int elseClause = formatString.lastIndexOf("nomatch(");
-        if (elseClause > 0) {
-            String output = formatString.substring(elseClause + "nomatch(".length());
-            if (output.endsWith(")")) output = output.substring(0,output.length()-1);
-            if (output.length() == 0) return output;
-            return magicBraces(context,output);
-        } else {
-            // standard behavior without a nomatch clause is blank output
-            return "";
-        }
-    }
-
-    private static String applyFormatString(String text, String formatString)
-    {
-        // strip calling wrapper ie "sprintf(%.03f)" -> "%.03f"
-        if (formatString.startsWith("sprintf(")) {
-            formatString = formatString.substring(8);
-            if (formatString.endsWith(")")) {
-                formatString = formatString.substring(0,formatString.length()-1);
-            }
-        }
-        // strip quotes if arg is quoted
-        char first = formatString.charAt(0);
-        char last = formatString.charAt(formatString.length()-1);
-        if (first == last && (first == '\'' || first == '"')) {
-            formatString = formatString.substring(1,formatString.length()-1);
-        }
-
-        return formatNumberFromString(formatString, text);
-    }
-
-    public static String formatNumberFromString(String formatString, String value)
-    {
-        char expecting = formatString.charAt(formatString.length()-1);
-        try {
-            if ("sS".indexOf(expecting) > -1) {
-                return String.format(formatString, value);
-            } else if ("eEfgGaA".indexOf(expecting) > -1) {
-                float f = Float.valueOf(value);
-                return String.format(formatString, f);
-            } else if ("doxX".indexOf(expecting) > -1) {
-                if (value.trim().startsWith("#")) {
-                    long l = Long.parseLong(value.trim().substring(1),16);
-                    return String.format(formatString, l);
-                } else if (value.trim().startsWith("0X") || value.trim().startsWith("0x")) {
-                    long l = Long.parseLong(value.trim().substring(2),16);
-                    return String.format(formatString, l);
-                } else {
-                    float f = Float.valueOf(value);
-                    return String.format(formatString, (long)f);
-                }
-            } else if ("cC".indexOf(expecting) > -1) {
-                if (value.trim().startsWith("0X") || value.trim().startsWith("0x")) {
-                    int i = Integer.parseInt(value.trim().substring(2),16);
-                    return String.format(formatString, (char)i);
-                } else {
-                    float f = Float.valueOf(value);
-                    return String.format(formatString, (char)f);
-                }
-            } else {
-                return "[Unknown format "+expecting+": \""+formatString+"\","+value+"]";
-            }
-        } catch (NumberFormatException e) {
-            return value;
-        } catch (java.util.IllegalFormatException e) {
-            return "["+e.getClass().getName()+": "+e.getMessage()+" \""+formatString+"\","+value+"]";
-        }
-    }
-
-    private static String applyQuickCalc(String text, String calc)
-    {
-        if (text == null) return null;
-        if (calc == null) return text;
-
-        // strip calling wrapper ie "calc(-30)" -> "-30"
-        if (calc.startsWith("qcalc(")) {
-            calc = calc.substring(6);
-            if (calc.endsWith(")")) {
-                calc = calc.substring(0,calc.length()-1);
-            }
-        }
-
-        try {
-            if (text.indexOf(".") > 0 || calc.indexOf(".") > 0) {
-                double x = Double.parseDouble(text);
-                char op = calc.charAt(0);
-                double y = Double.parseDouble(calc.substring(1));
-
-                //System.err.println("float-op: "+op+" args: "+x+","+y);
-
-                double z = x;
-                if (op == '-') z = x - y;
-                if (op == '+') z = x + y;
-                if (op == '*') z = x * y;
-                if (op == '/') z = x / y;
-                if (op == '%') z = x % y;
-                return Double.toString(z);
-
-            } else {
-                long x = Long.parseLong(text);
-                char op = calc.charAt(0);
-                long y = Long.parseLong(calc.substring(1));
-
-                //System.err.println("int-op: "+op+" args: "+x+","+y);
-
-                long z = x;
-                if (op == '-') z = x - y;
-                if (op == '+') z = x + y;
-                if (op == '*') z = x * y;
-                if (op == '/') z = x / y;
-                if (op == '%') z = x % y;
-                if (op == '^') z = Math.round( Math.pow(x,y) );
-                return Long.toString(z);
-            }
-        } catch (NumberFormatException e) {
-            return text;
-        }
-    }
-
-    @SuppressWarnings({ "rawtypes", "unchecked" })
-	public static String base64Decode(String text)
-    {
-        byte[] decoded = null;
-        // try base 64 using two potentially available 3rd party classes
-        try {
-            // 1. would this really compile if sun.misc.BASE64Encoder weren't on the classpath?
-            // 2. why is BASE in all caps?  is it an acronym?
-            sun.misc.BASE64Decoder decoder =
-                (sun.misc.BASE64Decoder) Class.forName("sun.misc.BASE64Decoder").newInstance();
-            decoded = decoder.decodeBuffer(text);
-        } catch (ClassNotFoundException e) {
-        } catch (InstantiationException e) {
-        } catch (IllegalAccessException e) {
-        } catch (java.io.IOException e) {
-        }
-
-        if (decoded == null) {
-            // hmm, that didn't work.  maybe com.x5.util.Base64 is available?
-            byte[] textBytes;
-            try {
-                textBytes = text.getBytes("UTF-8");
-            } catch (java.io.UnsupportedEncodingException e) {
-                textBytes = text.getBytes();
-            }
-            try {
-                Class b64 = Class.forName("com.x5.util.Base64");
-                Class[] paramTypes = new Class[] { byte[].class, Integer.TYPE, Integer.TYPE };
-                java.lang.reflect.Method decode = b64.getMethod("decode", paramTypes);
-                decoded = (byte[]) decode.invoke(null, new Object[]{ textBytes, new Integer(0), new Integer(textBytes.length) });
-            } catch (ClassNotFoundException e2) {
-            } catch (NoSuchMethodException e2) {
-            } catch (IllegalAccessException e2) {
-            } catch (java.lang.reflect.InvocationTargetException e2) {
-            }
-        }
-
-        if (decoded == null) {
-            // on failure -- return original bytes
-            return text;
-        } else {
-            // convert decoded bytes to string
-            try {
-                return new String(decoded,"UTF-8");
-            } catch (java.io.UnsupportedEncodingException e) {
-                return new String(decoded);
-            }
-        }
-    }
-
-    public static String base64(String text)
-    {
-        try {
-            byte[] textBytes = text.getBytes("UTF-8");
-            return base64(textBytes);
-        } catch (java.io.UnsupportedEncodingException e) {
-            return base64(text.getBytes());
-        }
-    }
-
-    @SuppressWarnings({ "rawtypes", "unchecked" })
-	public static String base64(byte[] bytes)
-    {
-        // try base 64 using two potentially available 3rd party classes
-        try {
-            // 1. would this really compile if sun.misc.BASE64Encoder weren't on the classpath?
-            // 2. why is BASE in all caps?  is it an acronym?
-            sun.misc.BASE64Encoder encoder =
-                (sun.misc.BASE64Encoder) Class.forName("sun.misc.BASE64Encoder").newInstance();
-            return encoder.encode(bytes);
-        } catch (ClassNotFoundException e) {
-        } catch (InstantiationException e) {
-        } catch (IllegalAccessException e) {
-        }
-        // hmm, that didn't work.  maybe com.x5.util.Base64 is available?
-        try {
-            Class b64 = Class.forName("com.x5.util.Base64");
-            Class[] paramTypes = new Class[] { byte[].class };
-            java.lang.reflect.Method encode = b64.getMethod("encodeBytes", paramTypes);
-            String b64text = (String) encode.invoke(null, new Object[]{ bytes });
-            return b64text;
-        } catch (ClassNotFoundException e2) {
-        } catch (NoSuchMethodException e2) {
-        } catch (IllegalAccessException e2) {
-        } catch (java.lang.reflect.InvocationTargetException e2) {
-        }
-
-        // on failure -- return original bytes
-        try {
-            return new String(bytes,"UTF-8");
-        } catch (java.io.UnsupportedEncodingException e) {
-            return new String(bytes);
-        }
-    }
-
-    public static String hashCrypt(String alg, String text, boolean base64)
-    {
-        // make byte array out of text
-        byte[] textBytes;
-        try {
-            textBytes = text.getBytes("UTF-8");
-        } catch (java.io.UnsupportedEncodingException e) {
-            textBytes = text.getBytes();
-        }
-
-        // attempt hashing algorithm
-        try {
-            java.security.MessageDigest hasher = java.security.MessageDigest.getInstance(alg);
-            hasher.update(textBytes,0,textBytes.length);
-            if (base64) {
-                // return as base64-encoded string
-                return base64(hasher.digest());
-            } else {
-                // return as lowercase hex string
-                return new java.math.BigInteger(1,hasher.digest()).toString(16);
-            }
-        } catch (java.security.NoSuchAlgorithmException e) {
-            return text;
-        }
-    }
-
-    public static String md5Hex(String text)
-    {
-        return md5(text, false);
-    }
-
-    public static String md5Base64(String text)
-    {
-        return md5(text, true);
-    }
-
-    public static String md5(String text, boolean base64)
-    {
-        return hashCrypt("MD5",text,base64);
-    }
-
-    public static String sha1Hex(String text)
-    {
-        return sha1(text, false);
-    }
-
-    public static String sha1Base64(String text)
-    {
-        return sha1(text, true);
-    }
-
-    public static String sha1(String text, boolean base64)
-    {
-        return hashCrypt("SHA-1",text,base64);
-    }
-
     public static int nextArgDelim(String arglist, int searchFrom)
     {
         return nextUnescapedDelim(",",arglist,searchFrom);
-    }
-
-    public static int nextRegexDelim(String regex, int searchFrom)
-    {
-        return nextUnescapedDelim("/",regex,searchFrom);
     }
 
     public static int nextUnescapedDelim(String delim, String regex, int searchFrom)
@@ -708,151 +308,6 @@ public class TextFilter
         return delimPos;
     }
 
-    public static String applyRegex(String text, String regex)
-    {
-        // parse perl-style regex a la s/find/replace/gmi
-        int patternStart = 2;
-        int patternEnd = nextRegexDelim(regex, patternStart);
-
-        // if the regex is not legal (missing delimiters), bail out
-        if (patternEnd < 0) return text;
-
-        int replaceEnd = nextRegexDelim(regex, patternEnd+1);
-        if (replaceEnd < 0) return text;
-
-        boolean greedy = false;
-        boolean ignoreCase = false;
-        boolean multiLine = false;
-        boolean dotAll = false;
-
-        for (int i=regex.length()-1; i>replaceEnd; i--) {
-            char option = regex.charAt(i);
-            if (option == 'g') greedy = true;
-            if (option == 'i') ignoreCase = true;
-            if (option == 'm') multiLine = true;
-            if (option == 's') dotAll = true; // dot matches newlines too
-        }
-
-        String pattern = regex.substring(patternStart,patternEnd);
-        String replaceWith = regex.substring(patternEnd+1,replaceEnd);
-        replaceWith = parseRegexEscapes(replaceWith);
-        // re-escape escaped backslashes, ie \ -> \\
-        replaceWith = Chunk.findAndReplace(replaceWith,"\\","\\\\");
-
-        if (multiLine) pattern = "(?m)" + pattern;
-        if (ignoreCase) pattern = "(?i)" + pattern;
-        if (dotAll) pattern = "(?s)" + pattern;
-
-        boolean caseConversions = false;
-        if (replaceWith.matches(".*\\\\[UL][\\$\\\\]\\d.*")) {
-        	// this monkey business marks up case-conversion blocks
-        	// since java's regex engine doesn't support perl-style
-        	// case-conversion.  but we do :)
-        	caseConversions = true;
-            replaceWith = replaceWith.replaceAll("\\\\([UL])[\\$\\\\](\\d)", "!$1@\\$$2@$1!");
-        }
-        
-        try {
-        	String result = null;
-        	
-            if (greedy) {
-                result = text.replaceAll(pattern,replaceWith);
-            } else {
-                result = text.replaceFirst(pattern,replaceWith);
-            }
-            
-            if (caseConversions) {
-            	return applyCaseConversions(result);
-            } else {
-            	return result;
-            }
-        } catch (IndexOutOfBoundsException e) {
-            return text + "[REGEX "+regex+" Error: "+e.getMessage()+"]";
-        }
-    }
-    
-    private static String applyCaseConversions(String result)
-    {
-    	StringBuilder x = new StringBuilder();
-    	
-    	Matcher m = Pattern.compile("!U@(.*?)@U!").matcher(result);
-    	int last = 0;
-        while (m.find()) {
-            x.append(result.substring(last, m.start()));
-            x.append(m.group(1).toUpperCase());
-            last = m.end();
-        }
-        if (last > 0) {
-        	x.append(result.substring(last));
-            result = x.toString();
-            x = new StringBuilder();
-            last = 0;
-        }
-        
-    	m = Pattern.compile("!L@(.*?)@L!").matcher(result);
-        while (m.find()) {
-            x.append(result.substring(last, m.start()));
-            x.append(m.group(1).toLowerCase());
-            last = m.end();
-        }
-        if (last > 0) {
-        	x.append(result.substring(last));
-        	return x.toString();
-        } else {
-        	return result;
-        }
-    }
-
-    private static String parseRegexEscapes(String str)
-    {
-        if (str == null) return str;
-
-        char[] strArr = str.toCharArray();
-        boolean escape = false;
-        StringBuilder buf = new StringBuilder();
-        for (int i = 0; i < strArr.length; ++i) {
-            if (escape) {
-                if (strArr[i] == 'b') {
-                    buf.append('\b');
-                } else if (strArr[i] == 't') {
-                    buf.append('\t');
-                } else if (strArr[i] == 'n') {
-                    buf.append('\n');
-                } else if (strArr[i] == 'r') {
-                    buf.append('\r');
-                } else if (strArr[i] == 'f') {
-                    buf.append('\f');
-                } else if (strArr[i] == 'U') {
-                	buf.append("\\U");
-                } else if (strArr[i] == 'L') {
-                	buf.append("\\L");
-                } else if (strArr[i] == 'u') {
-                    // Unicode escape
-                    int utf = Integer.parseInt(str.substring(i + 1, i + 5), 16);
-                    buf.append((char)utf);
-                    i += 4;
-                } else if (Character.isDigit(strArr[i])) {
-                    // Octal escape
-                    int j = 0;
-                    for (j = 1; (j < 2) && (i + j < strArr.length); ++j) {
-                        if (!Character.isDigit(strArr[i+j]))
-                            break;
-                    }
-                    int octal = Integer.parseInt(str.substring(i, i + j), 8);
-                    buf.append((char)octal);
-                    i += j-1;
-                } else {
-                    buf.append(strArr[i]);
-                }
-                escape = false;
-            } else if (strArr[i] == '\\') {
-                escape = true;
-            } else {
-                buf.append(strArr[i]);
-            }
-        }
-        return buf.toString();
-    }
 
     public static String[] splitFilters(String filter)
     {
@@ -878,11 +333,11 @@ public class TextFilter
 
         if (pipePos >= 0 && filter.startsWith("s/")) {
             // tricky case -- skip pipes that appear inside regular expressions
-            int regexEnd = nextRegexDelim(filter,2);
+            int regexEnd = RegexFilter.nextRegexDelim(filter,2);
             if (regexEnd < 0) return pipePos;
 
             // ok, we have reached the middle delimeter, now find the the closer
-            regexEnd = nextRegexDelim(filter,regexEnd+1);
+            regexEnd = RegexFilter.nextRegexDelim(filter,regexEnd+1);
             if (regexEnd < 0) return pipePos;
 
             if (regexEnd < pipePos) {
@@ -898,7 +353,7 @@ public class TextFilter
             while (!skippedArgs) {
                 int slashPos = filter.indexOf("/",cursor);
                 if (slashPos < 0) break;
-                slashPos = nextRegexDelim(filter,slashPos+1);
+                slashPos = RegexFilter.nextRegexDelim(filter,slashPos+1);
                 if (slashPos < 0) break;
                 int commaPos = nextUnescapedDelim(",",filter,slashPos+1);
                 if (commaPos < 0) break;
@@ -938,6 +393,7 @@ public class TextFilter
         }
     }
 
+    /*
     public static boolean matches(String text, Pattern pattern)
     {
         // lamest syntax ever...
@@ -950,7 +406,7 @@ public class TextFilter
         // lamest syntax ever...
         Matcher m = Pattern.compile(pattern).matcher(text);
         return m.find();
-    }
+    }*/
 
     // this is really just /includeIf([!~].*).[^)]*$/
     // with some groupers to parse out the variable pieces
@@ -1022,11 +478,11 @@ public class TextFilter
                     if (tagValue == null) tagValue = "";
                     if (isNeg) {
                         xlation = open + tagB.substring(1)
-                            + "|onmatch(/^" + escapeRegex(tagValue) + "$/,)nomatch(+"
+                            + "|onmatch(/^" + RegexFilter.escapeRegex(tagValue) + "$/,)nomatch(+"
                             + includeTemplate + ")" + close;
                     } else {
                         xlation = open + tagB.substring(1)
-                            + "|onmatch(/^" + escapeRegex(tagValue) + "$/,+"
+                            + "|onmatch(/^" + RegexFilter.escapeRegex(tagValue) + "$/,+"
                             + includeTemplate + ")nomatch()" + close;
                     }
                 } else {
@@ -1039,11 +495,11 @@ public class TextFilter
                     }
                     if (isNeg) {
                         // include the template if the value does not match
-                        xlation = open + tagA + "|onmatch(/^" + escapeRegex(match) + "$/,)nomatch(+"
+                        xlation = open + tagA + "|onmatch(/^" + RegexFilter.escapeRegex(match) + "$/,)nomatch(+"
                             + includeTemplate + ")" + close;
                     } else {
                         // include the template if the value matches
-                        xlation = open + tagA + "|onmatch(/^" + escapeRegex(match) + "$/,+"
+                        xlation = open + tagA + "|onmatch(/^" + RegexFilter.escapeRegex(match) + "$/,+"
                             + includeTemplate + ")nomatch()" + close;
                     }
                 }
@@ -1077,25 +533,6 @@ public class TextFilter
         return xlation;
     }
 
-    public static String escapeRegex(String x)
-    {
-        if (matches(x,"^[-A-Za-z0-9_ <>\"']*$")) return x;
-        // nothing should leave this sub with its special regex meaning preserved
-        StringBuilder noSpecials = new StringBuilder();
-        for (int i=0; i<x.length(); i++) {
-            char c = x.charAt(i);
-            if ((c == ' ') || (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z')
-                           || (c >= '0' && c <= '9')) {
-                // do not escape A-Z a-z 0-9, spaces
-                noSpecials.append(c);
-            } else {
-                noSpecials.append("\\");
-                noSpecials.append(c);
-            }
-        }
-        return noSpecials.toString();
-    }
-
     public static int grokFinalFilterPipe(String wholeTag, int startHere)
     {
         int cursor = startHere;
@@ -1121,8 +558,8 @@ public class TextFilter
         // onmatch(/:/,:,/:/,:)nomatch(:)
         // onmatch(/(asdf|as:df)/,:)
         if (wholeTag.charAt(startHere) == 's' && wholeTag.charAt(startHere+1) == '/') {
-            int regexMid = nextRegexDelim(wholeTag,startHere+2);
-            int regexEnd = nextRegexDelim(wholeTag,regexMid+1);
+            int regexMid = RegexFilter.nextRegexDelim(wholeTag,startHere+2);
+            int regexEnd = RegexFilter.nextRegexDelim(wholeTag,regexMid+1);
             return regexEnd+1;
         }
         // this assumes no whitespace in the filters
@@ -1133,7 +570,7 @@ public class TextFilter
             while (!skippedArgs) {
                 int slashPos = wholeTag.indexOf("/",startHere);
                 if (slashPos < 0) break;
-                slashPos = nextRegexDelim(wholeTag,slashPos+1);
+                slashPos = RegexFilter.nextRegexDelim(wholeTag,slashPos+1);
                 if (slashPos < 0) break;
                 int commaPos = nextUnescapedDelim(",",wholeTag,slashPos+1);
                 if (commaPos < 0) break;
@@ -1174,9 +611,13 @@ public class TextFilter
     	if (array == null) return "";
     	if (array.length == 1) return array[0];
     	
+    	String divider = null;
     	// the only arg is the divider
-    	String[] args = parseArgs(joinFilter);
-    	String divider = args[0];
+    	int parenPos = joinFilter.indexOf('(');
+    	if (parenPos > 0) {
+        	String[] args = parseArgs(joinFilter.substring(parenPos+1),false);
+        	divider = args[0];
+    	}
     	
     	StringBuilder x = new StringBuilder();
     	for (int i=0; i<array.length; i++) {
@@ -1186,51 +627,5 @@ public class TextFilter
     	return x.toString();
     }
     
-    public static String applyIndent(String text, String filter)
-    {
-        String[] args = parseArgs(filter);
-        if (args == null) return text;
-        
-        String indent = args[0];
-
-        String padChip = " ";
-        if (args.length > 1) {
-            padChip = args[1];
-        } else if (indent.indexOf(",") > 0) {
-            String[] args2 = indent.split(",");
-            indent = args2[0];
-            padChip = args2[1];
-        }
-        
-        try {
-            int pad = Integer.parseInt(indent);
-            int textLen = text.length();
-            
-            String linePrefix = padChip;
-            for (int i=1; i<pad; i++) linePrefix += padChip;
-            
-            StringBuilder indented = new StringBuilder();
-            indented.append(linePrefix);
-
-            Pattern eol = Pattern.compile("(\\r\\n|\\r\\r|\\n)");
-            Matcher m = eol.matcher(text);
-
-            int marker = 0;
-            while (m.find()) {
-                String line = text.substring(marker,m.end());
-                indented.append(line);
-                marker = m.end();
-                if (marker < textLen) indented.append(linePrefix);
-            }
-            
-            if (marker < textLen) {
-                indented.append(text.substring(marker));
-            }
-            
-            return indented.toString();
-        } catch (NumberFormatException e) {
-            return text;
-        }
-    }
 
 }
