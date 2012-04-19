@@ -16,9 +16,13 @@ import java.net.URL;
 import java.nio.charset.Charset;
 import java.util.Hashtable;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
+
+import com.x5.template.filters.ChunkFilter;
+import com.x5.template.filters.RegexFilter;
 
 // Project Title: Chunk
 // Description: Template Util
@@ -843,7 +847,7 @@ public class TemplateSet implements ContentSource, ChunkFactory
         // this regex: s/^\s*({^\/?(...)[^}]*})\s*/$1/g removes leading and trailing whitespace
         // from lines that only contain {^loop} ...
         // NB: this regex will not catch {^if (~cond =~ /\/x{1,3}/)} but it's already nigh-unreadable...
-        return TextFilter.applyRegex(template, "s/^\\s*(\\{(\\^|\\~\\.)\\/?(loop|if|else|elseIf|divider|onEmpty)([^\\}]*|[^\\}]*\\/[^\\/]*\\/[^\\}]*)\\})[ \\t]*$/$1/gm");
+        return RegexFilter.applyRegex(template, "s/^\\s*(\\{(\\^|\\~\\.)\\/?(loop|if|else|elseIf|divider|onEmpty)([^\\}]*|[^\\}]*\\/[^\\/]*\\/[^\\}]*)\\})[ \\t]*$/$1/gm");
     }
     
     public static String expandShorthand(String template)
@@ -1361,5 +1365,10 @@ public class TemplateSet implements ContentSource, ChunkFactory
             // default is UTF-8
             return "UTF-8";
         }
+    }
+
+    public Map<String,ChunkFilter> getFilters()
+    {
+        return null;
     }
 }

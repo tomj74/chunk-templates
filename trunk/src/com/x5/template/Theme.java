@@ -1,7 +1,11 @@
 package com.x5.template;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
+
+import com.x5.template.filters.ChunkFilter;
 
 public class Theme implements ContentSource, ChunkFactory
 {
@@ -310,5 +314,27 @@ public class Theme implements ContentSource, ChunkFactory
 			}
 		}
 	}
+
+	// now supporting user-contributed filters
+    private Map<String,ChunkFilter> customFilters;
+    
+    public Map<String,ChunkFilter> getFilters()
+    {
+        return customFilters;
+    }
+    
+    public void registerFilter(ChunkFilter filter)
+    {
+        if (customFilters == null) {
+            customFilters = new HashMap<String,ChunkFilter>();
+        }
+        customFilters.put(filter.getFilterName(),filter);
+        String[] aliases = filter.getFilterAliases();
+        if (aliases != null) {
+            for (String alias : aliases) {
+                customFilters.put(alias,filter);
+            }
+        }
+    }
 
 }

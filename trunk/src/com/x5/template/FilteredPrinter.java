@@ -31,7 +31,9 @@ public class FilteredPrinter extends Writer
         String output = TextFilter.applyTextFilter(context, filter, copout.toString());
         copout.setLength(0);
         // process one more time (!) since filtered output might contain new tags
-        context.explodeStringToPrinter(finalOutput, output, 1);
+        if (output != null) {
+            context.explodeStringToPrinter(finalOutput, output, 1);
+        }
         finalOutput.flush();
     }
 
