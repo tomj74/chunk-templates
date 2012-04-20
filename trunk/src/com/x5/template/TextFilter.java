@@ -253,6 +253,8 @@ public class TextFilter
 
     public static String magicBraces(Chunk context, String output)
     {
+        if (output == null || output.length() == 0) return output;
+        
         char firstChar = output.charAt(0);
         if (firstChar == '~' || firstChar == '+') {
         	if (context == null || context.isConforming()) {
