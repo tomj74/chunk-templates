@@ -75,7 +75,14 @@ public class TextFilter
         if (customFilters != null) {
             ChunkFilter userFilter = customFilters.get(filterName);
             if (userFilter != null) {
-                return userFilter.transformText(context, text, filterArgs);
+                try {
+                    return userFilter.transformText(context, text, filterArgs);
+                } catch (Exception e) {
+                    // poorly behaved contrib code.  don't buy the farm, just
+                    // complain to stderr and move along.
+                    e.printStackTrace(System.err);
+                    return text;
+                }
             }
         }
 

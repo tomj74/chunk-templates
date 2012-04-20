@@ -1,6 +1,10 @@
 package com.x5.template;
 
 import org.junit.Test;
+
+import com.x5.template.filters.BasicFilter;
+import com.x5.template.filters.ChunkFilter;
+
 import static org.junit.Assert.*;
 
 public class TextFilterTest
@@ -427,6 +431,46 @@ public class TextFilterTest
         assertEquals("blau",c.toString());
     }
     
-    //TODO add tests for |hex and |HEX and |sel(string)
-    // and |sel(~tag) and |checked(string) and |checked(~tag)
+    @Test
+    public void testUserFilter()
+    {
+        Theme theme = new Theme();
+        theme.registerFilter(new LeftTrimFilter());
+        Chunk c = theme.makeChunk();
+        c.append("xxx{~name|ltrim}xxx");
+        c.set("name","  \nBob  ");
+        assertEquals("xxxBob  xxx",c.toString());
+    }
+    
+    @Test
+    public void testPoorlyBehavedUserFilter()
+    {
+        Theme theme = new Theme();
+        theme.registerFilter(new LeftTrimFilter());
+        Chunk c = theme.makeChunk();
+        c.append("xxx.{~name|ltrim:}.xxx");
+        assertEquals("xxx..xxx",c.toString());
+    }
+    
+    public class LeftTrimFilter extends BasicFilter implements ChunkFilter
+    {
+
+        public String transformText(Chunk chunk, String text, String[] args)
+        {
+            ///if (text == null) return null;
+            
+            int i=0;
+            while (i < text.length() && Character.isWhitespace(text.charAt(i))) i++;
+
+            return (i == 0) ? text : text.substring(i);
+        }
+
+        public String getFilterName()
+        {
+            return "ltrim";
+        }
+        
+    }
+    
+    //TODO add tests for |hex and |HEX 
 }
