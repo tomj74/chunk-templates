@@ -40,10 +40,9 @@ public class SelectedFilter extends BasicFilter implements ChunkFilter
         // no arg?  so, just return token if text is non-null
         if (args == null) return token;
         
-        String testValue = args[1];
-        if (args.length > 2 && args[2] != null) {
-            token = args[2];
-        }
+        String testValue = args[0];
+        if (args.length > 1) testValue = args[1];
+        if (args.length > 2) token = args[2];
         
         if (testValue.charAt(0) == '~') {
             // this is a sneaky way of allowing {~xyz|sel(~tag)}
