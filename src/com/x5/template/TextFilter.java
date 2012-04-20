@@ -99,6 +99,7 @@ public class TextFilter
             return text == null ? null : text.toLowerCase();
         }
         
+        // try to find a matching factory-standard stock filter for this job.
         ChunkFilter stockFilter = filters.get(filterName);
         if (stockFilter == null) {
             return text;
@@ -117,7 +118,9 @@ public class TextFilter
         int quote1 = filter.indexOf("\"");
         int quote2;
         boolean isQuoted = true;
-        if (quote1 < 0) {
+        // quote must be preceded only by whitespace...
+        if (quote1 < 0 || filter.substring(0,quote1).trim().length() > 0) {
+            quote1 = -1;
             quote2 = filter.lastIndexOf(")");
             if (quote2 < 0) return null;
                 

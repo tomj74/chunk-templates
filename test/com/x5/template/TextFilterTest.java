@@ -246,6 +246,44 @@ public class TextFilterTest
     }
     
     @Test
+    public void testSelected()
+    {
+        Chunk c = new Chunk();
+        c.append("<option value=\"{~val}\" {~val|selected(x)}>{~val|uc}</option>");
+        c.set("val","x");
+        assertEquals("<option value=\"x\"  selected=\"selected\" >X</option>",c.toString());
+    }
+    
+    @Test
+    public void testNotSelected()
+    {
+        Chunk c = new Chunk();
+        c.append("<option value=\"{~val}\" {~val|selected(x)}>{~val|uc}</option>");
+        c.set("val","z");
+        assertEquals("<option value=\"z\" >Z</option>",c.toString());
+    }
+
+    @Test
+    public void testSelectedMatchVariable()
+    {
+        Chunk c = new Chunk();
+        c.append("<option value=\"{~val}\" {~val|selected(~var2)}>{~val|uc}</option>");
+        c.set("val","x");
+        c.set("var2","x");
+        assertEquals("<option value=\"x\"  selected=\"selected\" >X</option>",c.toString());
+    }
+    
+    @Test
+    public void testNotSelectedMatchVariable()
+    {
+        Chunk c = new Chunk();
+        c.append("<option value=\"{~val}\" {~val|selected(~var2)}>{~val|uc}</option>");
+        c.set("val","z");
+        c.set("var2","x");
+        assertEquals("<option value=\"z\" >Z</option>",c.toString());
+    }
+    
+    @Test
     public void testURLEncode()
     {
         Chunk c = new Chunk();
