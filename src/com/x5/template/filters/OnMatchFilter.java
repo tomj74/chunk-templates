@@ -39,6 +39,8 @@ public class OnMatchFilter extends BasicFilter implements ChunkFilter
                 return TextFilter.magicBraces(context, value);
             }
             
+            if (text == null) continue; // won't ever match
+            
             int patternStart = test.indexOf('/') + 1;
             int patternEnd = test.lastIndexOf('/');
             if (patternStart < 0 || patternStart == patternEnd) return text;
