@@ -35,11 +35,7 @@ public class SnippetTag extends SnippetPart
 
         Object tagValue = null;
         
-        try {
-            tagValue = rules.resolveTagValue(tag);
-        } catch (BlockTagException e) {
-            // FIXME handle here?  this is supposed to be a simple tag.
-        }
+        tagValue = rules.resolveTagValue(tag, depth);
         
         if (tagValue == null) {
             // preserve tag in final output (can be used as template)

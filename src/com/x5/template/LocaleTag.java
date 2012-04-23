@@ -50,32 +50,13 @@ public class LocaleTag extends BlockTag
         this.args = cleanParams.split(" *(?<!\\\\), *");
     }
     
-    public static String translate(String params, Chunk context)
-    throws BlockTagException
-    {
-        LocaleTag obj = new LocaleTag(params, context);
-        return obj._eval();
-    }
-    
-    private String _eval()
-    throws BlockTagException
-    {
-        if (body == null) {
-            // in other words, always throw this exception
-            throw new BlockTagException(this);
-        }
-        
-        return cookBlock(body);
-    }
-    
-    @Override
-    public String cookBlock(String blockBody)
+    private String _translate()
     {
         ChunkLocale locale = context.getLocale();
         if (locale == null) {
-            return ChunkLocale.processFormatString(blockBody,args,context);
+            return ChunkLocale.processFormatString(body,args,context);
         } else {
-            return locale.translate(blockBody,args,context);
+            return locale.translate(body,args,context);
         }
     }
 
@@ -216,7 +197,7 @@ public class LocaleTag extends BlockTag
         
         this.context = context;
         
-        String translated = cookBlock(this.body);
+        String translated = _translate();
         out.append( translated );
     }
 }
