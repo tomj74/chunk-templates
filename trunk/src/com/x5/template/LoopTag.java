@@ -243,7 +243,7 @@ public class LoopTag extends BlockTag
         } else {
             if (rowTemplate != null) rowSnippet = context.getTemplateSet().getSnippet(rowTemplate);
             if (emptyTemplate != null) {
-                if (emptyTemplate.isEmpty()) {
+                if (emptyTemplate.length() == 0) {
                     emptySnippet = new Snippet("");
                 } else {
                     emptySnippet = context.getTemplateSet().getSnippet(emptyTemplate);
