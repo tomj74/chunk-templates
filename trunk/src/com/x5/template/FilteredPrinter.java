@@ -32,7 +32,7 @@ public class FilteredPrinter extends Writer
         copout.setLength(0);
         // process one more time (!) since filtered output might contain new tags
         if (output != null) {
-            context.explodeStringToPrinter(finalOutput, output, 1);
+            context.explodeToPrinter(finalOutput, output, 1);
         }
         finalOutput.flush();
     }

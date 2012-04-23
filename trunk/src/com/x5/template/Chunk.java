@@ -667,15 +667,6 @@ public class Chunk implements Map<String,Object>
                     renderForParentToPrinter(out);
                 }
                 
-                /*
-                String output = renderToStringForParent();
-                if (delayedFilter != null) {
-                    String postFilter = TextFilter.applyTextFilter(this, delayedFilter, output);
-                    // re-process, post-filter output may contain un-processed tags
-                    StringBuilder buf = new StringBuilder();
-                    explodeAndAppend(postFilter, buf, 1);
-                    output = buf.toString();
-                }*/
                 popContextStack();
             }
         } else {
@@ -685,51 +676,9 @@ public class Chunk implements Map<String,Object>
                 wrappedOut.flush();
             } else {
                 renderForParentToPrinter(out);
-                /*
-                String postFilter = TextFilter.applyTextFilter(this, delayedFilter, output);
-                // re-process, post-filter output may contain un-processed tags
-                StringBuilder buf = new StringBuilder();
-                explodeAndAppend(postFilter, buf, 1);
-                output = buf.toString();
-                */
             }
         }        
     }
-
-    /* DEPRECATED see explodeForParentToPrinter
-    private String explodeForParent(Vector<Chunk> ancestors)
-    {
-        if (template == null && templateRoot == null) return "";
-        
-        if (ancestors != null) {
-            // PUSH ANCESTORS ONTO STACK AND LOCK DOWN
-            synchronized(this) {
-                pushContextStack(ancestors);
-                String output = renderForParentToString();
-                if (delayedFilter != null) {
-                    String postFilter = TextFilter.applyTextFilter(this, delayedFilter, output);
-                    // re-process, post-filter output may contain un-processed tags
-                    StringBuilder buf = new StringBuilder();
-                    explodeAndAppend(postFilter, buf, 1);
-                    output = buf.toString();
-                }
-                popContextStack();
-                return output;
-            }
-        } else {
-            String output = renderForParentToString();
-            if (delayedFilter != null) {
-                String postFilter = TextFilter.applyTextFilter(this, delayedFilter, output);
-                // re-process, post-filter output may contain un-processed tags
-                StringBuilder buf = new StringBuilder();
-                explodeAndAppend(postFilter, buf, 1);
-                output = buf.toString();
-            }
-            return output;
-        }
-
-
-    }*/
     
     private void renderForParentToPrinter(Writer out)
     throws IOException
@@ -744,23 +693,6 @@ public class Chunk implements Map<String,Object>
         }
     }
     
-    /* DEPRECATED see renderForParentToPrinter()
-    private String renderForParentToString()
-    {
-        StringBuilder buf = new StringBuilder();
-        
-        if (template == null) {
-            explodeAndAppend(templateRoot, buf, 1);
-        } else {
-            for (int i=0; i < template.size(); i++) {
-                Object obj = template.elementAt(i);
-                explodeAndAppend(obj, buf, 1);
-            }
-        }
-        
-        return buf.toString();
-    }*/
-    
     void explodeToPrinter(Writer out, Object obj, int depth)
     throws IOException
     {
@@ -771,46 +703,7 @@ public class Chunk implements Map<String,Object>
         } else if (obj instanceof Snippet) {
             
             Snippet snippet = (Snippet)obj;
-            // soon to be... snippet.render(out, this, depth);
             snippet.render(out,this,depth);
-            
-            /*
-            if (snippet.isSimple()) {
-                // most snippets are simple (ie don't contain literals)
-                explodeStringToPrinter(out, snippet.getSimpleText(), depth);
-            } else {
-                ArrayList<SnippetPart> parts = snippet.getParts();
-                if (parts == null) return;
-                for (SnippetPart part : parts) {
-                    if (part.isLiteral()) {
-                        // DO NOT INTERPOLATE. literal block.
-                        out.append( part.getText() );
-                    } else if (part.isSimpleTag()) {
-                        try {
-                            String tag = ((SnippetTag)part).getTag();
-                            renderTag(out,tag,depth);
-                        } catch (BlockTagException e) {
-                            System.err.println("Unexpected Block Tag.");
-                            //- FIXME should find matching block end among the snippet parts.
-                            BlockTag helper = e.getHelper();
-                            int[] blockEnd = BlockTag.findMatchingBlockEnd(this,template,end,helper);
-                            if (blockEnd == null) {
-                                // FAIL...
-                                buf.append("<!-- [tag expansion error! "+helper.getBlockStartMarker()+" block with no matching end marker! ] -->");
-                                marker = end + tagEndLen;
-                            } else {
-                                String blockBody = template.substring(end+1,blockEnd[0]);
-                                String cooked = helper.cookBlock(blockBody);
-                                explodeAndAppend(cooked, buf, ancestors, depth+1);
-                                marker = blockEnd[1];
-                            }
-                            -/
-                        }
-                    } else {
-                        explodeStringToPrinter(out, part.getText(), depth);
-                    }
-                }
-            }*/
             
         } else if (obj instanceof String) {
             
@@ -836,79 +729,6 @@ public class Chunk implements Map<String,Object>
             
         }        
     }
-
-    /* DEPRECATED see explodeToPrinter
-    private void explodeAndAppend(Object obj, StringBuilder buf, int depth)
-    {
-        if (depth >= DEPTH_LIMIT) {
-            
-            buf.append("[**ERR** max template recursions: "+DEPTH_LIMIT+"]");
-            
-        } else if (obj instanceof Snippet) {
-            
-        	Snippet snippet = (Snippet)obj;
-        	if (snippet.isSimple()) {
-        		// most snippets are simple (ie don't contain literals)
-        		buf.append(explodeString(snippet.getSimpleText(), depth));
-        	} else {
-            	ArrayList<SnippetPart> parts = snippet.getParts();
-            	if (parts == null) return;
-        		for (SnippetPart part : parts) {
-                	if (part.isLiteral()) {
-                	    // DO NOT INTERPOLATE. literal block.
-                		buf.append( part.getText() );
-                	} else if (part.isSimpleTag()) {
-                	    try {
-                            String tag = ((SnippetTag)part).getTag();
-                	        renderTag(buf,tag,depth);
-                	    } catch (BlockTagException e) {
-                	        System.err.println("Unexpected Block Tag.");
-                	        //- FIXME should find matching block end among the snippet parts.
-                            BlockTag helper = e.getHelper();
-                            int[] blockEnd = BlockTag.findMatchingBlockEnd(this,template,end,helper);
-                            if (blockEnd == null) {
-                                // FAIL...
-                                buf.append("<!-- [tag expansion error! "+helper.getBlockStartMarker()+" block with no matching end marker! ] -->");
-                                marker = end + tagEndLen;
-                            } else {
-                                String blockBody = template.substring(end+1,blockEnd[0]);
-                                String cooked = helper.cookBlock(blockBody);
-                                explodeAndAppend(cooked, buf, ancestors, depth+1);
-                                marker = blockEnd[1];
-                            }
-                            -/
-                        }
-                	} else {
-                        buf.append( explodeString(part.getText(), depth) );
-                	}
-        		}
-        	}
-        	
-        } else if (obj instanceof String) {
-            
-        	// snippet-ify to catch/skip literal blocks
-        	Snippet snippet = new Snippet((String)obj);
-			explodeAndAppend(snippet,buf,depth);
-            ///buf.append(explodeString((String)obj, ancestors, depth));
-			
-        } else if (obj instanceof Chunk) {
-            
-            Vector<Chunk> parentContext = prepareParentContext();
-            Chunk c = (Chunk) obj;
-            buf.append(c.explodeForParent(parentContext));
-            
-        } else if (obj instanceof DataCapsule[]) {
-            
-        	// auto-expand?
-        	DataCapsuleReader reader = DataCapsuleReader.getReader((DataCapsule[])obj);
-        	buf.append("[LIST("+reader.getDataClassName()+") - Use a loop construct such as ^loop or ^grid to display list data.]");
-        	
-        } else if (obj instanceof String[]) {
-            
-        	buf.append("[LIST(java.lang.String) - Use a loop construct such as ^loop to display list data, or pipe to join().]");
-        	
-        }
-    }*/
     
     private Vector<Chunk> prepareParentContext()
     {
@@ -972,17 +792,15 @@ public class Chunk implements Map<String,Object>
         altSources.put(protocol,src);
     }
 
-    private Object altFetch(String tagName)
-    throws BlockTagException
+    private Object altFetch(String tagName, int depth)
     {
-        return altFetch(tagName, false);
+        return altFetch(tagName, depth, false);
     }
     
     private static final java.util.regex.Pattern INCLUDEIF_PATTERN =
         java.util.regex.Pattern.compile("^\\.include(If|\\.\\()");
 
-    private Object altFetch(String tagName, boolean ignoreParentContext)
-    throws BlockTagException
+    private Object altFetch(String tagName, int depth, boolean ignoreParentContext)
     {
         String tagValue = null;
 
@@ -1008,19 +826,15 @@ public class Chunk implements Map<String,Object>
             return eval;
         }
         
+        /** 
+         * in theory, should never see these tags here anymore?
+         *
         if (tagName.startsWith(".if")) {
             String result = IfTag.evalIf(tagName, this);
             
             return result;
         }
 
-        // the ^loop(...) fn
-        if (tagName.startsWith(".loop")) {
-            String table = LoopTag.expandLoop(tagName,this);
-
-            return table;
-        }
-        
         // the ^loc locale tag
         if (tagName.startsWith(".loc")) {
             String translation = LocaleTag.translate(tagName,this);
@@ -1028,11 +842,12 @@ public class Chunk implements Map<String,Object>
             return translation;
         }
 
-        // the ^grid(...) fn
-        if (tagName.startsWith(".grid")) {
-            String table = Grid.expandGrid(tagName,this);
-
-            return table;
+         *
+         */
+        
+        // the ^loop(...) fn
+        if (tagName.startsWith(".loop")) {
+            return LoopTag.expandLoop(tagName,this,depth);
         }
         
         // the ^tagStack fn
@@ -1109,7 +924,7 @@ public class Chunk implements Map<String,Object>
             if (parentContext != null) {
                 for (Chunk ancestor : parentContext) {
                     // lazy... should repeat if/else above to avoid re-parsing the tag
-                    Object x = ancestor.altFetch(tagName, true);
+                    Object x = ancestor.altFetch(tagName, depth, true);
                     if (x != null) return x;
                 }
             }
@@ -1142,7 +957,7 @@ public class Chunk implements Map<String,Object>
         return tagName.indexOf("|",nextParen+1);
     }
     
-    private String resolveBackticks(String lookupName)
+    private String resolveBackticks(String lookupName, int depth)
     {
     	int backtickA = lookupName.indexOf('`');
     	if (backtickA < 0) return lookupName;
@@ -1158,24 +973,17 @@ public class Chunk implements Map<String,Object>
     		return lookupName;
     	}
     	
-    	try {
-        	String dynLookupName = lookupName.substring(0,backtickA)
-        	  + resolveTagValue(embeddedTag)
-        	  + lookupName.substring(backtickB+1);
-        	
-        	// there may be more...
-        	return resolveBackticks(dynLookupName);
-    	} catch (BlockTagException e) {
-    	    // should never, ever happen.
-    	    e.printStackTrace(System.err);
-    	    return null;
-    	}
+    	String dynLookupName = lookupName.substring(0,backtickA)
+    	  + resolveTagValue(embeddedTag, depth)
+    	  + lookupName.substring(backtickB+1);
+    	
+    	// there may be more...
+    	return resolveBackticks(dynLookupName, depth);
     }
     
-    protected Object resolveTagValue(String tagName)
-    throws BlockTagException
+    protected Object resolveTagValue(String tagName, int depth)
     {
-        return _resolveTagValue(tagName, false);
+        return _resolveTagValue(tagName, depth, false);
     }
 
     // resolveTagValue responds in the context of an explosion tree.
@@ -1187,11 +995,10 @@ public class Chunk implements Map<String,Object>
     // same throughout the whole table -- rather than set it over and
     // over the same in each row, the tag is given a value once at the
     // table level.
-    protected Object _resolveTagValue(String tagName, boolean ignoreParentContext)
-    throws BlockTagException
+    protected Object _resolveTagValue(String tagName, int depth, boolean ignoreParentContext)
     {
     	if (tagName.indexOf('`') > -1) {
-    		tagName = resolveBackticks(tagName);
+    		tagName = resolveBackticks(tagName, depth);
     	}
         String lookupName = tagName;
 
@@ -1200,7 +1007,7 @@ public class Chunk implements Map<String,Object>
         //strip filters as well eg {~tagName|s/xx/yy/}
         int colonPos = tagName.indexOf(':');
         int pipePos = tagName.indexOf('|');
-        pipePos = confirmPipe(tagName,pipePos);
+        if (pipePos > -1) pipePos = confirmPipe(tagName,pipePos);
 
         if (colonPos > 0 || pipePos > 0) {
             int firstMod = (colonPos > 0) ? colonPos : pipePos;
@@ -1212,7 +1019,7 @@ public class Chunk implements Map<String,Object>
 
         if (lookupName.charAt(0) == '.') {
             // if the tag starts with a period, we need to delegate
-            tagValue = altFetch(tagName);
+            tagValue = altFetch(tagName, depth);
         } else if (hasValue(lookupName)) {
             // first look in this chunk's own tags
             tagValue = getTag(lookupName);
@@ -1221,7 +1028,7 @@ public class Chunk implements Map<String,Object>
             if (parentContext != null) {
                 // now look in ancestors (iteration, not recursion, so sue me)
                 for (Chunk ancestor : parentContext) {
-                    tagValue = ancestor._resolveTagValue(lookupName, true);
+                    tagValue = ancestor._resolveTagValue(lookupName, depth, true);
                     if (tagValue != null) break;
                 }
             }
@@ -1534,211 +1341,6 @@ public class Chunk implements Map<String,Object>
     		return cursor;
     	}
     }
-    
-    private String expandMacros(String template)
-    {
-        // Before we tackle the macros, let's
-        // pre-process (1) include shorthand tags
-        // and (2) ez-locale-tag syntax
-        // to make them easier to parse.
-        template = expandIncludes(template);
-        template = LocaleTag.expandLocaleTags(template, this);
-
-        int macroTagBegin = template.indexOf(TemplateSet.MACRO_START);
-        if (macroTagBegin < 0) return template;
-
-        // found a macro.  expand!
-        StringBuilder expanded = new StringBuilder();
-        expanded.append(template.substring(0,macroTagBegin));
-
-        macroTagBegin += TemplateSet.MACRO_START.length();
-        int macroTagEnd = template.indexOf(TemplateSet.MACRO_NAME_END,macroTagBegin);
-        int macroSectionEnd = template.indexOf(TemplateSet.MACRO_END,macroTagEnd+1);
-        
-        // This little piece makes nested Macros possible.  I think.
-        int nestedMacro = template.indexOf(TemplateSet.MACRO_START,macroTagBegin);
-        
-        while (nestedMacro > -1 && nestedMacro < macroSectionEnd) {
-            // this end does not match our beginning -- keep looking for real end
-            macroSectionEnd = template.indexOf(TemplateSet.MACRO_END,macroSectionEnd+1);
-            nestedMacro = template.indexOf(TemplateSet.MACRO_START,nestedMacro+1);
-            // don't mistake a macro-end {*} for a macro-beginning {*ASDF*}
-            while (nestedMacro == template.indexOf(TemplateSet.MACRO_END,nestedMacro)) {
-                nestedMacro = template.indexOf(TemplateSet.MACRO_START,nestedMacro+1);
-            }
-        }
-
-        if (macroSectionEnd < macroTagEnd+1) {
-            return "[Template syntax error -- missing macro-end tag?  Please close off all macros with "
-            +TemplateSet.MACRO_END+"]";
-        }
-
-        String templateRef = template.substring(macroTagBegin,macroTagEnd).trim();
-        while (templateRef.endsWith("*")) {
-            // {*BOX} and {*BOX*} and {* BOX *} are all allowed -- 3rd form is preferred
-            templateRef = templateRef.substring(0,templateRef.length()-1).trim();
-        }
-
-        String macroVars = template.substring(macroTagEnd+1, macroSectionEnd);
-        int letBegin = macroVars.indexOf(this.tagStart);
-        if (letBegin < 0) {
-            // no assignments
-        	// altFetch returns String or Snippet
-            try {
-                Object theTemplate = altFetch(".include."+templateRef, true);
-                if (theTemplate != null) {
-                	expanded.append( expandMacros(theTemplate.toString()) );
-                }
-            } catch (BlockTagException e) {
-                // won't ever happen.
-                e.printStackTrace(System.err);
-            }
-        } else {
-            // make chunk from templateRef and delegate assignments
-            if (letBegin > 0) macroVars = macroVars.substring(letBegin);
-            expanded.append( expandMacros( expandMacros2(templateRef, macroVars) ) );
-        }
-
-        int allTheRest = macroSectionEnd + TemplateSet.MACRO_END.length();
-        expanded.append( expandMacros(template.substring(allTheRest)) );
-
-        return expanded.toString();
-    }
-    
-	private static final Pattern INVALID_ASSIGNMENT = Pattern.compile("[\\.\\(\\:\\|]");
-
-    /* if the macro includes variable assignments a la {~var=}value{=}, expandMacros2
-     * parses them out and handles the expansion.
-     * {~var = simple value} is also permitted (eg, if value contains no tags) */
-    private String expandMacros2(String templateRef, String macroVars)
-    {
-        if (this.chunkFactory == null) return "";
-
-        Chunk macro = chunkFactory.makeChunk(templateRef);
-
-        int marker = 0;
-        int delimPos;
-        int nextTag,nextTagEnd,nextEq,nextMarker;
-        int nestedMacro;
-        int closeLen = TemplateSet.MACRO_LET_END.length();
-        boolean jumpMarker = false;
-        String closeMarker = TemplateSet.MACRO_LET + TemplateSet.MACRO_LET_END;
-        String varName;
-        String varValue;
-        while (marker < macroVars.length()) {
-        	// advance playhead to next track...
-        	marker = macroVars.indexOf(this.tagStart,marker);
-        	if (marker < 0) break;
-        	
-            marker += this.tagStart.length();
-            delimPos = macroVars.indexOf(TemplateSet.MACRO_LET_END,marker);
-            varName = macroVars.substring(marker,delimPos);
-            while (varName.endsWith("=")) {
-                // {~var=}xyz{=} and {~var = xyz} are both allowed
-                varName = varName.substring(0,varName.length()-1);
-            }
-            // inline/simple definition?  a la  {~var=20} or {~var = 20}
-            int eqPos = varName.indexOf('=');
-            if (eqPos > -1) {
-            	marker = delimPos + closeLen;
-            	String[] assignment = varName.split(" *= *");
-            	varName = assignment[0];
-            	varValue = assignment[1];
-            	macro.set(varName,varValue);
-            	continue;
-            }
-            // got here? var not defined inline.
-            // looking for {~var=} (lots of stuff...) {=}
-            // end delimiter is optional but its use strongly preferred
-            nextTagEnd = delimPos;
-            delimPos += closeLen;
-            // scan for start of next definition OR closeMarker {=}
-            nextMarker = macroVars.indexOf(closeMarker,delimPos);
-      
-            // find the end of this def or the start of the next def
-            do {
-                nextTag = macroVars.indexOf(this.tagStart,nextTagEnd+closeLen);
-                if (nextTag < 0) {
-                	// no more tags, def runs to end/closeMarker
-                	nextTag = (nextMarker > -1 ? nextMarker : macroVars.length());
-                	break;
-                } else if (nextMarker > -1 && nextTag > nextMarker) {
-                	// found closeMarker
-                	jumpMarker = true;
-                	nextTag = nextMarker;
-                	break;
-                }
-                nextTagEnd = macroVars.indexOf(TemplateSet.MACRO_LET_END,nextTag);
-                if (nextTagEnd < 0) {
-                	nextTag = macroVars.length();
-                	break;
-                }
-                nextEq = macroVars.lastIndexOf('=',nextTagEnd);
-                if (nextEq > nextTag) {
-                	// possible assignment tag.  check for paren or dot to left of =
-                	String assignLeftHandSide = macroVars.substring(nextTag,nextEq);
-                	if (INVALID_ASSIGNMENT.matcher(assignLeftHandSide).find()) {
-                		// not a valid assignment tag, false alarm
-                		nextEq = -1;
-                	}
-                }
-                // if this tag is not an assignment tag, keep looking
-            } while (nextEq < nextTag);
-		            
-            marker = nextTag;
-            
-            if (marker < delimPos) marker = macroVars.length();
-            
-            nestedMacro = macroVars.indexOf(TemplateSet.MACRO_START,delimPos);
-            while (nestedMacro > -1 && nestedMacro < marker) {
-                // skip ahead to matching macro end
-                int nestedMacroEnd = macroVars.indexOf(TemplateSet.MACRO_END,nestedMacro+1);
-                // make sure this is the end
-                int doubleNested = macroVars.indexOf(TemplateSet.MACRO_START,nestedMacro+1);
-                while (doubleNested > -1 && doubleNested < nestedMacroEnd) {
-                    // this end does not match our beginning -- keep looking for real end
-                    nestedMacroEnd = macroVars.indexOf(TemplateSet.MACRO_END,nestedMacroEnd+1);
-                    doubleNested = template.indexOf(TemplateSet.MACRO_START,doubleNested+1);
-                    // don't mistake a macro-end {*} for a macro-beginning {*ASDF*}
-                    while (doubleNested == template.indexOf(TemplateSet.MACRO_END,doubleNested)) {
-                        doubleNested = template.indexOf(TemplateSet.MACRO_START,doubleNested+1);
-                    }
-                }
-                // now look for the end of the value, starting after the end of the nested macro
-                marker = macroVars.indexOf(TemplateSet.MACRO_LET,nestedMacroEnd+1);
-                if (marker < delimPos) marker = macroVars.length();
-                
-                // keep checking, there might be another one we need to skip.
-                nestedMacro = macroVars.indexOf(TemplateSet.MACRO_START,nestedMacroEnd+1);
-            }
-            
-            varValue = macroVars.substring(delimPos,marker);
-            macro.set(varName,varValue);
-            
-            if (jumpMarker) {
-            	jumpMarker = false;
-            	marker += closeMarker.length();
-            }
-        }
-
-        // this will trigger a standard expansion which will
-        // properly reference all ancestor tag values.
-        // otherwise defaults will be used incorrectly when there
-        // are actually expansion values available up/down the tree.
-        String macroTag = getNextMacroTag();
-        this.set(macroTag, macro);
-        return this.tagStart + macroTag + this.tagEnd;
-    }
-
-    private int macroCounter = 0;
-
-    private String getNextMacroTag()
-    {
-        // these tags are unlikely to collide with application-supplied tags
-        String macroTag = "CHUNK_-_MACRO_-_"+macroCounter;
-        macroCounter++;
-        return macroTag;
-    }
 
     private int findMatchingEndBrace(String template, int searchFrom)
     {
@@ -1798,9 +1400,9 @@ public class Chunk implements Map<String,Object>
     }
     
     private void renderTag(Writer out, String tagName, int depth)
-    throws BlockTagException, IOException
+    throws IOException
     {
-        Object tagValue = resolveTagValue(tagName);
+        Object tagValue = resolveTagValue(tagName, depth);
         // unresolved tags get put back the way we found
         // them in case the final String which explode() returns
         // is then fed into another Chunk which *does* have
@@ -1814,152 +1416,6 @@ public class Chunk implements Map<String,Object>
         }
     }
     
-    /* DEPRECATED see renderTag(Writer...)
-    private void renderTag(StringBuilder buf, String tagName, int depth)
-    throws BlockTagException
-    {
-        Object tagValue = resolveTagValue(tagName);
-        // unresolved tags get put back the way we found
-        // them in case the final String which explode() returns
-        // is then fed into another Chunk which *does* have
-        // a value.
-        if (tagValue == null) {
-            buf.append(tagStart);
-            buf.append(tagName);
-            buf.append(tagEnd);
-        } else {
-            explodeAndAppend(tagValue, buf, depth+1);
-        }
-    }*/
-
-    // the core search-and-replace routine
-    void explodeStringToPrinter(Writer out, String template, int depth)
-    throws IOException
-    {
-        template = expandMacros(template);
-
-        int begin, end;
-        int tagStartLen = tagStart.length();
-        int tagEndLen = tagEnd.length();
-
-        int marker = 0;
-        while ((begin = template.indexOf(tagStart,marker)) > -1) {
-            // found a tag.  everything up to here has no more tags,
-            // so... put in the can!
-            if (begin > marker) out.append(template,marker,begin);
-            //if (begin > marker) out.append(template.substring(marker, begin));
-
-            begin += tagStartLen;
-            // find end of tag
-            if ((end = findMatchingEndBrace(template,begin)) > -1) {
-                String tagName = template.substring(begin,end);
-                try {
-                    renderTag(out, tagName, depth);
-                    marker = end + tagEndLen;
-                } catch (BlockTagException e) {
-                    BlockTag helper = e.getHelper();
-                    int[] blockEnd = BlockTag.findMatchingBlockEnd(this,template,end,helper);
-                    if (blockEnd == null) {
-                        // FAIL...
-                        out.append("<!-- [tag expansion error! "+helper.getBlockStartMarker()+" block with no matching end marker! ] -->");
-                        marker = end + tagEndLen;
-                    } else {
-                        String blockBody = template.substring(end+1,blockEnd[0]);
-                        String cooked = helper.cookBlock(blockBody);
-                        explodeStringToPrinter(out, cooked, depth+1);
-                        marker = blockEnd[1];
-                    }
-                }
-            } else {
-                // somebody didn't end a tag...
-                // leave broken tagstart and move along
-                out.append(tagStart);
-                marker = begin;
-            }
-        }
-        if (marker == 0) {
-            // no tags found
-            out.append(template);
-        } else {
-            out.append(template,marker,template.length());
-            //out.append(template.substring(marker));
-        }        
-    }
-    
-    // the core search-and-replace routine
-    /* DEPRECATED see explodeStringToPrinter
-    private String explodeString(String template, int depth)
-    {
-        template = expandMacros(template);
-
-        StringBuilder buf = new StringBuilder();
-
-        int begin, end;
-        int tagStartLen = tagStart.length();
-        int tagEndLen = tagEnd.length();
-
-        int marker = 0;
-        while ((begin = template.indexOf(tagStart,marker)) > -1) {
-            // found a tag.  everything up to here has no more tags,
-            // so... put in the can!
-            if (begin > marker) buf.append(template.substring(marker, begin));
-
-            begin += tagStartLen;
-            // find end of tag
-            if ((end = findMatchingEndBrace(template,begin)) > -1) {
-                String tagName = template.substring(begin,end);
-                try {
-                    renderTag(buf, tagName, depth);
-                    marker = end + tagEndLen;
-                } catch (BlockTagException e) {
-                    BlockTag helper = e.getHelper();
-                    int[] blockEnd = BlockTag.findMatchingBlockEnd(this,template,end,helper);
-                    if (blockEnd == null) {
-                        // FAIL...
-                        buf.append("<!-- [tag expansion error! "+helper.getBlockStartMarker()+" block with no matching end marker! ] -->");
-                        marker = end + tagEndLen;
-                    } else {
-                        String blockBody = template.substring(end+1,blockEnd[0]);
-                        String cooked = helper.cookBlock(blockBody);
-                        explodeAndAppend(cooked, buf, depth+1);
-                        marker = blockEnd[1];
-                    }
-                }
-            } else {
-                // somebody didn't end a tag...
-                // leave broken tagstart and move along
-                buf.append(tagStart);
-                marker = begin;
-            }
-        }
-        if (marker == 0) {
-            // no tags found
-            return template;
-        } else {
-            buf.append(template.substring(marker));
-            return buf.toString();
-        }
-    }*/
-    
-    /**
-     * literals are now caught higher up the chain
-     * no need to process them and then unprocess them anymore.
-    private String makePrettyLiteral(String literal)
-    {
-    	// turn {~.literal}...{~.} back into {^literal}...{^}
-    	// and turn {~.^}...{~.} back into {^^}...{^}
-    	String pretty = tagStart + literal + tagEnd;
-    	if (pretty.startsWith("{~.")) {
-    		pretty = TemplateSet.PROTOCOL_SHORTHAND + pretty.substring(3);
-    	}
-    	int endMarker = pretty.lastIndexOf(TemplateSet.LITERAL_END_EXPANDED);
-    	if (endMarker > -1) {
-    		pretty = pretty.substring(0,endMarker) + TemplateSet.LITERAL_END;
-    	}
-    	return pretty;
-    }
-     */
-
     /**
      * Clears all tag replacement rules.
      */
@@ -2013,15 +1469,9 @@ public class Chunk implements Map<String,Object>
         return tags.equals(o);
     }
 
-    //private Vector<Chunk> ancestorStack = null;
-
     public Object get(Object key)
     {
-        try {
-            return resolveTagValue((String)key);
-        } catch (BlockTagException e) {
-            return null;
-        }
+        return resolveTagValue((String)key, 1);
     }
 
     public int hashCode()

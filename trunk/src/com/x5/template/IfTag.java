@@ -130,27 +130,6 @@ public class IfTag extends BlockTag
         return opts;
     }
     
-    public static String evalIf(String params, Chunk context)
-    throws BlockTagException
-    {
-        IfTag obj = new IfTag(params, context);
-        return obj._eval();
-    }
-    
-    private String _eval()
-    throws BlockTagException
-    {
-        if (thenTemplate == null) {
-            throw new BlockTagException(this);
-        }
-        
-        if (isTrueExpr(primaryCond,context)) {
-            return snippetOrValue(thenTemplate);
-        } else {
-            return snippetOrValue(elseTemplate);
-        }
-    }
-    
     private boolean isTrueExpr(String test, Chunk context)
     {
         if (test == null) return false;
@@ -285,77 +264,6 @@ public class IfTag extends BlockTag
         } else {
             return result;
         }
-    }
-    
-    public String cookBlock(String blockBody)
-    {
-        // locate correct block from then, else, elseIf blocks
-        // trim unless trim="false"
-        // return chosen block
-        Pattern p = Pattern.compile("\\{\\~\\.else[^\\}]*}"); // FIXME what about curly braces inside a regex?
-        Matcher m = p.matcher(blockBody);
-
-        String nestedIf = context.tagStart+".if";
-        int nestedIfPos = blockBody.indexOf(nestedIf);
-        int nestedBlockEnd = -1;
-        
-        int marker = 0;
-        
-        ElseScan:
-        while (m.find()) {
-            // this else might be from a nested if -- in that case, ignore
-            while (nestedIfPos > -1 && nestedIfPos < m.start()) {
-                if (nestedBlockEnd < nestedIfPos) {
-                    int[] endSpan = findMatchingBlockEnd(context,blockBody,nestedIfPos+nestedIf.length(),this);
-                    nestedBlockEnd = endSpan == null ? -1 : endSpan[1];
-                }
-                if (m.start() < nestedBlockEnd) {
-                    // nested else, ignore
-                    continue ElseScan;
-                } else {
-                    // we are past a nested if-- check if we're inside another one
-                    if (nestedBlockEnd > 0) {
-                        nestedIfPos = blockBody.indexOf(nestedIf,nestedBlockEnd);
-                    }
-                }
-            }
-            
-            if (marker == 0) {
-                thenTemplate = blockBody.substring(0,m.start());
-                if (doTrim) thenTemplate = smartTrim(thenTemplate);
-                if (chosenPath == 0) {
-                    return thenTemplate;
-                }
-            }
-            
-            String elseTag = blockBody.substring(m.start(),m.end());
-            String cond = parseCond(elseTag);
-            if (cond == null) {
-                // simple if-else, else wins
-                elseTemplate = blockBody.substring(m.end());
-                if (doTrim) elseTemplate = smartTrim(elseTemplate);
-                return elseTemplate;
-            } else {
-                marker = m.end();
-                if (isTrueExpr(cond,context)) {
-                    int altBlockEnd = blockBody.length();
-                    if (m.find()) {
-                        altBlockEnd = m.start();
-                    }
-                    String altBlock = blockBody.substring(marker,altBlockEnd);
-                    if (doTrim) altBlock = smartTrim(altBlock);
-                    return altBlock;
-                }
-            }
-        }
-        
-        if (chosenPath == 0 && marker == 0) {
-            thenTemplate = blockBody;
-            if (doTrim) thenTemplate = smartTrim(thenTemplate);
-            return thenTemplate;
-        }
-        
-        return "";
     }
     
     private void smartTrim(List<SnippetPart> subParts)

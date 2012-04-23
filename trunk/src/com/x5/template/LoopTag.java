@@ -22,6 +22,10 @@ public class LoopTag extends BlockTag
     private String emptyTemplate;
     private Map<String,Object> options;
     
+    private Snippet emptySnippet = null;
+    private Snippet dividerSnippet = null;
+    private Snippet rowSnippet = null;
+    
     private static final String ON_EMPTY_MARKER = "{~.onEmpty}";
     private static final String DIVIDER_MARKER = "{~.divider}";
 
@@ -36,11 +40,16 @@ public class LoopTag extends BlockTag
         System.out.println("empty_tpl="+loop.emptyTemplate);
     }
 
-    public static String expandLoop(String params, Chunk ch)
-    throws BlockTagException
+    public static String expandLoop(String params, Chunk ch, int depth)
     {
         LoopTag loop = new LoopTag(params, ch);
-        return loop._cookLoop();
+        StringWriter out = new StringWriter();
+        try {
+            loop.renderBlock(out, ch, depth);
+        } catch (IOException e) {
+            e.printStackTrace(System.err);
+        }
+        return out.toString();
     }
 
     public LoopTag()
@@ -51,6 +60,26 @@ public class LoopTag extends BlockTag
     {
         this.chunk = ch;
         parseParams(params);
+        
+        // this constructor is only called when the loop tag has no body
+        // eg {^loop data="~mydata" template="#test_row" no_data="#test_empty" divider="<hr/>"}
+        initWithoutBlock();
+    }
+    
+    private void initWithoutBlock()
+    {
+        // set up snippets
+        if (this.chunk == null) return;
+        
+        ContentSource snippetRepo = chunk.getTemplateSet();
+        if (snippetRepo == null) return;
+            
+        if (this.rowTemplate != null) {
+            this.rowSnippet = snippetRepo.getSnippet(rowTemplate);
+        }
+        if (this.emptyTemplate != null) {
+            this.emptySnippet = snippetRepo.getSnippet(emptyTemplate);
+        }
     }
 
     public LoopTag(String params, Snippet body)
@@ -226,46 +255,8 @@ public class LoopTag extends BlockTag
         options.put(param,value);
     }
 
-    private String _cookLoop()
-    throws BlockTagException
-    {
-    	if (rowTemplate == null) throw new BlockTagException(this);
-        return LoopTag.cookLoop(data, chunk, rowTemplate, emptyTemplate, options, false);
-    }
-
     private static final Pattern NON_LEGAL = Pattern.compile("[^A-Za-z0-9_-]");
     
-    public static String cookLoop(TableData data, Chunk context,
-    		String rowTemplate, String emptyTemplate,
-    		Map<String,Object> opt, boolean isBlock)
-    {
-        Snippet rowSnippet = null;
-        Snippet emptySnippet = null;
-        if (isBlock) {
-            rowSnippet = rowTemplate == null ? null : new Snippet(rowTemplate);
-            emptySnippet = emptyTemplate == null ? null : new Snippet(emptyTemplate);
-        } else {
-            if (rowTemplate != null) rowSnippet = context.getTemplateSet().getSnippet(rowTemplate);
-            if (emptyTemplate != null) {
-                if (emptyTemplate.length() == 0) {
-                    emptySnippet = new Snippet("");
-                } else {
-                    emptySnippet = context.getTemplateSet().getSnippet(emptyTemplate);
-                }
-            }
-        }
-        
-        try {
-            StringWriter out = new StringWriter();
-            cookLoopToPrinter(out,data,context,rowSnippet,emptySnippet,opt,isBlock,1);
-            out.flush();
-            return out.toString();
-        } catch (IOException e) {
-            e.printStackTrace(System.err);
-            return "[Loop error: IOException "+e.getLocalizedMessage()+"]";
-        }
-    }
-     
     public static void cookLoopToPrinter(Writer out, TableData data, Chunk context,
             Snippet rowSnippet, Snippet emptySnippet,
             Map<String,Object> opt, boolean isBlock, int depth)
@@ -439,115 +430,6 @@ public class LoopTag extends BlockTag
             return null;
         }
     }
-
-    public String cookBlock(String blockBody)
-    {
-        // split body up into row template and optional empty template
-        //  (delimited by {^on_empty} )
-        // trim both, unless requested not to.
-//        return null;
-        boolean isBlock = true;
-        
-        boolean doTrim = true;
-        String trimOpt = (options == null) ? null : (String)options.get("trim");
-        if (trimOpt != null && trimOpt.equalsIgnoreCase("false")) {
-            doTrim = false;
-        }
-        
-        String divider = null;
-
-        // how do we know these aren't inside a nested ^loop block?
-        // find any nested blocks and only scan for these markers *outside* the
-        // nested sections.
-        int[] nestingGrounds = demarcateNestingGrounds(blockBody);
-        
-        int delimPos = blockBody.indexOf(ON_EMPTY_MARKER);
-        int dividerPos = blockBody.indexOf(DIVIDER_MARKER);
-
-        while (isInsideNestingGrounds(delimPos,nestingGrounds)) {
-            delimPos = blockBody.indexOf(ON_EMPTY_MARKER,delimPos+ON_EMPTY_MARKER.length());
-        }
-        while (isInsideNestingGrounds(dividerPos,nestingGrounds)) {
-            dividerPos = blockBody.indexOf(DIVIDER_MARKER,dividerPos+DIVIDER_MARKER.length());
-        }
-        
-        if (dividerPos > -1) {
-            if (delimPos > -1 && delimPos > dividerPos) {
-                divider = blockBody.substring(dividerPos+DIVIDER_MARKER.length(),delimPos);
-                // remove divider section from block body
-                String before = blockBody.substring(0,dividerPos);
-                String after = blockBody.substring(delimPos);
-                blockBody = before + after;
-                delimPos -= divider.length() + DIVIDER_MARKER.length();
-            } else {
-                divider = blockBody.substring(dividerPos+DIVIDER_MARKER.length());
-                // remove divider section from block body
-                blockBody = blockBody.substring(0,dividerPos);
-            }
-            divider = doTrim ? smartTrim(divider) : divider;
-        }
-        
-        if (delimPos > -1) {
-            String template = blockBody.substring(0,delimPos);
-            String onEmpty = blockBody.substring(delimPos+ON_EMPTY_MARKER.length());
-            this.rowTemplate = doTrim ? smartTrim(template) : template;
-            this.emptyTemplate = doTrim ? onEmpty.trim() : onEmpty;
-        } else {
-            this.rowTemplate = doTrim ? smartTrim(blockBody) : blockBody;
-        }
-        
-        if (divider != null) {
-            registerOption("divider",divider);
-        }
-        
-        return LoopTag.cookLoop(data, chunk, rowTemplate, emptyTemplate, options, isBlock);
-    }
-    
-    private boolean isInsideNestingGrounds(int pos, int[] offLimits)
-    {
-        if (pos < 0) return false;
-        if (offLimits == null) return false;
-        
-        for (int i=0; i<offLimits.length; i+=2) {
-            int boundA = offLimits[i];
-            int boundB = offLimits[i+1];
-            if (pos < boundA) return false;
-            if (pos < boundB) return true;
-        }
-        return false;
-    }
-    
-    private int[] demarcateNestingGrounds(String blockBody)
-    {
-        String nestStart = this.chunk.tagStart + ".loop";
-        int nestPos = blockBody.indexOf(nestStart);
-        
-        // easy case, no nesting
-        if (nestPos < 0) return null;
-        
-        int[] bounds = null;
-        while (nestPos > -1) {
-            int[] endSpan = BlockTag.findMatchingBlockEnd(chunk, blockBody, nestPos+nestStart.length(), this);
-            if (endSpan != null) {
-                if (bounds == null) {
-                    bounds = new int[]{nestPos,endSpan[1]};
-                } else {
-                    // grow each time -- yep, hugely inefficient,
-                    // but hey, how often do we nest loops more than one deep?
-                    int[] newBounds = new int[bounds.length+2];
-                    System.arraycopy(bounds, 0, newBounds, 0, bounds.length);
-                    newBounds[newBounds.length-2] = nestPos;
-                    newBounds[newBounds.length-1] = endSpan[1];
-                    bounds = newBounds;
-                }
-                nestPos = blockBody.indexOf(nestStart,endSpan[1]);
-            } else {
-                break;
-            }
-        }
-        
-        return bounds;
-    }
     
     public String getBlockStartMarker()
     {
@@ -657,10 +539,6 @@ public class LoopTag extends BlockTag
         }*/
     }
 
-    private Snippet emptySnippet = null;
-    private Snippet dividerSnippet = null;
-    private Snippet rowSnippet = null;
-    
     private void initBody(Snippet body)
     {
         // the snippet parts should already be properly nested,
@@ -740,6 +618,37 @@ public class LoopTag extends BlockTag
         if (doTrim) smartTrim(subParts);
         
         return new Snippet(subParts);
+    }
+    
+    public static String cookLoop(TableData data, Chunk context,
+            String rowTemplate, String emptyTemplate,
+            Map<String,Object> opt, boolean isBlock)
+    {
+        Snippet rowSnippet = null;
+        Snippet emptySnippet = null;
+        if (isBlock) {
+            rowSnippet = rowTemplate == null ? null : new Snippet(rowTemplate);
+            emptySnippet = emptyTemplate == null ? null : new Snippet(emptyTemplate);
+        } else {
+            if (rowTemplate != null) rowSnippet = context.getTemplateSet().getSnippet(rowTemplate);
+            if (emptyTemplate != null) {
+                if (emptyTemplate.length() == 0) {
+                    emptySnippet = new Snippet("");
+                } else {
+                    emptySnippet = context.getTemplateSet().getSnippet(emptyTemplate);
+                }
+            }
+        }
+        
+        try {
+            StringWriter out = new StringWriter();
+            cookLoopToPrinter(out,data,context,rowSnippet,emptySnippet,opt,isBlock,1);
+            out.flush();
+            return out.toString();
+        } catch (IOException e) {
+            e.printStackTrace(System.err);
+            return "[Loop error: IOException "+e.getLocalizedMessage()+"]";
+        }
     }
     
     @Override
