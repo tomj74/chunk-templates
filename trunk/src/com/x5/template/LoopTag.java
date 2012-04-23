@@ -170,6 +170,8 @@ public class LoopTag extends BlockTag
 
     private void fetchData(String dataVar)
     {
+        this.data = null;
+        
         if (dataVar != null) {
             int rangeMarker = dataVar.indexOf("[");
             if (rangeMarker > 0) {
@@ -210,7 +212,9 @@ public class LoopTag extends BlockTag
                 // template reference
                 if (chunk != null) {
                 	String tableAsString = chunk.getTemplateSet().fetch(dataVar);
-                    this.data = InlineTable.parseTable(tableAsString);
+                	if (tableAsString != null) {
+                	    this.data = InlineTable.parseTable(tableAsString);
+                	}
                 }
             }
         }

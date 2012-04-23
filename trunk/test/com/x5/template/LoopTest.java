@@ -169,4 +169,25 @@ public class LoopTest
         String output = c.toString();
         assertEquals(output,"WEBATDPLUS\n");
     }
+    
+    @Test
+    public void testDataReset()
+    {
+        Theme theme = new Theme("themes","test/base");
+        
+        String widgets = "[[widget_id,widget_name],[1,thingamabob],[2,doodad]]";
+        
+        Chunk c = theme.makeChunk();
+        c.append("{^loop in ~widgets as w}{~w.widget_id}{^onEmpty}EMPTY{/loop}");
+        
+        c.set("widgets", widgets);
+        
+        String outputA = c.toString();
+        assertEquals("12",outputA);
+        
+        c.unset("widgets");
+        
+        String outputB = c.toString();
+        assertEquals("EMPTY",outputB);
+    }
 }
