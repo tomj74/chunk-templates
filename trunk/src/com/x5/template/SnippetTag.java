@@ -40,12 +40,12 @@ public class SnippetTag extends SnippetPart
         if (tagValue == null) {
             // preserve tag in final output (can be used as template)
             out.append(super.snippetText);
-        } else if (tagValue instanceof String) {
-            Snippet compiled = new Snippet((String)tagValue);
-            compiled.render(out,rules,depth+1);
         } else if (tagValue instanceof Snippet) {
             // needs additional processing
             ((Snippet)tagValue).render(out, rules, depth);
+        } else if (tagValue instanceof String) {
+            Snippet compiled = Snippet.getSnippet((String)tagValue);
+            compiled.render(out,rules,depth+1);
         } else {
             rules.explodeToPrinter(out, tagValue, depth+1);
         }

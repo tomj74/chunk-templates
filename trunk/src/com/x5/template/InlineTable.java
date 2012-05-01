@@ -23,7 +23,7 @@ public class InlineTable
 
         String[] labels = table.getColumnLabels();
 
-        Map<String,String> record;
+        Map<String,Object> record;
 
         while (table.hasNext()) {
             record = table.nextRecord();

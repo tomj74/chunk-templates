@@ -26,6 +26,8 @@ public class LoopTag extends BlockTag
     private Snippet dividerSnippet = null;
     private Snippet rowSnippet = null;
     
+    private Chunk rowX;
+    
     private static final String ON_EMPTY_MARKER = "{~.onEmpty}";
     private static final String DIVIDER_MARKER = "{~.divider}";
 
@@ -231,6 +233,17 @@ public class LoopTag extends BlockTag
                         this.data = InlineTable.parseTable(snippetData.toString());
                     } else if (dataStore instanceof String[]) {
                     	this.data = new SimpleTable((String[])dataStore);
+                    } else if (dataStore instanceof List) {
+                        // is it a list of strings? or a list of kindred objects?
+                        List list = (List)dataStore;
+                        if (list.size() > 0) {
+                            Object a = list.get(0);
+                            if (a instanceof String) {
+                                this.data = new SimpleTable(list);
+                            } else if (a instanceof Map) {
+                                this.data = new TableOfMaps(list);
+                            }
+                        }
                     } else if (dataStore instanceof Object[]) {
                     	// assume array of objects that implement DataCapsule
                     	this.data = DataCapsuleTable.extractData((Object[])dataStore);
@@ -257,9 +270,8 @@ public class LoopTag extends BlockTag
 
     private static final Pattern NON_LEGAL = Pattern.compile("[^A-Za-z0-9_-]");
     
-    public static void cookLoopToPrinter(Writer out, TableData data, Chunk context,
-            Snippet rowSnippet, Snippet emptySnippet,
-            Map<String,Object> opt, boolean isBlock, int depth)
+    public void cookLoopToPrinter(Writer out, Chunk context,
+            boolean isBlock, int depth)
     throws IOException
     {
         if (data == null || !data.hasNext()) {
@@ -276,43 +288,54 @@ public class LoopTag extends BlockTag
         }
         
         Snippet dividerSnippet = null;
-        boolean createArrayTags = true;
+        boolean createArrayTags = false;
+        boolean counterTags = false;
         
-        if (opt != null) {
-            if (opt.containsKey("dividerSnippet")) {
-                dividerSnippet = (Snippet)opt.get("dividerSnippet");
-            } else if (opt.containsKey("divider")) {
-	        	String dividerTemplate = (String)opt.get("divider");
+        if (options != null) {
+            if (options.containsKey("dividerSnippet")) {
+                dividerSnippet = (Snippet)options.get("dividerSnippet");
+            } else if (options.containsKey("divider")) {
+	        	String dividerTemplate = (String)options.get("divider");
 	        	ContentSource templates = context.getTemplateSet();
 	        	if (templates.provides(dividerTemplate)) {
 	        		dividerSnippet = templates.getSnippet(dividerTemplate);
 	        	} else {
-	        	    dividerSnippet = new Snippet(dividerTemplate);
+	        	    dividerSnippet = Snippet.getSnippet(dividerTemplate);
 	        	}
-	        	opt.put("dividerSnippet", dividerSnippet);
+	        	options.put("dividerSnippet", dividerSnippet);
         	}
-        	if (opt.containsKey("array_index_tags")) {
-        		createArrayTags = false;
+        	if (options.containsKey("array_tags")) {
+        		createArrayTags = true;
+        	}
+        	if (options.containsKey("counter_tags")) {
+        	    counterTags = true;
         	}
         }
 
         ChunkFactory factory = context.getChunkFactory();
 
-        String[] columnLabels = data.getColumnLabels();
-
-        Chunk rowX;
-        rowX = (factory == null) ? new Chunk() : factory.makeChunk();
-        rowX.append( rowSnippet );
+        if (rowX == null) {
+            rowX = (factory == null) ? new Chunk() : factory.makeChunk();
+            rowX.append( rowSnippet );
+        }
 
         String prefix = null;
+        if (options != null && options.containsKey("name")) {
+            String name = (String)options.get("name");
+            prefix = name; //NON_LEGAL.matcher(name).replaceAll("");
+        }
         
+        String[] columnLabels = data.getColumnLabels();
+        
+        if (createArrayTags && columnLabels == null) {
+            createArrayTags = false;
+        }
+
         // set up all these auto-generated tags before entering the loop.
         String[] prefixedLabels = null;
         String[] prefixedIndices = null;
         String[] anonIndices = null;
-        if (opt != null && opt.containsKey("name")) {
-            String name = (String)opt.get("name");
-            prefix = NON_LEGAL.matcher(name).replaceAll("");
+        if (prefix != null && columnLabels != null) {
             prefixedLabels = new String[columnLabels.length];
             for (int i=columnLabels.length-1; i>-1; i--) {
                 prefixedLabels[i] = prefix + "." + columnLabels[i];
@@ -333,28 +356,39 @@ public class LoopTag extends BlockTag
         
         int counter = 0;
         while (data.hasNext()) {
-            rowX.set("0",counter);
-            rowX.set("1",counter+1);
+            if (counterTags) {
+                rowX.set("0",counter);
+                rowX.set("1",counter+1);
+            }
             
             if (dividerSnippet != null && counter > 0) {
                 dividerSnippet.render(out, context, depth);
             }
 
-            Map<String,String> record = data.nextRecord();
+            Map<String,Object> record = data.nextRecord();
 
-            // loop backwards -- in case any headers are identical,
-            // this ensures the first such named column will be used
-            for (int i=columnLabels.length-1; i>-1; i--) {
-                String field = columnLabels[i];
-                String value = record.get(field);
-                // prefix with eg x. if prefix supplied
-                String fieldName = prefix == null ? field : prefixedLabels[i];
-                rowX.setOrDelete(fieldName, value);
-                if (createArrayTags) {
-                    rowX.setOrDelete(anonIndices[i], value);
-                    if (prefix != null) {
-                        rowX.setOrDelete(prefixedIndices[i], value);
+            if (columnLabels != null) {
+                // loop backwards -- in case any headers are identical,
+                // this ensures the first such named column will be used
+                for (int i=columnLabels.length-1; i>-1; i--) {
+                    String field = columnLabels[i];
+                    Object value = record.get(field);
+                    // prefix with eg x. if prefix supplied
+                    String fieldName = prefix == null ? field : prefixedLabels[i];
+                    rowX.setOrDelete(fieldName, value);
+                    if (createArrayTags) {
+                        rowX.setOrDelete(anonIndices[i], value);
+                        if (prefix != null) {
+                            rowX.setOrDelete(prefixedIndices[i], value);
+                        }
                     }
+                }
+            } else {
+                for (String key : record.keySet()) {
+                    Object value = record.get(key);
+                    
+                    String fieldName = prefix == null ? key : prefix + "." + key;
+                    rowX.setOrDelete(fieldName, value);
                 }
             }
             
@@ -362,8 +396,10 @@ public class LoopTag extends BlockTag
             // allow loop in ~array as x to use {~x} for the value --
             // otherwise template has to have {~x[0]} or {~x.anonymous}
             // which is silly.
-            if (prefix != null && columnLabels.length == 1 && columnLabels[0].equals(SimpleTable.ANON_ARRAY_LABEL)) {
-                rowX.setOrDelete(prefix, record.get(SimpleTable.ANON_ARRAY_LABEL));
+            if (prefix != null && columnLabels != null) {
+                if (columnLabels.length == 1 && columnLabels[0].equals(SimpleTable.ANON_ARRAY_LABEL)) {
+                    rowX.setOrDelete(prefix, record.get(SimpleTable.ANON_ARRAY_LABEL));
+                }
             }
 
             // make sure chunk tags are resolved in context
@@ -545,17 +581,21 @@ public class LoopTag extends BlockTag
         // so any ^onEmpty and ^divider tags at this level should
         // be for this loop.  locate and separate.
         
-        int eMarker = -1, dMarker = -1;
-        
         List<SnippetPart> bodyParts = body.getParts();
+
+        int eMarker = -1, dMarker = -1, dMarkerEnd = bodyParts.size();
+        
         for (int i=bodyParts.size()-1; i>=0; i--) {
             SnippetPart part = bodyParts.get(i);
             if (part.isTag()) {
                 SnippetTag tag = (SnippetTag)part;
-                if (tag.getTag().equals(".onEmpty")) {
+                String tagText = tag.getTag();
+                if (tagText.equals(".onEmpty")) {
                     eMarker = i;
-                } else if (tag.getTag().equals(".divider")) {
+                } else if (tagText.equals(".divider")) {
                     dMarker = i;
+                } else if (tagText.equals("./divider")) {
+                    dMarkerEnd = i;
                 }
             }
         }
@@ -566,7 +606,7 @@ public class LoopTag extends BlockTag
             doTrim = false;
         }
         
-        int eMarkerEnd, dMarkerEnd;
+        int eMarkerEnd;
         
         int bodyEnd = -1;
         
@@ -574,11 +614,11 @@ public class LoopTag extends BlockTag
             if (eMarker > dMarker) {
                 bodyEnd = dMarker;
                 eMarkerEnd = bodyParts.size();
-                dMarkerEnd = eMarker;
+                dMarkerEnd = Math.min(eMarker, dMarkerEnd);
             } else {
                 bodyEnd = eMarker;
                 eMarkerEnd = dMarker;
-                dMarkerEnd = bodyParts.size();
+                ///dMarkerEnd = bodyParts.size();
             }
             emptySnippet = extractParts(bodyParts,eMarker+1,eMarkerEnd,doTrim);
             dividerSnippet = extractParts(bodyParts,dMarker+1,dMarkerEnd,doTrim);
@@ -589,7 +629,7 @@ public class LoopTag extends BlockTag
             dividerSnippet = null;
         } else if (dMarker > -1) {
             bodyEnd = dMarker;
-            dMarkerEnd = bodyParts.size();
+            ///dMarkerEnd = bodyParts.size();
             emptySnippet = null;
             dividerSnippet = extractParts(bodyParts,dMarker+1,dMarkerEnd,doTrim);
         } else {
@@ -620,20 +660,20 @@ public class LoopTag extends BlockTag
         return new Snippet(subParts);
     }
     
-    public static String cookLoop(TableData data, Chunk context,
+    public String cookLoop(TableData data, Chunk context,
             String rowTemplate, String emptyTemplate,
-            Map<String,Object> opt, boolean isBlock)
+            boolean isBlock)
     {
         Snippet rowSnippet = null;
         Snippet emptySnippet = null;
         if (isBlock) {
-            rowSnippet = rowTemplate == null ? null : new Snippet(rowTemplate);
-            emptySnippet = emptyTemplate == null ? null : new Snippet(emptyTemplate);
+            rowSnippet = rowTemplate == null ? null : Snippet.getSnippet(rowTemplate);
+            emptySnippet = emptyTemplate == null ? null : Snippet.getSnippet(emptyTemplate);
         } else {
             if (rowTemplate != null) rowSnippet = context.getTemplateSet().getSnippet(rowTemplate);
             if (emptyTemplate != null) {
                 if (emptyTemplate.length() == 0) {
-                    emptySnippet = new Snippet("");
+                    emptySnippet = Snippet.getSnippet("");
                 } else {
                     emptySnippet = context.getTemplateSet().getSnippet(emptyTemplate);
                 }
@@ -642,7 +682,7 @@ public class LoopTag extends BlockTag
         
         try {
             StringWriter out = new StringWriter();
-            cookLoopToPrinter(out,data,context,rowSnippet,emptySnippet,opt,isBlock,1);
+            cookLoopToPrinter(out,context,isBlock,1);
             out.flush();
             return out.toString();
         } catch (IOException e) {
@@ -662,7 +702,7 @@ public class LoopTag extends BlockTag
         this.chunk = context;
         fetchData((String)options.get("data"));
         
-        LoopTag.cookLoopToPrinter(out, data, context, rowSnippet, emptySnippet, options, true, depth);
+        cookLoopToPrinter(out, context, true, depth);
     }
 
 }

@@ -264,8 +264,8 @@ public class ChunkTest
     @Test
     public void testSnippetRoundTrip()
     {
-        String tpl = "xyz {~xyz:} {* MACRO *} {*} {^loop} {/loop}";
-        Snippet testSnippet = new Snippet(tpl);
+        String tpl = "xyz {~xyz:} {* MACRO *} {*} {^loop} {/loop} _[token] {_[token %s %s],~arg1,~arg2}";
+        Snippet testSnippet = Snippet.getSnippet(tpl);
         String recombobulated = testSnippet.toString();
         assertEquals(tpl,recombobulated);
     }
