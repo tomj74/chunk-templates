@@ -11,11 +11,13 @@ import java.io.Writer;
  */
 public class SnippetToken extends SnippetPart
 {
+    protected String token;
     private String[] args;
     
-    public SnippetToken(String text)
+    public SnippetToken(String text, String token)
     {
         super(text);
+        this.token = token;
     }
     
     public void render(Writer out, Chunk context, int depth)
@@ -27,16 +29,16 @@ public class SnippetToken extends SnippetPart
         
         if (locale == null) {
             if (args == null) {
-                out.append(super.snippetText);
+                out.append(token);
                 return;
             } else {
-                translated = ChunkLocale.processFormatString(super.snippetText, args, context);
+                translated = ChunkLocale.processFormatString(token, args, context);
             }
         } else {
-            translated = locale.translate(super.snippetText, args, context);
+            translated = locale.translate(token, args, context);
         }
         
-        Snippet reprocess = new Snippet(translated);
+        Snippet reprocess = Snippet.getSnippet(translated);
         reprocess.render(out, context, depth);
     }
 
@@ -46,10 +48,10 @@ public class SnippetToken extends SnippetPart
         int bodyB = wholeTag.lastIndexOf(LocaleTag.LOCALE_SIMPLE_CLOSE);
         if (bodyB < 0) {
             // no end bracket, no args
-            return new SnippetToken(wholeTag.substring(bodyA));
+            return new SnippetToken(wholeTag,wholeTag.substring(bodyA));
         }
         String body = wholeTag.substring(bodyA,bodyB);
-        SnippetToken tokenWithArgs = new SnippetToken(body);
+        SnippetToken tokenWithArgs = new SnippetToken(wholeTag,body);
         
         int argsA = bodyB+1;
         int argsB = wholeTag.length();
@@ -66,4 +68,5 @@ public class SnippetToken extends SnippetPart
         
         return tokenWithArgs;
     }
+    
 }

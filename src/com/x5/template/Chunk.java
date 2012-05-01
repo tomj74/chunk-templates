@@ -7,6 +7,7 @@ import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Hashtable;
+import java.util.List;
 import java.util.Set;
 import java.util.Vector;
 import java.util.Enumeration;
@@ -330,12 +331,19 @@ public class Chunk implements Map<String,Object>
         if (templateRoot == null && template == null) {
             templateRoot = toAdd;
         } else {
-            // FIXME just add more parts to the root snippet.
             if (template == null) {
                 template = new Vector<Object>();
                 template.addElement(templateRoot);
+                templateRoot.append(toAdd);
+            } else {
+                Object last = template.lastElement();
+                if (last instanceof Snippet) {
+                    // combine snippets into one snippet
+                    ((Snippet)last).append(toAdd);
+                } else {
+                    template.addElement(toAdd);
+                }
             }
-            template.addElement(toAdd);
         }
     }
 
@@ -347,7 +355,7 @@ public class Chunk implements Map<String,Object>
     	if (toAdd == null) return;
     	
     	// cut string into snippets-to-process and literals
-    	Snippet snippet = new Snippet(toAdd);
+    	Snippet snippet = Snippet.getSnippet(toAdd);
     	append(snippet);
     }
 
@@ -428,9 +436,9 @@ public class Chunk implements Map<String,Object>
                 tags.remove(tagName);
             }
             return;
+        } else {
+            set(tagName, tagValue, null);
         }
-        String ifNull = null;
-        set(tagName, tagValue, ifNull);
     }
 
     /**
@@ -448,13 +456,17 @@ public class Chunk implements Map<String,Object>
         if (tagName == null) return;
         // ensure that tagValue is either a String or a Chunk (or some tabular data)
         if (tagValue != null) {
-        	if (!(tagValue instanceof String
+            if (tagValue instanceof Chunk || tagValue instanceof TableData) {
+                // don't treat chunk or tabledata as a Map
+            } else if (tagValue instanceof Map) {
+                extractObjectParams(tagName,(Map<String,Object>)tagValue);
+                return;
+            } else if (!(tagValue instanceof String
         			|| tagValue instanceof Snippet
-        			|| tagValue instanceof Chunk
-        			|| tagValue instanceof TableData
+        			|| tagValue instanceof List
         			|| tagValue instanceof Object[])) {
-        		// bail...
-        		return;
+        		// force to string
+        		tagValue = tagValue.toString();
         	}
         }
         if (tagValue == null) {
@@ -484,27 +496,14 @@ public class Chunk implements Map<String,Object>
             }
         }
     }
-
-    /**
-     * Create a tag replacement rule, supplying a default value in case
-     * the value passed is null.  If both the tagValue and the fallback
-     * are null, a translate-to-empty-string rule is created.
-     * @param tagName tag to replace
-     * @param tagValue replacement value -- no-op unless this is of type String or Chunk.
-     * @param ifNull fallback replacement value in case tagValue is null
-     */
-    public void set(String tagName, Object tagValue, Chunk ifNull)
+    
+    private void extractObjectParams(String prefix, Map<String,Object> params)
     {
-        if (tagName == null) return;
-        if (tagValue == null) {
-            if (ifNull == null) {
-                tagValue = "";
-            } else {
-                tagValue = ifNull;
-            }
-        }
-        if (tagValue instanceof Chunk || tagValue instanceof String || tagValue instanceof TableData) {
-            set(tagName, tagValue, "");
+        String nullStr = null;
+        
+        for (String key : params.keySet()) {
+            String fullKey = prefix + '.' + key;
+            set(fullKey, params.get(key), nullStr);
         }
     }
 
@@ -708,7 +707,7 @@ public class Chunk implements Map<String,Object>
         } else if (obj instanceof String) {
             
             // snippet-ify to catch/skip literal blocks
-            Snippet snippet = new Snippet((String)obj);
+            Snippet snippet = Snippet.getSnippet((String)obj);
             explodeToPrinter(out, snippet, depth);
             
         } else if (obj instanceof Chunk) {
@@ -727,7 +726,11 @@ public class Chunk implements Map<String,Object>
             
             out.append("[LIST(java.lang.String) - Use a loop construct such as ^loop to display list data, or pipe to join().]");
             
-        }        
+        } else if (obj instanceof List) {
+
+            out.append("[LIST - Use a loop construct such as ^loop to display list data, or pipe to join().]");
+            
+        }
     }
     
     private Vector<Chunk> prepareParentContext()
@@ -759,17 +762,35 @@ public class Chunk implements Map<String,Object>
      * Retrieves a tag replacement rule.  getTag responds outside the context
      * of recursive tag replacement, so the return value may include unresolved
      * tags.
-     * @return The String or Chunk that this tag will resolve to, or null
+     * @return The Chunk or Snippet etc. that this tag will resolve to, or null
      * if no rule yet exists.
      */
     public Object getTag(String tagName)
     {
         if (tags != null) {
-            return tags.get(tagName);
+            Object x = tags.get(tagName);
+            if (x instanceof String) {
+                // first request for this value.  lazy-convert to Snippet.
+                // subsequent fetches will benefit from pre-scan.
+                Snippet s = Snippet.getSnippet((String)x);
+                tags.put(tagName, s);
+                return s;
+            } else {
+                return x;
+            }
         } else {
             for (int i=0; i<tagCount; i++) {
                 if (firstTags[i].equals(tagName)) {
-                    return firstValues[i];
+                    Object x = firstValues[i];
+                    if (x instanceof String) {
+                        // first request for this value. lazy-convert to Snippet.
+                        // subsequent fetches will benefit from pre-scan.
+                        Snippet s = Snippet.getSnippet((String)x);
+                        firstValues[i] = s;
+                        return s;
+                    } else {
+                        return x;
+                    }
                 }
             }
         }
@@ -1179,6 +1200,9 @@ public class Chunk implements Map<String,Object>
     {
         if (tagValue instanceof String[]) {
             return makeFilterOnion((String[])tagValue, filterMeLater, filters);
+        } else if (tagValue instanceof List) {
+            String[] niceList = stringifyList((List)tagValue);
+            return makeFilterOnion(niceList, filterMeLater, filters);
         } else if (tagValue instanceof String || tagValue instanceof Chunk || tagValue instanceof Snippet) {
             return wrapRemainingFilters(filterMeLater, filters);
         }
@@ -1193,6 +1217,15 @@ public class Chunk implements Map<String,Object>
             // no valid filters
             return tagValue;
         }
+    }
+    
+    private String[] stringifyList(List list)
+    {
+        String[] array = new String[list == null ? 0 : list.size()];
+        for (int i=0; i<array.length; i++) {
+            array[i] = list.get(i).toString();
+        }
+        return array;
     }
     
     // pipe denotes a request to apply a filter
@@ -1543,15 +1576,13 @@ public class Chunk implements Map<String,Object>
     /**
      * Adds multiple find-and-replace rules using all entries in the
      * Hashtable.  Replaces an existing rule if tagNames collide.
-     * Assumes keys are strings and values are either type String
-     * or type Chunk.
      */
     public void setMultiple(Map<String,Object> rules)
     {
         if (rules == null || rules.size() <= 0) return;
         Set<String> keys = rules.keySet();
         for (String tagName : keys) {
-            set(tagName,rules.get(tagName),"");
+            setOrDelete(tagName,rules.get(tagName));
         }
     }
 
@@ -1562,7 +1593,7 @@ public class Chunk implements Map<String,Object>
     public void setMultiple(Chunk copyFrom)
     {
         if (copyFrom != null) {
-            Hashtable<String,Object> h = copyFrom.getTagsTable();
+            Map<String,Object> h = copyFrom.getTagsTable();
             setMultiple(h);
         }
     }
@@ -1573,7 +1604,7 @@ public class Chunk implements Map<String,Object>
      * Does not return a clone.
      * @return a Hashtable containing the Chunk's find-and-replace rules.
      */
-    public Hashtable<String,Object> getTagsTable()
+    public Map<String,Object> getTagsTable()
     {
         if (tags != null) {
             return tags;

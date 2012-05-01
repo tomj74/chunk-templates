@@ -8,7 +8,7 @@ public class DataCapsuleTable implements TableData
 	private DataCapsuleReader fish;
 	private DataCapsule[] records;
 	private int cursor = -1;
-	private Map<String,String> currentRecord;
+	private Map<String,Object> currentRecord;
 	
 	public static DataCapsuleTable extractData(Object[] objArray)
 	{
@@ -80,7 +80,7 @@ public class DataCapsuleTable implements TableData
         }
 	}
 
-	public Map<String, String> nextRecord()
+	public Map<String, Object> nextRecord()
 	{
         cursor++;
         String[] values = getRow();
@@ -93,7 +93,7 @@ public class DataCapsuleTable implements TableData
         	// and maybe even individual DataCapsule objects
         	// ie, in addition to simple Strings
         	// for now, restricting table data to String objects.
-            currentRecord = new HashMap<String,String>();
+            currentRecord = new HashMap<String,Object>();
         } else {
             currentRecord.clear();
         }

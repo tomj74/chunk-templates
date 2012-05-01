@@ -1,5 +1,9 @@
 package com.x5.template;
 
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
+
+import org.junit.Before;
 import org.junit.Test;
 
 import com.x5.template.filters.BasicFilter;
@@ -448,7 +452,14 @@ public class TextFilterTest
         Theme theme = new Theme();
         theme.registerFilter(new LeftTrimFilter());
         Chunk c = theme.makeChunk();
+        // name is not defined, so filter throws NullPointerException,
+        // doesn't handle null properly
         c.append("xxx.{~name|ltrim:}.xxx");
+        
+        // this test intentionally triggers a problem.
+        // this hides the unsightly stderr output which will result.
+        System.setErr(new PrintStream(new ByteArrayOutputStream()));
+        
         assertEquals("xxx..xxx",c.toString());
     }
     

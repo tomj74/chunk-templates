@@ -127,7 +127,7 @@ public class IfTagTest
 
         c.set("parent_name", "Dad");
         c.append("{^if (~parent_name == ~name)} Dad's Dad! {/if}");
-        assertEquals(p.toString(), "P:  name is Dad.  Dad's here!  Dad's Dad! ");
+        assertEquals("P:  name is Dad.  Dad's here!  Dad's Dad! ",p.toString());
     }
     
     @Test

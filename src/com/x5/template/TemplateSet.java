@@ -293,7 +293,7 @@ public class TemplateSet implements ContentSource, ChunkFactory
                 errmsg.append(w.toString());
                 errmsg.append(" -->");
                 
-                template = new Snippet(errmsg.toString());
+                template = Snippet.getSnippet(errmsg.toString());
             }
         }
 
@@ -309,7 +309,7 @@ public class TemplateSet implements ContentSource, ChunkFactory
         		errmsg.append(filename);
         		errmsg.append("] -->");
 	            
-	            template = new Snippet(errmsg.toString());
+	            template = Snippet.getSnippet(errmsg.toString());
         	} else {
         		return null;
         	}
@@ -838,7 +838,7 @@ public class TemplateSet implements ContentSource, ChunkFactory
         if (template == null) return;
         String tpl = removeBlockTagIndents(template.toString());
         
-        cache.put(ref, new Snippet(tpl));
+        cache.put(ref, Snippet.getSnippet(tpl));
         cacheFetch.put(ref, new Long(System.currentTimeMillis()) );
     }
     
@@ -1059,7 +1059,8 @@ public class TemplateSet implements ContentSource, ChunkFactory
                     expanded.append(fullRef);
                     tagCursor = hashPos;
                 }
-            } else if ((a == ')' || a == 'e') && (b == '.' || b == ' ')) {
+            } else if ((a == ')' || a == 'e' || a == 'c') && (b == '.' || b == ' ')) {
+                // e for include, c for exec
                 if (expanded == null) expanded = new StringBuilder();
                 expanded.append(tagDirective.substring(tagCursor,hashPos));
                 expanded.append(fullRef);

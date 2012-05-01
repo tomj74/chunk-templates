@@ -8,6 +8,6 @@ public interface TableData
     public void setColumnLabels(String[] labels);
     public String[] getRow();
     public boolean hasNext();
-    public Map<String,String> nextRecord();
+    public Map<String,Object> nextRecord();
     public void reset();
 }

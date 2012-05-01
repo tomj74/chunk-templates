@@ -187,7 +187,7 @@ public class Theme implements ContentSource, ChunkFactory
 	    }
 	    
 	    err.append("] -->");
-	    return new Snippet(err.toString());
+	    return Snippet.getSnippet(err.toString());
 	}
 	
 	public String fetch(String itemName)

@@ -12,7 +12,7 @@ public class LoopTest
         String[] list = new String[]{"Frodo","Bilbo","Sam"};
         c.set("list", list);
         // smart trim is the default (strip first line if all whitespace)
-        c.append("{^loop data=\"~list\"}  \n {~DATA[0]}<br/>\n{/loop}");
+        c.append("{^loop data=\"~list\" array_tags=\"true\"}  \n {~DATA[0]}<br/>\n{/loop}");
         assertEquals(" Frodo<br/>\n Bilbo<br/>\n Sam<br/>\n",c.toString());
     }
 
@@ -24,7 +24,7 @@ public class LoopTest
         c.set("list", list);
         // smart trim is the default (strip first line if all whitespace)
         // note, this template has no final newline.
-        c.append("{^loop data=\"~list\"}\n{~DATA[0]}<br/>{/loop}");
+        c.append("{^loop data=\"~list\" array_tags=\"true\"}\n{~DATA[0]}<br/>{/loop}");
         assertEquals("Frodo<br/>Bilbo<br/>Sam<br/>",c.toString());
     }
     
@@ -34,7 +34,7 @@ public class LoopTest
         Chunk c = new Chunk();
         String[] list = new String[]{"Frodo","Bilbo","Sam"};
         c.set("list", list);
-        c.append("{^loop data=\"~list\" trim=\"all\"}\n {~DATA[0]}<br/>\n{/loop}");
+        c.append("{^loop data=\"~list\" trim=\"all\" array_tags=\"true\"}\n {~DATA[0]}<br/>\n{/loop}");
         assertEquals("Frodo<br/>Bilbo<br/>Sam<br/>",c.toString());
     }
     
@@ -44,7 +44,7 @@ public class LoopTest
         Chunk c = new Chunk();
         String[] list = new String[]{"Frodo","Bilbo","Sam"};
         c.set("list", list);
-        c.append("{^loop data=\"~list\" trim=\"false\"}\n{~DATA[0]}<br/>\n{/loop}");
+        c.append("{^loop data=\"~list\" trim=\"false\" array_tags=\"true\"}\n{~DATA[0]}<br/>\n{/loop}");
         assertEquals("\nFrodo<br/>\n\nBilbo<br/>\n\nSam<br/>\n",c.toString());
     }
     
@@ -139,7 +139,7 @@ public class LoopTest
         String widgets = "[[widget_id,widget_name],[1,thingamabob],[2,doodad]]";
         c.set("widgets",widgets);
         
-        assertEquals("1:thingamabob\n thingamabob *\n --\n doodad\n==\n2:doodad\n thingamabob\n --\n doodad *\n",
+        assertEquals("1. 1:thingamabob\n thingamabob *\n --\n doodad\n==\n2. 2:doodad\n thingamabob\n --\n doodad *\n",
                 c.toString());
     }
     
