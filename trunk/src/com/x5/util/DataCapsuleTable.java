@@ -5,10 +5,10 @@ import java.util.Map;
 
 public class DataCapsuleTable implements TableData
 {
-	private DataCapsuleReader fish;
 	private DataCapsule[] records;
 	private int cursor = -1;
 	private Map<String,Object> currentRecord;
+	private String[] columnLabels;
 	
 	public static DataCapsuleTable extractData(Object[] objArray)
 	{
@@ -34,12 +34,16 @@ public class DataCapsuleTable implements TableData
 	public DataCapsuleTable(DataCapsule[] dataCapsules)
 	{
 		this.records = dataCapsules;
-		fish = DataCapsuleReader.getReader(records);
 	}
 	
 	public String[] getColumnLabels()
 	{
-		return fish.getColumnLabels();
+	    if (columnLabels == null) {
+    	    DataCapsuleReader fish = getReader();
+    		return fish.getColumnLabels();
+	    } else {
+	        return columnLabels;
+	    }
 	}
 
 	public Object[] getRowRaw()
@@ -47,10 +51,22 @@ public class DataCapsuleTable implements TableData
         if (cursor < 0) cursor = 0;
 
         if (records != null && records.length > cursor) {
+            DataCapsuleReader fish = getReader();
             return fish.extractData(records[cursor]);
         } else {
             return null;
         }
+	}
+	
+	private DataCapsuleReader getReader()
+	{
+	    if (cursor < 0) cursor = 0;
+	    if (records != null && records.length > cursor) {
+	        DataCapsule atCursor = records[cursor];
+	        return DataCapsuleReader.getReader(atCursor);
+	    }
+	    
+	    return null;
 	}
 	
 	// convert non-strings in data to strings
@@ -109,7 +125,7 @@ public class DataCapsuleTable implements TableData
 
 	public void setColumnLabels(String[] labels)
 	{
-		fish.overrideColumnLabels(labels);
+	    this.columnLabels = labels;
 	}
 
 	public void reset()
