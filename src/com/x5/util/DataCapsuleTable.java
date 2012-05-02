@@ -60,9 +60,12 @@ public class DataCapsuleTable implements TableData
 	
 	private DataCapsuleReader getReader()
 	{
-	    if (cursor < 0) cursor = 0;
-	    if (records != null && records.length > cursor) {
-	        DataCapsule atCursor = records[cursor];
+	    // careful not to advance cursor unintentionally
+	    // eg when just retrieving labels
+	    int readerIndex = cursor;
+	    if (readerIndex < 0) readerIndex = 0;
+	    if (records != null && records.length > readerIndex) {
+	        DataCapsule atCursor = records[readerIndex];
 	        return DataCapsuleReader.getReader(atCursor);
 	    }
 	    
