@@ -300,4 +300,17 @@ public class IfTagTest
         assertEquals(" not stilton! roquefort! Brethren! ", c.toString());
     }
 
+    @Test
+    public void testNestedParens()
+    {
+        Chunk c = new Chunk();
+        c.set("a", 1);
+        c.append("{^if (~a|qcalc(%2) == 0)}EVEN{^else}ODD{/if}");
+        
+        Chunk d = new Chunk();
+        d.set("a", 2);
+        d.append("{^if (~a|qcalc(%2) == 0)}EVEN{^else}ODD{/if}");
+        
+        assertEquals("ODDEVEN",c.toString()+d.toString());
+    }
 }

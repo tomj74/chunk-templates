@@ -14,14 +14,7 @@ public class IfTag extends BlockTag
 {
     // chosenPath simplest case: 0 is "then", -1 is "else"
     // else-if case: 0 is "then", 1 is first else-if, 2 is 2nd else-if, -1 is "else"
-    private int chosenPath;
     private String primaryCond;
-    
-    private String thenTemplate;
-    private String elseTemplate;
-    
-    //private String[] altConds;
-    //private String[] altTemplates;
     
     private Chunk context;
     private Snippet body;
@@ -65,18 +58,19 @@ public class IfTag extends BlockTag
     {
         String cond = parseCond(params);
         primaryCond = cond;
+        /*
         if (context != null) {
             if (isTrueExpr(primaryCond, context)) {
                 chosenPath = 0;
             } else {
                 chosenPath = -1;
             }
-        }
+        }*/
         options = parseAttributes(params);
         if (options == null) return;
         
-        thenTemplate = options.get("then");
-        elseTemplate = options.get("else");
+        //thenTemplate = options.get("then");
+        //elseTemplate = options.get("else");
         String trimOpt = options.get("trim");
         if (trimOpt != null) {
             if (trimOpt.equalsIgnoreCase("false") || trimOpt.equalsIgnoreCase("none")) {
@@ -94,8 +88,9 @@ public class IfTag extends BlockTag
         int quotedCondPos = params.indexOf(" cond=\"");
         
         if (openParenPos > -1) {
-            int closeParenPos = params.indexOf(")",openParenPos+1);
-            if (quotedCondPos < 0) {
+            //int closeParenPos = params.indexOf(")",openParenPos+1);
+            int closeParenPos = params.lastIndexOf(")");
+            if (quotedCondPos < 0 && closeParenPos > openParenPos) {
                 String test = params.substring(openParenPos+1,closeParenPos);
                 return test;
             }
@@ -256,16 +251,7 @@ public class IfTag extends BlockTag
         return m.find();
     }
     
-    private String snippetOrValue(String result)
-    {
-        ContentSource theme = context.getTemplateSet();
-        if (theme.provides(result)) {
-            return theme.fetch(result);
-        } else {
-            return result;
-        }
-    }
-    
+    /*
     private void smartTrim(List<SnippetPart> subParts)
     {
         if (subParts != null && subParts.size() > 0) {
@@ -283,7 +269,7 @@ public class IfTag extends BlockTag
                 }
             }
         }
-    }
+    }*/
     
     private String trimLeft(String x)
     {
@@ -373,25 +359,25 @@ public class IfTag extends BlockTag
         List<SnippetPart> bodyParts = body.getParts();
         int nextElseTag = nextElseTag(bodyParts,0);
         
-        int path = 0;
+        //int path = 0;
         
         if (isTrueExpr(primaryCond, context)) {
-            chosenPath = 0;
+            //chosenPath = 0;
             if (nextElseTag < 0) nextElseTag = bodyParts.size();
             renderChosenParts(out, context, depth, bodyParts, 0, nextElseTag);
         } else {
             // locate next {^else} or {^elseIf} tag, or output nothing
             while (nextElseTag > -1) {
-                path++;
+                //path++;
                 String elseTag = ((SnippetTag)bodyParts.get(nextElseTag)).getTag();
                 if (elseTag.equals(".else")) {
-                    chosenPath = path;
+                    //chosenPath = path;
                     renderChosenParts(out, context, depth, bodyParts, nextElseTag+1, bodyParts.size());
                     break;
                 } else {
                     String elseIfCond = parseCond(elseTag);
                     if (isTrueExpr(elseIfCond, context)) {
-                        chosenPath = path;
+                        //chosenPath = path;
                         int nextBoundary = nextElseTag(bodyParts,nextElseTag+1);
                         if (nextBoundary == -1) nextBoundary = bodyParts.size();
                         renderChosenParts(out, context, depth, bodyParts, nextElseTag+1, nextBoundary);
