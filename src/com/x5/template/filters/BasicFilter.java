@@ -40,6 +40,7 @@ public abstract class BasicFilter implements ChunkFilter
         new TranslateFilter(),
         new URLDecodeFilter(),
         new URLEncodeFilter(),
+        new AlternateFilter(),
     };
     
     public static Map<String,ChunkFilter> getStockFilters()

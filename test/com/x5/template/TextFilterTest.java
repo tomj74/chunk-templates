@@ -423,7 +423,7 @@ public class TextFilterTest
     }
     
     @Test
-    public void testTranslation()
+    public void testTranslationFilter()
     {
         ChunkLocale.registerLocale("de_DE", new String[]{"blue","blau"});
         
@@ -433,6 +433,16 @@ public class TextFilterTest
         c.append(c.makeTag("color|xlate"));
         
         assertEquals("blau",c.toString());
+    }
+    
+    @Test
+    public void testAlternateFilter()
+    {
+        Chunk c = new Chunk();
+        c.set("stooges",new String[]{"Larry","Curly","Moe"});
+        c.append("{^loop in ~stooges as name counter_tags=\"true\" divider=\"-\"}{~name}:{~0|alternate(EVEN,ODD)}{/loop}");
+        
+        assertEquals("Larry:EVEN-Curly:ODD-Moe:EVEN", c.toString());
     }
     
     @Test

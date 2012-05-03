@@ -297,7 +297,7 @@ public class LoopTag extends BlockTag
             } else if (options.containsKey("divider")) {
 	        	String dividerTemplate = (String)options.get("divider");
 	        	ContentSource templates = context.getTemplateSet();
-	        	if (templates.provides(dividerTemplate)) {
+	        	if (templates != null && templates.provides(dividerTemplate)) {
 	        		dividerSnippet = templates.getSnippet(dividerTemplate);
 	        	} else {
 	        	    dividerSnippet = Snippet.getSnippet(dividerTemplate);
