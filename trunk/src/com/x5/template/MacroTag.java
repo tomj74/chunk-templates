@@ -15,10 +15,13 @@ import net.minidev.json.JSONValue;
 public class MacroTag extends BlockTag
 {
     private String templateRef;
+    private Snippet template;
     private Map<String,Object> macroDefs;
 
     public static final String MACRO_MARKER = "exec";
     public static final String MACRO_END_MARKER = "/exec";
+    
+    private static final int ARG_START = MACRO_MARKER.length()+2;
     
     // macro can take args in many formats
     private static final String FMT_CHUNK       = "chunk";
@@ -33,17 +36,53 @@ public class MacroTag extends BlockTag
     
     public MacroTag(String tagName, Snippet body)
     {
-        templateRef = tagName.substring(MACRO_MARKER.length()+2).trim();
-        
         String defFormat = FMT_ORIGINAL; // chunk is the standard format
-        // check for nonstandard requested format
-        int spacePos = templateRef.indexOf(' ');
-        if (spacePos > 0) {
-            defFormat = templateRef.substring(spacePos+1).toLowerCase();
-            templateRef = templateRef.substring(0,spacePos);
-        }
         
+        if (tagName.length() > ARG_START) {
+            templateRef = tagName.substring(ARG_START).trim();
+        
+            // check for nonstandard requested format
+            int spacePos = templateRef.indexOf(' ');
+            if (spacePos > 0) {
+                defFormat = templateRef.substring(spacePos+1).toLowerCase();
+                templateRef = templateRef.substring(0,spacePos);
+            }
+        }        
+        
+        if (templateRef == null) {
+            parseInlineTemplate(body);
+        }
         parseDefs(body,defFormat);
+    }
+    
+    private void parseInlineTemplate(Snippet body)
+    {
+        List<SnippetPart> parts = body.getParts();
+        int bodyEnd = parts.size();
+        for (int i=bodyEnd-1; i>=0; i--) {
+            SnippetPart part = parts.get(i);
+            if (part.isTag()) {
+                SnippetTag tag = (SnippetTag)part;
+                if (tag.getTag().equals("./body")) {
+                    bodyEnd = i;
+                } else if (tag.getTag().equals(".body")) {
+                    // everything after this marker is the template
+                    Snippet inlineSnippet = new Snippet(parts, i+1, bodyEnd);
+                    
+                    // trim leading whitespace up to first line break
+                    List<SnippetPart> inlineParts = inlineSnippet.getParts();
+                    LoopTag.smartTrimSnippetParts(inlineParts, false);
+                    
+                    this.template = inlineSnippet;
+                    
+                    // strip inline template away, no need to parse for args
+                    for (int j=parts.size()-1; j>=i; j--) {
+                        parts.remove(j);
+                    }
+                    return;
+                }
+            }
+        }
     }
     
     private void parseDefs(Snippet body, String defFormat)
@@ -233,9 +272,20 @@ public class MacroTag extends BlockTag
     public void renderBlock(Writer out, Chunk context, int depth)
         throws IOException
     {
-        Chunk macro = context.getChunkFactory().makeChunk(templateRef);
-        macro.setMultiple(macroDefs);
+        Chunk macro = null;
+        ChunkFactory theme = context.getChunkFactory();
         
+        if (templateRef != null && theme != null) {
+            macro = theme.makeChunk(templateRef);
+        } else if (template != null) {
+            macro = (theme == null) ? new Chunk() : theme.makeChunk();
+            macro.append(template);
+        } else {
+            // no template! bail
+            return;
+        }
+        
+        macro.setMultiple(macroDefs);
         macro.render(out, context);
     }
 

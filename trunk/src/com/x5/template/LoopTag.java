@@ -479,14 +479,19 @@ public class LoopTag extends BlockTag
     
     private void smartTrim(List<SnippetPart> subParts)
     {
+        smartTrimSnippetParts(subParts, isTrimAll());
+    }
+    
+    public static void smartTrimSnippetParts(List<SnippetPart> subParts, boolean isTrimAll)
+    {
         if (subParts != null && subParts.size() > 0) {
             SnippetPart firstPart = subParts.get(0);
             if (firstPart.isLiteral()) {
-                String trimmed = isTrimAll() ? trimLeft(firstPart.getText())
-                        : smartTrim(firstPart.getText(), true);
+                String trimmed = isTrimAll ? trimLeft(firstPart.getText())
+                        : smartTrimString(firstPart.getText(), true, false);
                 firstPart.setText(trimmed);
             }
-            if (isTrimAll()) {
+            if (isTrimAll) {
                 SnippetPart lastPart = subParts.get(subParts.size()-1);
                 if (lastPart.isLiteral()) {
                     String trimmed = trimRight(lastPart.getText());
@@ -496,7 +501,7 @@ public class LoopTag extends BlockTag
         }
     }
     
-    private String trimLeft(String x)
+    private static String trimLeft(String x)
     {
         if (x == null) return null;
         int i = 0;
@@ -510,7 +515,7 @@ public class LoopTag extends BlockTag
         return x.substring(i);
     }
     
-    private String trimRight(String x)
+    private static String trimRight(String x)
     {
         if (x == null) return null;
         int i = x.length()-1;
@@ -537,14 +542,14 @@ public class LoopTag extends BlockTag
     
     private String smartTrim(String x)
     {
-        return smartTrim(x, false);
+        return smartTrimString(x, false, isTrimAll());
     }
     
     private static final Pattern UNIVERSAL_LF = Pattern.compile("\n|\r\n|\r\r");
     
-    private String smartTrim(String x, boolean ignoreAll)
+    private static String smartTrimString(String x, boolean ignoreAll, boolean isTrimAll)
     {
-        if (!ignoreAll && isTrimAll()) {
+        if (!ignoreAll && isTrimAll) {
             // trim="all" disables smartTrim.
             return x.trim();
         }

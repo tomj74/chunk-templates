@@ -900,7 +900,9 @@ public class Chunk implements Map<String,Object>
         int spacePos = tagName.indexOf(" ",1); // {^include abc#xyz} is ok too
         if (delimPos < 0 && spacePos < 0) {
             if (tagName.startsWith("./")) {
-                return "[CHUNK_ERR: extra end tag, no matching tag found for "+tagName.substring(1)+"]";
+                // extra end tag, pass through
+                return null;
+                //return "[CHUNK_ERR: extra end tag, no matching tag found for "+tagName.substring(1)+"]";
             } else {
                 return "[CHUNK_ERR: malformed content reference: '"+tagName+"' -- missing argument]";
             }

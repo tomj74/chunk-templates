@@ -3,6 +3,7 @@ package com.x5.template;
 import java.io.Writer;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -51,10 +52,12 @@ public class Snippet
 	    long threshhold = timestamp - CAN_GC_AFTER;
 	    if (lastGC > threshhold) return;
 	    
-	    for (String key : snippetCache.keySet()) {
+	    Iterator<String> i = snippetCache.keySet().iterator();
+	    while (i.hasNext()) {
+	        String key = i.next();
 	        long age = cacheAge.get(key);
 	        if (age < threshhold) {
-	            snippetCache.remove(key);
+	            i.remove();
 	            cacheAge.remove(key);
 	        }
 	    }
