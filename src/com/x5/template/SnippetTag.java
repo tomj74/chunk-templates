@@ -65,7 +65,7 @@ public class SnippetTag extends SnippetPart
         String[] tokens = new String[blockTags.length];
         for (int i=0; i<blockTags.length; i++) {
             // This will miss old-style (deprecated?) {^loop(...)} invocation (do we care?)
-            tokens[i] = "."+blockTags[i].getBlockStartMarker()+" ";
+            tokens[i] = "."+blockTags[i].getBlockStartMarker();
         }
         return tokens;
     }

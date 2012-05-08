@@ -101,4 +101,23 @@ public class MacroTest
         
         assertEquals(targetOutput, c.toString());
     }
+    
+    @Test
+    public void inlineBodyTest()
+    {
+        Chunk c = new Chunk();
+        c.append("{^exec}{~a=2}{~x=3}{^body}a = {~a}.  x = {~x}.{/exec}");
+        
+        assertEquals("a = 2.  x = 3.", c.toString());
+    }
+
+    @Test
+    public void inlineBodyWithEndTagTest()
+    {
+        // also tests smart trim...
+        Chunk c = new Chunk();
+        c.append("{^exec}{~a=2}{~x=3}{^body}\na = {~a}.  x = {~x}.\n{/body} alksdjflaksjdf {/exec}");
+        
+        assertEquals("a = 2.  x = 3.\n", c.toString());
+    }
 }

@@ -485,8 +485,13 @@ public class TextFilter
                 String xlation;
                 if (tagB.charAt(0) == '~') {
                     // equality (or inequality) of two variables (tags)
-                    // resolve right-hand tag reference to a value
-                    String tagValue = (String)tagTable.get(tagA);
+                    // resolve right-hand tag reference to a string value
+                    String tagValue = null;
+                    
+                    // might be a snippet...
+                    Object tagValueObj = tagTable.get(tagA);
+                    if (tagValueObj != null) tagValue = tagValueObj.toString();
+                    
                     if (tagValue == null) tagValue = "";
                     if (isNeg) {
                         xlation = open + tagB.substring(1)
