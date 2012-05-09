@@ -333,9 +333,18 @@ public class TextFilterTest
         Chunk c = new Chunk();
         c.set("abc","& ' \" <Tag>");
         c.append("test: {~abc|xmlescape}");
-        assertEquals("test: &amp; &apos; &quot; &lt;Tag&gt;",c.toString());
+        assertEquals("test: &amp; &apos; &quot; &lt;Tag&gt;", c.toString());
     }
 
+    @Test
+    public void testXMLUnescape()
+    {
+        Chunk c = new Chunk();
+        c.set("abc","&amp; &apos; \" &lt;Tag&gt; &#123; &#x03BB;");
+        c.append("test: {~abc|unescape}");
+        assertEquals("test: & ' \" <Tag> { \u03BB", c.toString());
+    }
+    
     @Test
     public void testDefang()
     {
@@ -353,6 +362,16 @@ public class TextFilterTest
         c.set("beatles", beatles);
         c.append("The beatles are: {~beatles|join(, )}.");
         assertEquals(c.toString(),"The beatles are: John, Paul, George, Ringo.");
+    }
+    
+    @Test
+    public void testGet()
+    {
+        Chunk c = new Chunk();
+        String[] beatles = new String[]{"John","Paul","George","Ringo"};
+        c.set("beatles", beatles);
+        c.append("The 2nd beatle is: {~beatles|get(1)}.");
+        assertEquals(c.toString(),"The 2nd beatle is: Paul.");
     }
     
     @Test
@@ -443,6 +462,20 @@ public class TextFilterTest
         c.append("{^loop in ~stooges as name counter_tags=\"true\" divider=\"-\"}{~name}:{~0|alternate(EVEN,ODD)}{/loop}");
         
         assertEquals("Larry:EVEN-Curly:ODD-Moe:EVEN", c.toString());
+    }
+    
+    @Test
+    public void testOnEmptyFilter()
+    {
+        Chunk c = new Chunk();
+
+        String x = null;
+        c.set("empty_tag",x);
+        c.set("std_tag","boo hoo!");
+        
+        c.append("{~tag|onempty(boo!)} {~empty_tag|onempty(foo!)} {~std_tag|onempty(hufu!)}");
+        
+        assertEquals("boo! foo! boo hoo!", c.toString());
     }
     
     @Test
