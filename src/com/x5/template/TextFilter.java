@@ -623,6 +623,24 @@ public class TextFilter
         return closeParen+1;
     }
     
+    public static String accessArrayIndex(String[] array, String getFilter)
+    {
+        if (array == null) return "";
+        int parenPos = getFilter.indexOf('(');
+        if (parenPos > 0) {
+            String[] args = parseArgs(getFilter.substring(parenPos+1),false);
+            String idx = args[0];
+            try {
+                int x = Integer.parseInt(idx);
+                if (x >= 0 && x < array.length) {
+                    return array[x];
+                }
+            } catch (NumberFormatException e) {
+            }
+        }
+        return "";
+    }
+    
     public static String joinStringArray(String[] array, String joinFilter)
     {
     	if (array == null) return "";
