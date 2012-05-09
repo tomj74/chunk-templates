@@ -1160,8 +1160,12 @@ public class Chunk implements Map<String,Object>
         // String[] is only really legal here if the very first
         // filter is join -- must pre-apply the filter here
         if (filters[0].startsWith("join")) {
-            String joinedString = TextFilter.joinStringArray((String[])tagValue,filters[0]);
+            String joinedString = TextFilter.joinStringArray(tagValue,filters[0]);
             filterMeLater.set("oneTag", joinedString);
+            filterMeLater.delayedFilter = null;
+        } else if (filters[0].startsWith("get")) {
+            String indexedValue = TextFilter.accessArrayIndex(tagValue,filters[0]);
+            filterMeLater.set("oneTag", indexedValue);
             filterMeLater.delayedFilter = null;
         } else if (filters[0].startsWith("ondefined")) {
             // well, it *is* non-null... give it a dummy string value
