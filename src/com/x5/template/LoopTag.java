@@ -117,7 +117,13 @@ public class LoopTag extends BlockTag
         
         if (params.length > 3) {
             if (params[3].equals("as")) {
-                options.put("name",params[4]);
+                String loopVarPrefix = params[4];
+                if (loopVarPrefix != null) {
+                    if (loopVarPrefix.startsWith("~")) {
+                        loopVarPrefix = loopVarPrefix.substring(1);
+                    }
+                    options.put("name",loopVarPrefix);
+                }
             }
         }
     }
