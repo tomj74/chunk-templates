@@ -47,6 +47,11 @@ public class MacroTag extends BlockTag
                 defFormat = templateRef.substring(spacePos+1).toLowerCase();
                 templateRef = templateRef.substring(0,spacePos);
             }
+            
+            // @inline should trigger a search for inline body within exec block
+            if (templateRef.startsWith("@")) {
+                templateRef = null;
+            }
         }        
         
         if (templateRef == null) {
@@ -152,6 +157,12 @@ public class MacroTag extends BlockTag
                     tags.put(tagName, rule.getNodeValue());
                 } else {
                     tags.put(tagName, parseXMLObject(rule));
+                }
+                Map<String,String> attrs = rule.getAttributes();
+                if (attrs != null) {
+                    for (String key : attrs.keySet()) {
+                        tags.put(tagName+"@"+key, attrs.get(key));
+                    }
                 }
             }
             

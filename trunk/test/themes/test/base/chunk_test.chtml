@@ -109,6 +109,36 @@ NOT A TOASTER
 
 
 {!---------------------------------------------}
+{#if_regex_inside_loop_tilde}
+{~program_code}
+{^loop in ~widgets as ~x}{!-- allow as ~x to mean as x --}
+  {^if (~program_code =~ /ATD/)}
+{!-- nothing! --}
+  {^elseIf (~x.is_toaster)}
+TOASTER!
+  {^else}
+NOT A TOASTER
+  {/if}
+{/loop}
+{#}
+
+
+{!---------------------------------------------}
+{#alt_prefix_test}
+{$program_code}
+{.loop in $widgets as $x}{!-- allow as ~x to mean as x --}
+  {.if ($program_code =~ /ATD/)}
+{!-- nothing! --}
+  {.elseIf ($x.is_toaster)}
+TOASTER!
+  {.else}
+NOT A TOASTER
+  {/if}
+{/loop}
+{#}
+
+
+{!---------------------------------------------}
 {#layer_test}
 Base Layer
 {#}

@@ -92,6 +92,17 @@ public class MacroTest
     }
     
     @Test
+    public void xmlArgsWithAttributesTest()
+    {
+        Theme theme = new Theme("test/base");
+        Chunk c = theme.makeChunk("macro_test#xml_with_attributes");
+        
+        String targetOutput = theme.fetch("macro_test#xml_with_attrs_expected_output");
+        
+        assertEquals(targetOutput, c.toString());
+    }
+    
+    @Test
     public void tableOfMapsTest()
     {
         Theme theme = new Theme("test/base");

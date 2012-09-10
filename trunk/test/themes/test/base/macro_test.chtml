@@ -3,12 +3,23 @@
 
 
 {!---------------------------------------------}
-{#simple_test}
+{#simple_test.deprecated}
+{!-- this syntax has been deprecated --}
 {* #SIMPLE_TEST_MACRO *}
  {~kind_of_food = burrito}
  {~kind_of_drink=}sangria{=}
  {~host=}{~host_name}{=}
 {*}
+{#}
+
+
+{!---------------------------------------------}
+{#simple_test}
+{^exec #SIMPLE_TEST_MACRO}
+ {~kind_of_food = burrito}
+ {~kind_of_drink=}sangria{=}
+ {~host=}{~host_name}{=}
+{/exec}
 {#}
 
 
@@ -20,9 +31,9 @@ Once I ate a {~kind_of_food} and drank some {~kind_of_drink} at {~host}'s house 
 
 {!---------------------------------------------}
 {#table_test}
-{* #TABLE *}
+{^exec #TABLE}
  {~some_data=}[[item,price],[spoon,.2],[fork,.3],[knife,1.03]]{=}
-{*}
+{/exec}
 {#}
 
 
@@ -267,11 +278,11 @@ knife $1.03
 
 {!---------------------------------------------}
 {#assignment_trick_test}
-{* #SIMPLE_TEST_MACRO *}
+{^exec #SIMPLE_TEST_MACRO}
  {~kind_of_food = burrito}
  {~kind_of_drink=}sangria{=}
  {~host=}{^if (~kind_of_food == burrito)}Jane{^else}{~host_name}{/if}{=}
-{*}
+{/exec}
 {#}
 
 
@@ -302,4 +313,34 @@ knife $1.03
 {^loop in ~items}
 {~id} - {~name} {~price|sprintf($%,.2f)}<br/>
 {/loop}
+{#}
+
+
+{!---------------------------------------------}
+{#xml_with_attributes}
+{!-- macro value test using xml with attributes.
+     attributes should be visible as param_name@attr_name
+  --}
+{^exec @inline xml}
+<values>
+ <obj_with_attrs xyz="hello" foo="\\bar\\" abc="I hate &quot;air-quotes&quot;" baz="hello \"ladies\"" />
+</values>
+{^body}
+
+I said {~obj_with_attrs@xyz}.
+foo is {~obj_with_attrs@foo}.
+He said "{~obj_with_attrs@abc}."
+She said "{~obj_with_attrs@baz}!"
+{/body}
+{/exec}
+{#}
+
+
+{!---------------------------------------------}
+{#xml_with_attrs_expected_output}
+
+I said hello.
+foo is \bar\.
+He said "I hate "air-quotes"."
+She said "hello "ladies"!"
 {#}

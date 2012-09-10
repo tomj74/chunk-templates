@@ -15,6 +15,7 @@ import java.util.regex.Pattern;
 public class LiteXml
 {
     private String xml;
+    private Map<String,String> attrs = null;
     // can handle this many child nodes in a parse for children
     // before pausing to grow the endpoints array.
     // nested nodes will survive ok, they don't add to the final count.
@@ -45,12 +46,101 @@ public class LiteXml
         String nodeType = xml.substring(begPos+1,endPos);
         return nodeType;
     }
+    
+    public Map<String,String> getAttributes()
+    {
+        if (xml == null) return null;
+        if (this.attrs != null) return this.attrs;
+        
+        // pick a candidate for close-tag-position (may disprove later if nec)
+        int tagEndPos = xml.indexOf('>');
+        // not found? bail.
+        if (tagEndPos < 0) return null;
+        int spacePos = xml.indexOf(' ');
+        // no attributes? bail.
+        if (spacePos < 0 || spacePos > tagEndPos) return null;
+        // narrow the parsing space to just this tag's attributes
+        String attrDefs = xml.substring(spacePos+1,tagEndPos);
+        this.attrs = parseAttributes(attrDefs);
+        return this.attrs;
+    }
+    
+    private Map<String,String> parseAttributes(String attrDef)
+    {
+        Map<String,String> attrs = new HashMap<String,String>();
+        int cursor = 0;
+        while (cursor < attrDef.length()) {
+            // establish value location: first seek =, then the opening double-quote
+            int openQuotePos = attrDef.indexOf('=',cursor);
+            if (openQuotePos < 0) break;
+            // store the param name
+            String param = attrDef.substring(cursor,openQuotePos);
+            // look for double-quote following = sign.
+            openQuotePos = attrDef.indexOf('"',openQuotePos + 1);
+            if (openQuotePos < 0) break;
+            cursor = openQuotePos + 1;
+            // look for unescaped closing double-quote
+            int closeQuotePos = nextUnescapedDelim("\"",attrDef,cursor);
+            if (closeQuotePos < 0) break;
+            // okay, if we made it this far we have a properly delimited value
+            String val = attrDef.substring(cursor,closeQuotePos);
+            // unescape slashes and quotes in the value
+            val = val.replaceAll("\\\\\"", "\"");
+            val = val.replaceAll("\\\\\\\\", "\\\\");
+            // store name-value pair
+            attrs.put(param.trim(), unescapeXML(val));
+            // seek to next attribute
+            cursor = attrDef.indexOf(' ',closeQuotePos+1);
+            if (cursor < 0) break;
+            cursor++;
+        }
+        
+        return attrs;
+    }
+    
+    public static int nextUnescapedDelim(String delim, String toScan, int searchFrom)
+    {
+        int delimPos = toScan.indexOf(delim, searchFrom);
 
+        boolean isProvenDelimeter = false;
+        while (!isProvenDelimeter) {
+            // count number of backslashes that precede this forward slash
+            int bsCount = 0;
+            while (delimPos-(1+bsCount) >= searchFrom && toScan.charAt(delimPos - (1+bsCount)) == '\\') {
+                bsCount++;
+            }
+            // if odd number of backslashes precede this delimiter char, it's escaped
+            // if even number precede, it's not escaped, it's the true delimiter
+            // (because it's preceded by either no backslash or an escaped backslash)
+            if (bsCount % 2 == 0) {
+                isProvenDelimeter = true;
+            } else {
+                // keep looking for real delimiter
+                delimPos = toScan.indexOf(delim, delimPos+1);
+                // if the regex is not legal (missing delimiters??), bail out
+                if (delimPos < 0) return -1;
+            }
+        }
+        return delimPos;
+    }
+    
+    public String getAttribute(String attr)
+    {
+        Map<String,String> myAttrs = getAttributes();
+        
+        if (myAttrs == null || myAttrs.size() < 1) {
+            return null;
+        }
+        
+        return myAttrs.get(attr);
+    }
+    
+    /*
     public String getAttribute(String attr)
     {
         // locate attributes
         if (xml == null) return null;
-        // assume attribute names and values do not contain >
+        // assume attribute names and values do not contain > (hey, this is Lite, right?)
         int tagEndPos = xml.indexOf('>');
         // malformed? (no >)?
         if (tagEndPos < 0) return null;
@@ -74,6 +164,9 @@ public class LiteXml
             if (endQuotePos < 0) return null;
             if (attrs.charAt(endQuotePos-1) == '\\') {
                 // escaped quote, doesn't count -- keep seeking
+                // FIXME should count num of consec escapes
+                // since, if preceded by even num of escapes,
+                // this char is actually not escaped.
                 endQuotePos++;
             }
         } while (endQuotePos < attrs.length() && attrs.charAt(endQuotePos) != '"');
@@ -83,7 +176,7 @@ public class LiteXml
             // never found closing quote
             return null;
         }
-    }
+    }*/
 
     private String getRawNodeValue()
     {

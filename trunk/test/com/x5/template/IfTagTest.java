@@ -313,4 +313,20 @@ public class IfTagTest
         
         assertEquals("ODDEVEN",c.toString()+d.toString());
     }
+    
+    @Test
+    public void testOnEmptyFilter()
+    {
+        Chunk c = new Chunk();
+        c.set("a","");
+        c.setOrDelete("b",null);
+        c.set("c","non-empty");
+        c.set("d","   \n   ");
+        c.append("{^if (~a|onempty(EMPTY) == EMPTY) }EMPTY{^else}FULL{/if} ");
+        c.append("{^if (~b|onempty(EMPTY) == EMPTY) }EMPTY{^else}FULL{/if} ");
+        c.append("{^if (~c|onempty(EMPTY) == EMPTY) }EMPTY{^else}FULL{/if} ");
+        c.append("{^if (~d|onempty(EMPTY) == EMPTY) }EMPTY{^else}FULL{/if}");
+        
+        assertEquals("EMPTY EMPTY FULL EMPTY", c.toString());
+    }
 }

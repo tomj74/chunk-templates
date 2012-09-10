@@ -171,6 +171,36 @@ public class LoopTest
     }
     
     @Test
+    public void testIfRegexInsideLoopFunkySyntax()
+    {
+        Theme theme = new Theme("themes","test/base");
+        
+        String widgets = "[[widget_id,widget_name],[1,thingamabob],[2,doodad]]";
+
+        Chunk c = theme.makeChunk("chunk_test#if_regex_inside_loop_tilde");
+        c.set("program_code","WEBATDPLUS");
+        c.set("widgets", widgets);
+
+        String output = c.toString();
+        assertEquals(output,"WEBATDPLUS\n");
+    }
+    
+    @Test
+    public void testAltPrefixSyntax()
+    {
+        Theme theme = new Theme("themes","test/base");
+        
+        String widgets = "[[widget_id,widget_name],[1,thingamabob],[2,doodad]]";
+
+        Chunk c = theme.makeChunk("chunk_test#alt_prefix_test");
+        c.set("program_code","WEBATDPLUS");
+        c.set("widgets", widgets);
+
+        String output = c.toString();
+        assertEquals(output,"WEBATDPLUS\n");
+    }
+    
+    @Test
     public void testDataReset()
     {
         Theme theme = new Theme("themes","test/base");
@@ -179,6 +209,27 @@ public class LoopTest
         
         Chunk c = theme.makeChunk();
         c.append("{^loop in ~widgets as w}{~w.widget_id}{^onEmpty}EMPTY{/loop}");
+        
+        c.set("widgets", widgets);
+        
+        String outputA = c.toString();
+        assertEquals("12",outputA);
+        
+        c.unset("widgets");
+        
+        String outputB = c.toString();
+        assertEquals("EMPTY",outputB);
+    }
+    
+    @Test
+    public void testDataResetAlt()
+    {
+        Theme theme = new Theme("themes","test/base");
+        
+        String widgets = "[[widget_id,widget_name],[1,thingamabob],[2,doodad]]";
+        
+        Chunk c = theme.makeChunk();
+        c.append("{.loop in ~widgets as w}{$w.widget_id}{.onEmpty}EMPTY{/loop}");
         
         c.set("widgets", widgets);
         

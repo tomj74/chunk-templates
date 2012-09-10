@@ -98,10 +98,10 @@ public class TextFilter
                 text = Chunk.findAndReplace(text,"'","\\'");
             }
             return text;
-        } else if (filter.equals("uc")) {
+        } else if (filter.equals("uc") || filter.equals("upper")) {
             // uppercase
             return text == null ? null : text.toUpperCase();
-        } else if (filter.equals("lc")) {
+        } else if (filter.equals("lc") || filter.equals("lower")) {
             // lowercase
             return text == null ? null : text.toLowerCase();
         }
@@ -258,12 +258,17 @@ public class TextFilter
         return truncated;
     }
 
+    /**
+     * magicBraces wraps unbraced tag-specials ~tag ^command +include in {~braces}
+     * to trigger proper re-processing later on.  magicBraces leaves unprefixed
+     * values intact.
+     */
     public static String magicBraces(Chunk context, String output)
     {
         if (output == null || output.length() == 0) return output;
         
         char firstChar = output.charAt(0);
-        if (firstChar == '~' || firstChar == '+') {
+        if (firstChar == '~' || firstChar == '+' || firstChar == '$') {
         	if (context == null || context.isConforming()) {
         		return "{"+output+"}";
         	} else {
@@ -277,7 +282,7 @@ public class TextFilter
         		
         		return tag;
         	}
-        } else if (firstChar == '^') {
+        } else if (firstChar == '^' || firstChar == '.') {
         	if (context == null) {
         		// internally, {^xyz} is just an alias for {~.xyz}
         		return TemplateSet.DEFAULT_TAG_START+'.'+output.substring(1)+TemplateSet.DEFAULT_TAG_END;
@@ -632,6 +637,11 @@ public class TextFilter
             String idx = args[0];
             try {
                 int x = Integer.parseInt(idx);
+                if (x < 0) {
+                    // eg, -1 returns the last item in the array
+                    // -2 return the 2nd-to-last, etc.
+                    x = array.length + x;
+                }
                 if (x >= 0 && x < array.length) {
                     return array[x];
                 }

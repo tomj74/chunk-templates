@@ -860,7 +860,7 @@ public class TemplateSet implements ContentSource, ChunkFactory
     {
     	// do NOT place in cache if ^super directive is found
     	// that way, the parent layer will be used instead.
-    	if (template.indexOf("{^super}") > -1) return null;
+    	if (template.indexOf("{^super}") > -1 || template.indexOf("{.super}") > -1) return null;
     	
         // to allow shorthand intra-template references, must pre-process the template
         // at this point and expand any intra-template references, eg:
@@ -898,9 +898,9 @@ public class TemplateSet implements ContentSource, ChunkFactory
             char afterBrace = template.charAt(cursor+1);
             if (afterBrace == '+') {
                 cursor = expandShorthandInclude(template,fullRef,cursor);
-            } else if (afterBrace == '~') {
+            } else if (afterBrace == '~' || afterBrace == '$') {
                 cursor = expandShorthandTag(template,fullRef,cursor);
-            } else if (afterBrace == '^') {
+            } else if (afterBrace == '^' || afterBrace == '.') {
             	// check for literal block, and do not perform expansions
             	// inside any literal blocks.
             	int afterLiteralBlock = skipLiterals(template,cursor);

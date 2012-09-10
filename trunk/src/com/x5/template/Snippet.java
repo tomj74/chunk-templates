@@ -91,7 +91,7 @@ public class Snippet
 		return parts;
 	}
 	
-	private static final String MAGIC_CHARS = "~^/*=+_";
+	private static final String MAGIC_CHARS = "~$^./*=+_";
 	
 	/**
 	 * One pass over the string.  Identify all dynamic tags and slice into
@@ -320,11 +320,11 @@ public class Snippet
         // and now focus on the tag...
         String wholeTag = template.substring(tagStart,i+1);
         
-        if (magicChar == '~') {
+        if (magicChar == '~' || magicChar == '$') {
             String gooeyCenter = template.substring(tagStart+2,i);
             SnippetTag tag = new SnippetTag(wholeTag,gooeyCenter);
             return tag;
-        } else if (magicChar == '^') {
+        } else if (magicChar == '^' || magicChar == '.') {
             String gooeyCenter = template.substring(tagStart+2,i);
             // check for literal block
             if (gooeyCenter.equals("literal") || gooeyCenter.equals("^")) return null;
