@@ -66,6 +66,16 @@ public class ChunkTest
     }
     
     @Test
+    public void testSimpleRecursionAlt()
+    {
+        Chunk c = new Chunk();
+        c.append("Hello, my name is {$name}!");
+        c.set("name", "{$username}");
+        c.set("username", "Bob");
+        assertEquals("Hello, my name is Bob!", c.toString());
+    }
+    
+    @Test
     public void testInfiniteRecursion()
     {
         Chunk c = new Chunk();
@@ -265,6 +275,15 @@ public class ChunkTest
     public void testSnippetRoundTrip()
     {
         String tpl = "xyz {~xyz:} {* MACRO *} {*} {^loop} {/loop} _[token] {_[token %s %s],~arg1,~arg2}";
+        Snippet testSnippet = Snippet.getSnippet(tpl);
+        String recombobulated = testSnippet.toString();
+        assertEquals(tpl,recombobulated);
+    }
+
+    @Test
+    public void testSnippetRoundTripAlt()
+    {
+        String tpl = "xyz {$xyz:} {* MACRO *} {*} {.loop} {/loop} _[token] {_[token %s %s],$arg1,$arg2}";
         Snippet testSnippet = Snippet.getSnippet(tpl);
         String recombobulated = testSnippet.toString();
         assertEquals(tpl,recombobulated);

@@ -28,8 +28,8 @@ public class LoopTag extends BlockTag
     
     private Chunk rowX;
     
-    private static final String ON_EMPTY_MARKER = "{~.onEmpty}";
-    private static final String DIVIDER_MARKER = "{~.divider}";
+    //private static final String ON_EMPTY_MARKER = "{~.onEmpty}";
+    //private static final String DIVIDER_MARKER = "{~.divider}";
 
     public static void main(String[] args)
     {
@@ -119,7 +119,7 @@ public class LoopTag extends BlockTag
             if (params[3].equals("as")) {
                 String loopVarPrefix = params[4];
                 if (loopVarPrefix != null) {
-                    if (loopVarPrefix.startsWith("~")) {
+                    if (loopVarPrefix.startsWith("~") || loopVarPrefix.startsWith("$")) {
                         loopVarPrefix = loopVarPrefix.substring(1);
                     }
                     options.put("name",loopVarPrefix);
@@ -218,11 +218,14 @@ public class LoopTag extends BlockTag
                 dataVar = dataVar.substring(0,rangeMarker);
                 registerOption("range",range);
             }
-            if (dataVar.charAt(0) == '^') {
+            char c0 = dataVar.charAt(0);
+            boolean isDirective = false;
+            if (c0 == '^' || c0 == '.') {
                 // expand "external" shortcut syntax eg ^wiki becomes ~.wiki
-                dataVar = RegexFilter.applyRegex(dataVar, "s/^\\^/~./");
+                dataVar = RegexFilter.applyRegex(dataVar, "s/^[\\^\\.]/~./");
+                isDirective = true;
             }
-            if (dataVar.startsWith("~")) {
+            if (isDirective || c0 == '~' || c0 == '$') {
                 // tag reference (eg, tag assigned to query result table)
                 dataVar = dataVar.substring(1);
 

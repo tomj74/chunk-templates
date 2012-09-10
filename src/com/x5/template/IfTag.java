@@ -132,14 +132,18 @@ public class IfTag extends BlockTag
         if (test.length() == 0) return false;
         
         char firstChar = test.charAt(0);
-        if (firstChar == '!' || firstChar == '~') test = test.substring(1);
+        if (firstChar == '!' || firstChar == '~' || firstChar == '$') {
+            test = test.substring(1);
+        }
         // eat one more in the !~tag case
-        if (firstChar == '!' && test.charAt(0) == '~') test = test.substring(1);
+        if (firstChar == '!' && (test.charAt(0) == '~' || test.charAt(0) == '$')) {
+            test = test.substring(1);
+        }
         
         if (test.indexOf('=') < 0 && test.indexOf("!~") < 0) {
             // simplest case: no comparison, just a non-null (or null) test
             Object tagValue = context.get(test);
-            if (firstChar == '~') {
+            if (firstChar == '~' || firstChar == '$') {
                 return (tagValue != null) ? true : false;
             } else if (firstChar == '!') {
                 return (tagValue == null) ? true : false;
@@ -162,7 +166,7 @@ public class IfTag extends BlockTag
                 Object tagValue = context.get(tagA);
                 String tagValueA = tagValue == null ? "" : tagValue.toString();
                 
-                if (tagB.charAt(0) == '~') {
+                if (tagB.charAt(0) == '~' || tagB.charAt(0) == '$') {
                     // equality (or inequality) of two variables (tags)
                     // resolve both tags and compare
                     
