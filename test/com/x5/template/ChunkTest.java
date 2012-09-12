@@ -254,6 +254,15 @@ public class ChunkTest
     }
     
     @Test
+    public void testLiteralNewSyntax()
+    {
+        Chunk c = new Chunk();
+        c.append("Pass through! {~gronk:bubbles!} <!-- {.literal} --> passing through {~gronk:} <!-- {^} --> Pass on {~process_me:happily}!");
+        
+        assertEquals(c.toString(), "Pass through! bubbles! <!-- {.literal} --> passing through {~gronk:} <!-- {^} --> Pass on happily!");
+    }
+    
+    @Test
     public void testIncludeShorthand()
     {
         Theme theme = new Theme("test/base");

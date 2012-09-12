@@ -121,7 +121,8 @@ public class TemplateSet implements ContentSource, ChunkFactory
     private static final String SKIP_BLANK_LINE = "";
     
     public static final String LITERAL_START = "{^literal}";
-    public static final String LITERAL_SHORTHAND = "{^^}";
+    public static final String LITERAL_START2 = "{.literal}";
+    public static final String LITERAL_SHORTHAND = "{^^}"; // this was a dumb idea
     public static final String LITERAL_END = "{^}";
     public static final String LITERAL_END_EXPANDED = "{~.}";
     public static final String LITERAL_END_LONGHAND = "{/literal}";
@@ -943,18 +944,26 @@ public class TemplateSet implements ContentSource, ChunkFactory
     	if (cursor + shortLen <= wall && template.substring(cursor,cursor+shortLen).equals(LITERAL_SHORTHAND)) {
     		scanStart = cursor + shortLen;
     	} else {
-    		int longLen = LITERAL_START.length();
-    		if (cursor + longLen <= wall && template.substring(cursor,cursor+longLen).equals(LITERAL_START)) {
+    		int longLen = LITERAL_START2.length();
+    		if (cursor + longLen <= wall && template.substring(cursor,cursor+longLen).equals(LITERAL_START2)) {
     			scanStart = cursor + longLen;
+    		} else {
+    		    longLen = LITERAL_START.length();
+    		    if (cursor + longLen <= wall && template.substring(cursor,cursor+longLen).equals(LITERAL_START)) {
+    		        scanStart = cursor + longLen;
+    		    }
     		}
     	}
     	
     	if (scanStart > cursor) {
+    	    // found a literal-block start marker.  scan for the matching end-marker.
     		int tail = template.indexOf(LITERAL_END, scanStart);
+    		int longTail = template.indexOf(LITERAL_END_LONGHAND, scanStart);
+    		tail = (tail < 0) ? longTail : (longTail < 0) ? tail : Math.min(tail, longTail);
     		if (tail < 0) {
     			return wall;
     		} else {
-    			return tail + LITERAL_END.length();
+    			return tail + (tail == longTail ? LITERAL_END_LONGHAND.length() : LITERAL_END.length());
     		}
     	} else {
     		return cursor;

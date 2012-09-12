@@ -115,7 +115,7 @@ public class Calc
             // look up value in vars
             String key = tokens[i];
             key = key.trim();
-            if (key.startsWith("~")) key = key.substring(1);
+            if (key.startsWith("~") || key.startsWith("$")) key = key.substring(1);
             //System.err.println("scanning map for "+key);
             Object value = vars.get(key);
             if (value instanceof String) {
