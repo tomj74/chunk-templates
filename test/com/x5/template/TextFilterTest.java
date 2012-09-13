@@ -228,6 +228,18 @@ public class TextFilterTest
     }
     
     @Test
+    public void testCalcSpecial()
+    {
+        Chunk c = new Chunk();
+        c.set("a",20);
+        c.set("b",30);
+        c.set("c",40);
+        
+        c.append("{.calc(\"$x+$y+$z\",$a,$b,$c)|sprintf(%.0f)}");
+        assertEquals("90",c.toString());
+    }
+    
+    @Test
     public void testQuickCalc()
     {
         Chunk c = new Chunk();

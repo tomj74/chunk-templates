@@ -14,8 +14,8 @@ import java.util.ArrayList;
  *
  * Examples:
  *
- * {~width|calc(*2)}
- * {^calc("sqrt($x^2 + $y^2)",~width,~height)} {!-- hypotenuse --}
+ * {$width|calc(*2)}
+ * {^calc("sqrt($x^2 + $y^2)",$width,$height)} {!-- hypotenuse --}
  * {^calc("sin(pi/4)")|sprintf(%.02f)} {!-- sqrt(2)/2 I think? --}
  */
 
@@ -40,6 +40,13 @@ public class Calc
         System.out.println(evalCalc(calcString, map));
         
         calcString = "\"$x * $x\",\"%.2f\",~a,~b";
+        System.out.println(evalCalc(calcString, map));
+        
+        calcString = "\"$x + $y\",\"%.2f\",$a,$b";
+        System.out.println(evalCalc(calcString, map));
+
+        map.put("c","40");
+        calcString = "\"$x + $y + $z\",$a,$b,$c";
         System.out.println(evalCalc(calcString, map));
     }
 
@@ -120,6 +127,8 @@ public class Calc
             Object value = vars.get(key);
             if (value instanceof String) {
             	values[i] = (String)value;
+            //} else {
+            //    values[i] = value.toString();
             }
         }
         return values;
