@@ -56,6 +56,24 @@ public class MacroTest
     }
     
     @Test
+    public void jsonBadArgsTest()
+    {
+        Theme theme = new Theme("test/base");
+        Chunk c = theme.makeChunk("macro_test#bad_json");
+        
+        assertEquals("Hello\n",c.toString());
+    }
+    
+    @Test
+    public void jsonArrayArgsTest()
+    {
+        Theme theme = new Theme("test/base");
+        Chunk c = theme.makeChunk("macro_test#json_array");
+        
+        assertEquals("Hello\n",c.toString());
+    }
+    
+    @Test
     public void jsonArgsTest()
     {
         Theme theme = new Theme("test/base");

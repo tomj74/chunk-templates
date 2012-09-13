@@ -344,3 +344,25 @@ foo is \bar\.
 He said "I hate "air-quotes"."
 She said "hello "ladies"!"
 {#}
+
+
+{!---------------------------------------------}
+{#json_array}{!-- template engine should not blow up when it encounters json array --}
+{.exec @inline json}
+["3","4"]
+{.body}
+Hello
+{/body}
+{/exec}
+{#}
+
+
+{!---------------------------------------------}
+{#bad_json}{!-- template engine should not blow up when it encounters bad json --}
+{.exec @inline json}
+I am not JSON.
+{.body}
+Hello
+{/body}
+{/exec}
+{#}

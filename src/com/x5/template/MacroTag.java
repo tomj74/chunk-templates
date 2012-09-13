@@ -8,6 +8,7 @@ import java.util.Map;
 
 import com.x5.util.LiteXml;
 
+import net.minidev.json.JSONArray;
 import net.minidev.json.JSONObject;
 import net.minidev.json.JSONValue;
 //import net.minidev.json.parser.ParseException;
@@ -108,16 +109,46 @@ public class MacroTag extends BlockTag
     private void parseDefsJsonLax(Snippet body)
     {
         String json = body.toString();
-        JSONObject defs = (JSONObject)JSONValue.parse(json);
-        importJSONDefs(defs);
+        
+        // check for json-smart jar, if not present then output a helpful
+        // message to stderr.
+        try {
+            Class.forName("net.minidev.json.JSONValue");
+            // it exists on the classpath
+        } catch (ClassNotFoundException e) {
+            System.err.println("Error: template uses json-formatted args in exec, but json-smart jar is not in the classpath!");
+        }
+        
+        Object parsedValue = JSONValue.parse(json);
+        if (parsedValue instanceof JSONObject) {
+            JSONObject defs = (JSONObject)parsedValue;
+            importJSONDefs(defs);
+        } else if (parsedValue instanceof JSONArray) {
+            System.err.println("Error processing template: exec expects JSON object, not JSON array.");
+        }
     }
     
     private void parseDefsJsonStrict(Snippet body)
     {
         try {
             String json = body.toString();
-            JSONObject defs = (JSONObject)JSONValue.parseStrict(json);
-            importJSONDefs(defs);
+
+            // check for json-smart jar, if not present then output a helpful
+            // message to stderr.
+            try {
+                Class.forName("net.minidev.json.JSONValue");
+                // it exists on the classpath
+            } catch (ClassNotFoundException e) {
+                System.err.println("Error: template uses json-formatted args in exec, but json-smart jar is not in the classpath!");
+            }
+            
+            Object parsedValue = JSONValue.parseStrict(json);
+            if (parsedValue instanceof JSONObject) {
+                JSONObject defs = (JSONObject)parsedValue;
+                importJSONDefs(defs);
+            } else if (parsedValue instanceof JSONArray) {
+                System.err.println("Error processing template: exec expects JSON object, not JSON array.");
+            }
         } catch (Exception e) {
             e.printStackTrace(System.err);
         }
