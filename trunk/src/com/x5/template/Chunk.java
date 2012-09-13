@@ -774,7 +774,10 @@ public class Chunk implements Map<String,Object>
                 // subsequent fetches will benefit from pre-scan.
                 Snippet s = Snippet.getSnippet((String)x);
                 tags.put(tagName, s);
-                return s;
+                return s.isSimple() ? s.toString() : s;
+            } else if (x instanceof Snippet) {
+                Snippet s = (Snippet)x;
+                return s.isSimple() ? s.toString() : s;
             } else {
                 return x;
             }
@@ -787,7 +790,10 @@ public class Chunk implements Map<String,Object>
                         // subsequent fetches will benefit from pre-scan.
                         Snippet s = Snippet.getSnippet((String)x);
                         firstValues[i] = s;
-                        return s;
+                        return s.isSimple() ? s.toString() : s;
+                    } else if (x instanceof Snippet) {
+                        Snippet s = (Snippet)x;
+                        return s.isSimple() ? s.toString() : s;
                     } else {
                         return x;
                     }

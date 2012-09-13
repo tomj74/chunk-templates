@@ -279,6 +279,11 @@ public class Snippet
         
 	}
 
+    public boolean isSimple()
+    {
+        return simpleText != null;
+    }
+    
 	private boolean isLiteralClose(String template, char magicChar, int tagStart, int i)
 	{
         if (magicChar == '^') {
