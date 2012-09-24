@@ -230,6 +230,9 @@ public class ChunkLocale
         }
     }
 
-    
+    public String toString()
+    {
+        return this.localeCode;
+    }
    
 }

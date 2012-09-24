@@ -78,11 +78,13 @@
 
 {!---------------------------------------------}
 {#looptest_nested_loops_ez_syntax}
- {^loop in ~widgets as w  array_tags="true" counter_tags="true"}{!-- outer loop --}
+ {!-- outer loop --}
+ {^loop in ~widgets as w  array_tags="true" counter_tags="true"}
 {!-- can access table data via numbered array index ~w[0] ~w[1]
      and/or object-style ~w.property_name --}
 {~1}. {~w[0]}:{~w.widget_name}
-  {^loop in ~widgets as x}{!-- inner loop over same table --}
+  {!-- inner loop over same table --}
+  {^loop in ~widgets as x}
  {~x.widget_name}{~x.widget_name|sel(~w.widget_name, *)}
   {^divider}
  --

@@ -440,6 +440,33 @@ public class Chunk implements Map<String,Object>
             set(tagName, tagValue, null);
         }
     }
+    
+    /**
+     * setLiteral() tag values will render verbatim, so even if the value
+     * contains tags/specials they will not be expanded.  However, if
+     * the final engine output is passed back into the chunk processor
+     * as a static string (for example, using chunk to pre-generate table
+     * rows that are destined for placement in another chunk), it will not
+     * be protected from the engine in that second pass.
+     * 
+     * To prevent re-processing higher up the chain, encase your string
+     * in {^literal}{/literal} tags, with the tradeoff that they will
+     * appear in your final output.  This is by design, so the literal
+     * will be preserved even after multiple passes through the engine.
+     * 
+     * Typical workaround: <!-- {^literal} --> ... <!-- {/literal} -->
+     * 
+     * Or, just be super-careful to use setLiteral() again when placing
+     * pre-processed output into higher-level chunks.
+     * 
+     * @param tagName
+     * @param literalValue
+     */
+    public void setLiteral(String tagName, String literalValue)
+    {
+        Snippet hardValue = Snippet.makeLiteralSnippet(literalValue);
+        set(tagName, hardValue);
+    }
 
     /**
      * Create a tag replacement rule, supplying a default value in case
@@ -1010,6 +1037,28 @@ public class Chunk implements Map<String,Object>
     	return resolveBackticks(dynLookupName, depth);
     }
     
+    // detect the following jQuery/prototype problem cases and bail!
+    // function(){$('selector').doSomething(":")}
+    // function(){$.whatever; x = y ? z : a; }
+    //
+    // parens, semicolons, quotes and ? can *not* legally appear
+    // before pipe or colon
+    // 
+    private static final Pattern TRICKY_JS = Pattern.compile("^[^|:]*[\\(\\;\\?\"\"\'\'].*$");
+    
+    private boolean isInvalidTag(String tagName)
+    {
+        // starts with . then, must assume it is valid cmd tag
+        if (tagName.charAt(0) == '.') return false;
+        
+        Matcher m = TRICKY_JS.matcher(tagName);
+        if (m.find()) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+    
     protected Object resolveTagValue(String tagName, int depth)
     {
         return _resolveTagValue(tagName, depth, false);
@@ -1026,6 +1075,8 @@ public class Chunk implements Map<String,Object>
     // table level.
     protected Object _resolveTagValue(String tagName, int depth, boolean ignoreParentContext)
     {
+        if (isInvalidTag(tagName)) return null;
+        
     	if (tagName.indexOf('`') > -1) {
     		tagName = resolveBackticks(tagName, depth);
     	}

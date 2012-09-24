@@ -283,7 +283,7 @@ public class ChunkTest
     @Test
     public void testSnippetRoundTrip()
     {
-        String tpl = "xyz {~xyz:} {* MACRO *} {*} {^loop} {/loop} _[token] {_[token %s %s],~arg1,~arg2}";
+        String tpl = "xyz {~xyz:} {!-- old macro syntax: --} {* MACRO *} {*} {^loop} {/loop} _[token] {_[token %s %s],~arg1,~arg2}";
         Snippet testSnippet = Snippet.getSnippet(tpl);
         String recombobulated = testSnippet.toString();
         assertEquals(tpl,recombobulated);
@@ -292,9 +292,39 @@ public class ChunkTest
     @Test
     public void testSnippetRoundTripAlt()
     {
-        String tpl = "xyz {$xyz:} {* MACRO *} {*} {.loop} {/loop} _[token] {_[token %s %s],$arg1,$arg2}";
+        String tpl = "xyz {$xyz:} {!-- old macro syntax: --} {* MACRO *} {*} {.loop} {/loop} _[token] {_[token %s %s],$arg1,$arg2}";
         Snippet testSnippet = Snippet.getSnippet(tpl);
         String recombobulated = testSnippet.toString();
         assertEquals(tpl,recombobulated);
+    }
+    
+    @Test
+    public void testCommentStripping()
+    {
+        String tpl = "{!-- comment 1 --}ABC{!-- comment 2 --}123!";
+        Chunk c = new Chunk();
+        c.append(tpl);
+        
+        assertEquals("ABC123!",c.toString());
+    }
+
+    @Test
+    public void testCommentStrippingWithLinebreaks()
+    {
+        String tpl = "{!-- comment 1 --}\nABC\n{!-- comment 2 --}\n123!\n keep me {!-- take me --}\n {!-- take me --} keep me too\n";
+        Chunk c = new Chunk();
+        c.append(tpl);
+        
+        assertEquals("ABC\n123!\n keep me \n  keep me too\n",c.toString());
+    }
+    
+    @Test
+    public void testJavascriptHeadFake()
+    {
+        String tpl = "<script>$(document).ready(function(){$('selector').doSomething(':','{$tag:test}');});</script>";
+        Chunk c = new Chunk();
+        c.append(tpl);
+        
+        assertEquals("<script>$(document).ready(function(){$('selector').doSomething(':','test');});</script>",c.toString());
     }
 }
