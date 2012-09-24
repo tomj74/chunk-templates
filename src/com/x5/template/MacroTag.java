@@ -55,10 +55,15 @@ public class MacroTag extends BlockTag
             }
         }        
         
+        // operate on clone to preserve body of parent snippet,
+        // otherwise we break toString() since we are about to
+        // do some surgery on this snippet's parts list.
+        Snippet bodyDouble = body.copy();
+        
         if (templateRef == null) {
-            parseInlineTemplate(body);
+            parseInlineTemplate(bodyDouble);
         }
-        parseDefs(body,defFormat);
+        parseDefs(bodyDouble,defFormat);
     }
     
     private void parseInlineTemplate(Snippet body)

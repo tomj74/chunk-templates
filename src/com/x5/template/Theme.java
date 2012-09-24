@@ -192,9 +192,21 @@ public class Theme implements ContentSource, ChunkFactory
 	
 	public String fetch(String itemName)
 	{
+        ArrayList<TemplateSet> layers = getThemeLayers();
+        // later layers have precedence if they provide the item
+        for (int i=layers.size()-1; i>=0; i--) {
+            TemplateSet x = layers.get(i);
+            if (x.provides(itemName)) {
+                return x.fetch(itemName);
+            }
+        }
+        return null;
+        
+	    /*
 		Snippet s = getSnippet(itemName);
 		if (s == null) return null;
 		return s.toString();
+		*/
 	}
 	
 	public String getProtocol()

@@ -91,7 +91,7 @@ public class Snippet
 		return parts;
 	}
 	
-	private static final String MAGIC_CHARS = "~$^./*=+_";
+	private static final String MAGIC_CHARS = "~$^./!*=+_";
 	
 	/**
 	 * One pass over the string.  Identify all dynamic tags and slice into
@@ -145,11 +145,16 @@ public class Snippet
 	            // collecting static until tag comes along
 	            if (c == '{') {
     	            if (MAGIC_CHARS.indexOf(c2) > -1) {
-    	                // FOUND TAG START
-    	                tagStart = i;
-    	                trailingBackslashes = 0;
-    	                i++;
-    	                magicChar = c2;
+    	                // avoid being tricked by javascript that only smells like a tag.
+    	                if (c2 == '$' && isJavascriptHeadFake(i,template)) {
+    	                    // not a chunk tag, keep scanning, nothing to see here.
+    	                } else {
+        	                // FOUND TAG START
+        	                tagStart = i;
+        	                trailingBackslashes = 0;
+        	                i++;
+        	                magicChar = c2;
+    	                }
     	            }
 	            } else if (c == '_' && c2 == '[') {
     	            // localization token!
@@ -188,7 +193,63 @@ public class Snippet
                             char c00 = template.charAt(i-2);
                             if (c0 == '-' && c00 == '-') {
                                 // FOUND COMMENT END
-                                // discard comment and reset scan mode
+                                // FIXME move this whole block its own separate method
+                                
+                                // strip comment into non-rendering part
+                                if (parts == null) parts = new ArrayList<SnippetPart>();
+                                String precedingComment = null;
+                                
+                                int startOfThisLine = marker;
+                                if (marker < tagStart) {
+                                    precedingComment = template.substring(marker,tagStart);
+                                    
+                                    // might need to strip empty line left by stripped comment.
+                                    // locate the start of this line by backtracking
+                                    int lineBreakPos = precedingComment.lastIndexOf('\n');
+                                    if (lineBreakPos > -1) {
+                                        startOfThisLine = marker + lineBreakPos + 1;
+                                    }
+                                    
+                                }
+                                
+                                // If eating comment leaves empty line, eat empty line too.
+                                //
+                                // ie, IF the span between final linebreak and tag is all whitespace
+                                // (or tag is not preceded by anything but whitespace)
+                                // *AND* the template following the comment begins with whitespace
+                                // and a linebreak (or the template-end), eat the preceding whitespace
+                                // and skip past the end of line.
+                                if (startOfThisLine == tagStart || template.substring(startOfThisLine,tagStart).trim().length()==0) {
+                                    // locate end of this line
+                                    int endOfLine = template.indexOf('\n',i+1);
+                                    if (endOfLine < 0) {
+                                        endOfLine = len;
+                                    }
+                                    if (template.substring(i+1,endOfLine).trim().length()==0) {
+                                        // yep, need to eat empty line and linebreak
+                                        if (startOfThisLine < tagStart) {
+                                            // strip leading whitespace from preceding static
+                                            // and shift that whitespace into the comment text
+                                            precedingComment = template.substring(marker,startOfThisLine);
+                                            tagStart = startOfThisLine;
+                                        }
+                                        // skip ahead to end of condemned line
+                                        i = (endOfLine == len) ? endOfLine-1 : endOfLine;
+                                    }
+                                }
+                                
+                                // preserve static leading up to comment
+                                if (precedingComment != null) {
+                                    SnippetPart literal = new SnippetPart(precedingComment);
+                                    literal.setLiteral(true);
+                                    parts.add(literal);
+                                }
+                                
+                                // this grabs the comment tag as well as any surrounding
+                                // whitespace that's being eaten (see above)
+                                String wholeComment = template.substring(tagStart,i+1);
+                                SnippetComment comment = new SnippetComment(wholeComment);
+                                parts.add(comment);
                                 tagStart = -1;
                                 marker = i+1;
                                 insideComment = false;
@@ -269,7 +330,12 @@ public class Snippet
 	        // no parts? avoid overhead of ArrayList
 	        simpleText = template;
 	    } else {
-	        if (!insideComment && marker < template.length()) {
+	        if (insideComment) {
+	            // add marker-to-end as comment
+	            SnippetPart finalComment = new SnippetComment(template.substring(marker));
+	            parts.add(finalComment);
+	        } else if (marker < template.length()) {
+	            // add marker-to-end as literal
 	            SnippetPart finalLiteral = new SnippetPart(template.substring(marker));
 	            finalLiteral.setLiteral(true);
 	            parts.add(finalLiteral);
@@ -279,6 +345,36 @@ public class Snippet
         
 	}
 
+	/**
+	 * Sniff out invalid tags that match specific common profile.
+	 * 
+	 * @return
+	 */
+	private static boolean isJavascriptHeadFake(int i, String template)
+	{
+	    int len = template.length();
+        // verify that this is tag and not function(){$.someJQueryFn()}
+        if (i+2 >= len) return true;
+        
+        char c3 = template.charAt(i+2);
+        // {$.XXX} {$(XXX)} and {$ XXX} and {$$xxx} are never valid chunk tags
+        if (c3 == '.' || c3 == '(' || c3 == ' ' || c3 == '$') {
+            // eep, not a tag!  probably a bit of javascript/jQuery.
+            return true;
+        }
+        // also, don't be fooled by function(){$j(...)}
+        // this catches a lot of prototype utility calls.
+        if (i+3 < len) {
+            char c4 = template.charAt(i+3);
+            if (c4 == '(') {
+                return true;
+            }
+        }
+        
+        // did not detect javascript.  probably a legit tag.
+        return false;
+	}
+	
     public boolean isSimple()
     {
         return simpleText != null;
@@ -377,7 +473,8 @@ public class Snippet
             }
         }
         
-        // huh?
+        // huh? in other words, we should never reach here.
+        // but just in case, let's make sure the wheels don't completely come off.
         SnippetPart wackyTag = new SnippetPart(wholeTag);
         return wackyTag;
     }
@@ -433,6 +530,8 @@ public class Snippet
                         SnippetBlockTag blockTag = new SnippetBlockTag(tag,subBodyParts,endTag);
 	                    bodyParts.add(i,blockTag);
 	                    
+	                    // this is good, but what about smart trim before block start?
+	                    // can't always rely on templateSet to remove block tag indents.
 	                    smartTrimAfterBlockEnd(bodyParts,i+1);
 	                } else {
 	                    // unmatched block tag!!  output error notice.
@@ -456,6 +555,19 @@ public class Snippet
 	{
 	    if (parts.size() <= nextPartIdx) return;
 	    SnippetPart nextPart = parts.get(nextPartIdx);
+	    
+	    // make sure to skip over non-rendering comments
+	    while (nextPart instanceof SnippetComment) {
+	        String commentText = nextPart.toString();
+	        if (commentText.charAt(commentText.length()-1) != '}') {
+	            // already ate, bail!  no double-trimming.
+	            return;
+	        }
+	        nextPartIdx++;
+	        if (parts.size() <= nextPartIdx) return;
+	        nextPart = parts.get(nextPartIdx);
+	    }
+	    
 	    if (nextPart.isLiteral()) {
 	        String text = nextPart.getText();
 	        // if the block begins with (whitespace+) LF, trim initial line
@@ -520,5 +632,30 @@ public class Snippet
                 parts.addAll(toAdd.parts);
             }
         }
+    }
+
+    public Snippet copy()
+    {
+        if (simpleText != null) {
+            Snippet copy = new Snippet("");
+            copy.simpleText = simpleText;
+            return copy;
+        } else {
+            List<SnippetPart> partsCopy = new ArrayList<SnippetPart>();
+            partsCopy.addAll(parts);
+            Snippet copy = new Snippet(partsCopy);
+            return copy;
+        }
+    }
+    
+    public static Snippet makeLiteralSnippet(String literal)
+    {
+        SnippetPart x = new SnippetPart(literal);
+        x.setLiteral(true);
+        
+        List<SnippetPart> listOfOne = new ArrayList<SnippetPart>();
+        listOfOne.add(x);
+        
+        return new Snippet(listOfOne);
     }
 }

@@ -200,10 +200,10 @@ public class TemplateSet implements ContentSource, ChunkFactory
     {
         return getSnippet(name, defaultExtension);
     }
-
+    
     public String fetch(String name)
     {
-    	Snippet s = getSnippet(name);
+    	Snippet s = getCleanTemplate(name);
     	if (s == null) return null;
     	// otherwise...
         return s.toString();
@@ -213,7 +213,12 @@ public class TemplateSet implements ContentSource, ChunkFactory
     {
         return "include";
     }
-
+    
+    private Snippet getCleanTemplate(String name)
+    {
+        return getSnippet(name, "_CLEAN_:"+defaultExtension);
+    }
+    
     /**
      * Retrieve as String the template specified by name and extension.
      * If name contains one or more dots it is assumed that the template
@@ -535,16 +540,31 @@ public class TemplateSet implements ContentSource, ChunkFactory
         throws IOException
     {
         StringBuilder sbTemp = new StringBuilder();
+        StringBuilder commentBuf;
         String line = null;
+        
         while (brTemp.ready()) {
             line = brTemp.readLine();
             if (line == null) break;
             int comPos = line.indexOf(COMMENT_START);
             int subPos = line.indexOf(SUB_START);
-            // first, strip out any comments
+            // first, skip over any comments
             boolean killedComment = false;
             while (comPos > -1 && (subPos < 0 || subPos > comPos)) {
-                line = stripComment(comPos,line,brTemp);
+                //line = stripComment(comPos,line,brTemp);
+                commentBuf = new StringBuilder();
+                line = skipComment(comPos,line,brTemp,commentBuf);
+                // line up to comPos is beforeComment
+                // line after comPos is now afterComment
+                String beforeComment = line.substring(0,comPos);
+                String afterComment = line.substring(comPos);
+
+                // preserve comment for clean fetch
+                sbTemp.append(beforeComment);
+                sbTemp.append(commentBuf);
+                line = afterComment;
+                
+                // check for another comment on same line
                 comPos = line.indexOf(COMMENT_START);
                 subPos = line.indexOf(SUB_START);
                 killedComment = true;
@@ -575,6 +595,40 @@ public class TemplateSet implements ContentSource, ChunkFactory
         }
         addToCache(name,extension,sbTemp);
         return sbTemp;
+    }
+    
+    private String getCommentLines(int comBegin, String firstLine, BufferedReader brTemp, StringBuilder sbTemp)
+        throws IOException
+    {
+        int comEnd = firstLine.indexOf(COMMENT_END,comBegin+2);
+        int endMarkerLen = COMMENT_END.length();
+        
+        if (comEnd > -1) {
+            // easy case -- comment does not span lines
+            comEnd += endMarkerLen;
+            sbTemp.append(firstLine.substring(0,comEnd));
+            return firstLine.substring(comEnd);
+        } else {
+            sbTemp.append(firstLine);
+            sbTemp.append("\n");
+            // multi-line comment, keep appending until we encounter comment-end marker
+            String line = null;
+            while (brTemp.ready()) {
+                line = brTemp.readLine();
+                if (line == null) break;
+                
+                comEnd = line.indexOf(COMMENT_END);
+                if (comEnd > -1) {
+                    comEnd += endMarkerLen;
+                    sbTemp.append(line.substring(0,comEnd));
+                    return line.substring(comEnd);
+                }
+                sbTemp.append(line);
+                sbTemp.append("\n");
+            }
+            // never found! appended rest of file as unterminated comment. burp.
+            return "";
+        }
     }
     
     private String getLiteralLines(int litBegin, String firstLine, BufferedReader brTemp, StringBuilder sbTemp)
@@ -624,7 +678,46 @@ public class TemplateSet implements ContentSource, ChunkFactory
     		return "";
     	}
     }
+    
+    // locate end of comment, and strip it but save it!
+    private String skipComment(int comPos, String firstLine, BufferedReader brTemp, StringBuilder commentBuf)
+        throws IOException
+    {
+        String beforeComment = firstLine.substring(0,comPos);
+        
+        int comEndPos = firstLine.indexOf(COMMENT_END);
+        if (comEndPos > -1) {
+            // easy case -- comment does not span lines
+            comEndPos += COMMENT_END.length();
+            // if removing comment leaves line with only whitespace...
+            commentBuf.append(firstLine.substring(comPos,comEndPos));
+            return beforeComment + firstLine.substring(comEndPos);
+        } else {
+            // keep eating lines until the end marker is found
+            commentBuf.append(firstLine.substring(comPos));
+            commentBuf.append("\n");
+            
+            String line = null;
+            while (brTemp.ready()) {
+                line = brTemp.readLine();
+                if (line == null) break;
 
+                comEndPos = line.indexOf(COMMENT_END);
+                if (comEndPos > -1) {
+                    comEndPos += COMMENT_END.length();
+                    commentBuf.append(line.substring(0,comEndPos));
+                    return beforeComment + line.substring(comEndPos);
+                } else {
+                    commentBuf.append(line);
+                    commentBuf.append("\n");
+                }
+            }
+            // never found!  ate rest of file.  burp.
+            return beforeComment;
+        }        
+    }
+
+    // locate end of comment and remove it from input
     private String stripComment(int comPos, String firstLine, BufferedReader brTemp)
         throws IOException
     {
@@ -753,7 +846,91 @@ public class TemplateSet implements ContentSource, ChunkFactory
             return "";
         }
     }
+    
+    private String getNextTemplateLine(String name, String extension,
+                                       BufferedReader brTemp, StringBuilder sbTemp)
+        throws IOException, EndOfSnippetException
+    {
+        String line = brTemp.readLine();
+        if (line == null) return null;
+        
+        int comPos = line.indexOf(COMMENT_START);
+        int subPos = line.indexOf(SUB_START);
+        int subEndPos = line.indexOf(SUB_END);
+        int litPos = findLiteralMarker(line);
+        
+        // special handling for literal blocks & comments
+        while (litPos > -1 || comPos > -1) {
+            // if end-marker present, kick out if it's not inside a comment or a literal block
+            if (subEndPos > -1) {
+                if ((litPos < 0 || subEndPos < litPos) && (comPos < 0 || comPos < subEndPos)) {
+                    break;
+                }
+            }
+            // if start-marker present, kick out if it's not inside a comment or a literal block
+            if (subPos > -1) {
+                if ((litPos < 0 || subPos < litPos) && (comPos < 0 || comPos < subPos)) {
+                    break;
+                }
+            }
+            // first, preserve any literal blocks
+            while (litPos > -1 && (comPos < 0 || comPos > litPos)) {
+                if (subEndPos < 0 || subEndPos > litPos) {
+                    line = getLiteralLines(litPos, line, brTemp, sbTemp);
+                    // skipped literal block. re-scan for markers.
+                    comPos = line.indexOf(COMMENT_START);
+                    subPos = line.indexOf(SUB_START);
+                    subEndPos = line.indexOf(SUB_END);
+                    litPos = findLiteralMarker(line);
+                } else {
+                    break;
+                }
+            }
+            
+            // next, skip over any comments
+            while (comPos > -1 && (subPos < 0 || subPos > comPos) && (subEndPos < 0 || subEndPos > comPos) && (litPos < 0 || litPos > comPos)) {
+                /*
+                int lenBefore = line.length();
+                line = stripComment(comPos,line,brTemp);
+                int lenAfter = line.length();
+                if (lenBefore != lenAfter && line.trim().length() == 0) {
+                    // if after removing comment, line is blank, don't output a blank line
+                    return SKIP_BLANK_LINE;
+                }*/
+                
+                // new plan -- preserve comments, let Snippet strip them out
+                line = getCommentLines(comPos, line, brTemp, sbTemp);
+                
+                // re-scan for markers
+                comPos = line.indexOf(COMMENT_START);
+                subPos = line.indexOf(SUB_START);
+                subEndPos = line.indexOf(SUB_END);
+                litPos = findLiteralMarker(line);
+            }
+        }
+        
+        // keep reading lines until end marker
+        if (subPos > -1 || subEndPos > -1) {
+            if (subEndPos > -1 && (subPos == -1 || subEndPos <= subPos)) {
+                // wrap it up
+                sbTemp.append(line.substring(0,subEndPos));
+                throw new EndOfSnippetException(line.substring(subEndPos+SUB_END.length()));
+            } else if (subPos > -1) {
+                int subNameEnd = line.indexOf(SUB_NAME_END, subPos + SUB_START.length());
+                if (subNameEnd > -1) {
+                    sbTemp.append(line.substring(0,subPos));
+                    String subName = line.substring(subPos + SUB_START.length(),subNameEnd);
+                    String restOfLine = line.substring(subNameEnd + SUB_NAME_END.length());
+                    line = readAndCacheSubTemplate(name + "." + subName, extension, brTemp, restOfLine);
+                    // if after removing subtemplate, line is blank, don't output a blank line
+                    if (line.length() < 1) return SKIP_BLANK_LINE;
+                }
+            }
+        }
+        return line;
+    }    
 
+    /*
     private String getNextTemplateLine(String name, String extension,
     								   BufferedReader brTemp, StringBuilder sbTemp)
     	throws IOException, EndOfSnippetException
@@ -830,11 +1007,17 @@ public class TemplateSet implements ContentSource, ChunkFactory
             }
         }
         return line;
-    }
+    }*/
     
     private void addToCache(String name, String extension, StringBuilder template)
     {
         String ref = extension + "." + name;
+        // first, store raw template in case it is needed
+        String cleanRef = "_CLEAN_:"+ref;
+        cache.put(cleanRef, Snippet.makeLiteralSnippet(template.toString()) );
+        cacheFetch.put(cleanRef, new Long(System.currentTimeMillis()) );
+        
+        // then, pre-process a bit for speed gain
         template = expandShorthand(name,template);
         if (template == null) return;
         String tpl = removeBlockTagIndents(template.toString());

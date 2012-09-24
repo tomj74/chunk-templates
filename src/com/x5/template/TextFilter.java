@@ -91,9 +91,10 @@ public class TextFilter
         if (filter.equals("trim")) {
             // trim leading and trailing whitespace
             return text == null ? null : text.trim(); //text.replaceAll("^\\s+","").replaceAll("\\s+$","");
-        } else if (filter.equals("qs") || filter.equals("quoted") || filter.equals("quotedstring")) {
+        } else if (filter.equals("qs") || filter.equals("quoted") || filter.equals("quotedstring") || filter.equals("escapequotes")) {
             // qs is a quoted string - escape " and ' with backslashes
             if (text != null) {
+                text = Chunk.findAndReplace(text,"\\","\\\\");
                 text = Chunk.findAndReplace(text,"\"","\\\"");
                 text = Chunk.findAndReplace(text,"'","\\'");
             }

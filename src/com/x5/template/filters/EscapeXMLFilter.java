@@ -27,6 +27,8 @@ public class EscapeXMLFilter extends BasicFilter implements ChunkFilter
             "html",
             "xmlescape",
             "htmlescape",
+            "escapexml",
+            "escapehtml",
             "xmlesc",
             "htmlesc"
         };
