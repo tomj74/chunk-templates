@@ -185,7 +185,16 @@ public class IfTag extends BlockTag
                     String match = tagB;
                     // allow tagB to be quoted?  if so, strip quotes here
                     if (tagB.charAt(0) == '"' && tagB.charAt(match.length()-1) == '"') {
+                        // FIXME should scan for unescaped end-quote in the middle of the string
                         match = tagB.substring(1, tagB.length()-1);
+                        // quoted strings may have escaped characters.
+                        // unescape.
+                        match = unescape(match);
+                    } else if (tagB.charAt(0) == '\'' && tagB.charAt(match.length()-1) == '\'') {
+                        // FIXME should scan for unescaped end-quote in the middle of the string
+                        match = tagB.substring(1, tagB.length()-1);
+                        // unescape
+                        match = unescape(match);
                     }
                     if (isNeg) {
                         return (tagValueA.equals(match)) ? false : true;
@@ -219,6 +228,12 @@ public class IfTag extends BlockTag
         } else {
             return isMatch ? true : false;
         }
+    }
+    
+    private String unescape(String x)
+    {
+        // this method does more or less what we want
+        return RegexFilter.parseRegexEscapes(x);
     }
     
     private boolean isMatch(String text, String regex)
