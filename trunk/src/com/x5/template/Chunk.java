@@ -1175,7 +1175,7 @@ public class Chunk implements Map<String,Object>
                 //     {~my_unsupplied_tag:not {~other_tag}} NOT VALID
                 //     {~my_unsupplied_tag:{~other_tag}} NOT VALID
                 char firstChar = defValue.charAt(0);
-                if (firstChar == '~' || firstChar == '+' || firstChar == '^') {
+                if (firstChar == '~' || firstChar == '$' || firstChar == '+' || firstChar == '^' || firstChar == '.') {
                     if (filter == null) {
                         return '{'+defValue+'}';
                     } else if (order.equals(TextFilter.FILTER_FIRST)) {

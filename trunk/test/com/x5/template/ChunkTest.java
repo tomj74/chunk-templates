@@ -40,6 +40,26 @@ public class ChunkTest
     }
 
     @Test
+    public void testSimpleExpandWithTagDefault()
+    {
+        Chunk c = new Chunk();
+        c.append("Hello, my name is {~name:~full_name}!");
+        c.unset("name");
+        c.set("full_name","Bob Johnson");
+        assertEquals("Hello, my name is Bob Johnson!",c.toString());
+    }
+
+    @Test
+    public void testSimpleExpandWithTagDefaultAltSyntax()
+    {
+        Chunk c = new Chunk();
+        c.append("Hello, my name is {$name:$full_name}!");
+        c.unset("name");
+        c.set("full_name","Bob Johnson");
+        assertEquals("Hello, my name is Bob Johnson!",c.toString());
+    }
+
+    @Test
     public void testFilteredDefault()
     {
         Chunk c = new Chunk();

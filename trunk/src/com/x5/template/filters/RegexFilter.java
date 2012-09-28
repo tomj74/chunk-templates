@@ -126,7 +126,7 @@ public class RegexFilter extends BasicFilter implements ChunkFilter
         }
     }
 
-    private static String parseRegexEscapes(String str)
+    public static String parseRegexEscapes(String str)
     {
         if (str == null) return str;
 
@@ -151,9 +151,14 @@ public class RegexFilter extends BasicFilter implements ChunkFilter
                     buf.append("\\L");
                 } else if (strArr[i] == 'u') {
                     // Unicode escape
-                    int utf = Integer.parseInt(str.substring(i + 1, i + 5), 16);
-                    buf.append((char)utf);
-                    i += 4;
+                    if (i+4 < strArr.length) {
+                        int utf = Integer.parseInt(str.substring(i + 1, i + 5), 16);
+                        buf.append((char)utf);
+                        i += 4;
+                    } else {
+                        buf.append('\\');
+                        buf.append(strArr[i]);
+                    }
                 } else if (Character.isDigit(strArr[i])) {
                     // Octal escape
                     int j = 0;

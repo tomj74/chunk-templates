@@ -15,6 +15,28 @@ public class IfTagTest
     }
     
     @Test
+    public void testQuotedComparison()
+    {
+        Chunk c = new Chunk();
+        c.append("{.if ($x == \"velveeta\")}happy{/if}");
+        c.append("{.if ($x == 'velveeta')}happy{/if}");
+        c.set("x","velveeta");
+        
+        assertEquals("happyhappy",c.toString());
+    }
+    
+    @Test
+    public void testQuotedComparisonWithEscapes()
+    {
+        Chunk c = new Chunk();
+        c.set("nasty_value","LionsAnd\nNewlines\rAnd\tTabs - '\u00A1Oh my!'");
+        
+        c.append("{.if ($nasty_value == 'LionsAnd\\nNewlines\\rAnd\\tTabs - \\'\\u00A1Oh my\\u0021\\'')}passed{.else}failed{/if}");
+        
+        assertEquals("passed", c.toString());
+    }
+    
+    @Test
     public void testElsePath()
     {
         Chunk c = new Chunk();
