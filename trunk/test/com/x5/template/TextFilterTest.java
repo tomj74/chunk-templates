@@ -377,6 +377,26 @@ public class TextFilterTest
     }
     
     @Test
+    public void testJoinOnSlash()
+    {
+        Chunk c = new Chunk();
+        String[] beatles = new String[]{"John","Paul","George","Ringo"};
+        c.set("beatles", beatles);
+        c.append("The beatles are: {~beatles|join(/)}.");
+        assertEquals(c.toString(),"The beatles are: John/Paul/George/Ringo.");
+    }
+    
+    @Test
+    public void testJoinInlineTable()
+    {
+        Chunk c = new Chunk();
+        String beatles = "[[name],[John],[Paul],[George],[Ringo]]";
+        c.set("beatles", beatles);
+        c.append("The beatles are: {~beatles|join(, )}.");
+        assertEquals(c.toString(),"The beatles are: John, Paul, George, Ringo.");
+    }
+
+    @Test
     public void testGet()
     {
         Chunk c = new Chunk();

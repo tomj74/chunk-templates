@@ -156,6 +156,78 @@ public class LoopTest
     }
     
     @Test
+    public void testFirstLast()
+    {
+        Theme theme = new Theme("themes","test/base,test/override");
+        
+        Chunk c = theme.makeChunk("chunk_test#looptest_first_last");
+        String widgets = "[[widget_id,widget_name],[1,thingamabob],[2,doodad],[3,gadget]]";
+        c.set("widgets",widgets);
+        
+        assertEquals(c.toString(),"<div class=\"first\">1</div>\n<div class=\"\">2</div>\n<div class=\"last\">3</div>\n");
+    }
+
+    @Test
+    public void testFirstLastNamed()
+    {
+        Theme theme = new Theme("themes","test/base,test/override");
+        
+        Chunk c = theme.makeChunk("chunk_test#looptest_first_last_named");
+        String widgets = "[[widget_id,widget_name],[1,thingamabob],[2,doodad],[3,gadget]]";
+        c.set("widgets",widgets);
+        
+        assertEquals(c.toString(),"<div class=\"first\">1</div>\n<div class=\"\">2</div>\n<div class=\"last\">3</div>\n");
+    }
+
+    @Test
+    public void testFirstLastPrefixed()
+    {
+        Theme theme = new Theme("themes","test/base,test/override");
+        
+        Chunk c = theme.makeChunk("chunk_test#looptest_first_last_prefixed");
+        String widgets = "[[widget_id,widget_name],[1,thingamabob],[2,doodad],[3,gadget]]";
+        c.set("widgets",widgets);
+        
+        assertEquals(c.toString(),"<div class=\"first\">1</div>\n<div class=\"\">2</div>\n<div class=\"last\">3</div>\n");
+    }
+
+    @Test
+    public void testCounterTags()
+    {
+        Theme theme = new Theme("themes","test/base,test/override");
+        
+        Chunk c = theme.makeChunk("chunk_test#looptest_counter");
+        String widgets = "[[widget_id,widget_name],[1,thingamabob],[2,doodad]]";
+        c.set("widgets",widgets);
+        
+        assertEquals(c.toString()," 0 1 1 thingamabob<br/>\n <hr/>\n 1 2 2 doodad<br/>\n");
+    }
+    
+    @Test
+    public void testCounterTag()
+    {
+        Theme theme = new Theme("themes","test/base,test/override");
+        
+        Chunk c = theme.makeChunk("chunk_test#looptest_counter_i");
+        String widgets = "[[widget_id,widget_name],[1,thingamabob],[2,doodad]]";
+        c.set("widgets",widgets);
+        
+        assertEquals(c.toString()," 0 1 thingamabob<br/>\n <hr/>\n 1 2 doodad<br/>\n");
+    }
+    
+    @Test
+    public void testBadCloseTag()
+    {
+        Theme theme = new Theme("themes","test/base,test/override");
+        
+        Chunk c = theme.makeChunk("chunk_test#looptest_bad_close_tag");
+        String widgets = "[[widget_id,widget_name],[1,thingamabob],[2,doodad]]";
+        c.set("widgets",widgets);
+        
+        assertTrue(c.toString().startsWith("[ERROR in template! loop block with no matching end marker! ]"));
+    }
+    
+    @Test
     public void testIfRegexInsideLoop()
     {
         Theme theme = new Theme("themes","test/base");

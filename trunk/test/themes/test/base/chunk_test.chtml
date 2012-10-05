@@ -32,6 +32,60 @@
 {#}
 
 {!---------------------------------------------}
+{#looptest_first_last}
+{.loop in $widgets first_last="true"}
+<div class="{$is_first|ondefined(first):}{$is_last|ondefined(last):}">{$widget_id}</div>
+{/loop}
+{#}
+
+{!---------------------------------------------}
+{#looptest_first_last_named}
+{.loop in $widgets first_last="first,last"}
+<div class="{$first|ondefined(first):}{$last|ondefined(last):}">{$widget_id}</div>
+{/loop}
+{#}
+
+{!---------------------------------------------}
+{#looptest_first_last_prefixed}
+{.loop in $widgets as $w first_last="true"}
+<div class="{$w.is_first|ondefined(first):}{$w.is_last|ondefined(last):}">{$w.widget_id}</div>
+{/loop}
+{#}
+
+{!---------------------------------------------}
+{#looptest_counter}
+{.loop in $widgets counter_tags="true"}
+ {$0} {$1} {$widget_id} {$widget_name}<br/>
+{.divider}
+ <hr/>
+{.onEmpty}
+ <i>No widgets!</i>
+{/loop}
+{#}
+
+{!---------------------------------------------}
+{#looptest_counter_i}
+{.loop in $widgets counter_tag="$i"}
+ {$i} {$widget_id} {$widget_name}<br/>
+{.divider}
+ <hr/>
+{.onEmpty}
+ <i>No widgets!</i>
+{/loop}
+{#}
+
+{!---------------------------------------------}
+{#looptest_bad_close_tag}
+{.loop in $widgets counter_tag="$i"}
+ {$i} {$widget_id} {$widget_name}<br/>
+{.divider}
+ <hr/>
+{.onEmpty}
+ <i>No widgets!</i>
+{.loop}
+{#}
+
+{!---------------------------------------------}
 {#looptest_simple_loop_noblock}
 {^loop data="~widgets" template="#widget_row" nodata="#no_widgets" divider="<hr/>"}
 {#}
