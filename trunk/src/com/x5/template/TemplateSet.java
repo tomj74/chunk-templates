@@ -94,7 +94,7 @@ import com.x5.template.filters.RegexFilter;
 public class TemplateSet implements ContentSource, ChunkFactory
 {
 
-    public static String DEFAULT_TAG_START = "{~";
+    public static String DEFAULT_TAG_START = "{$";
     public static String DEFAULT_TAG_END = "}";
     public static final String MACRO_START = "{*";
     public static final String MACRO_NAME_END = "}";
@@ -102,7 +102,7 @@ public class TemplateSet implements ContentSource, ChunkFactory
     public static final String MACRO_LET = "{=";
     public static final String MACRO_LET_END = "}";
     public static final String INCLUDE_SHORTHAND = "{+";
-    public static final String PROTOCOL_SHORTHAND = "{^";
+    public static final String PROTOCOL_SHORTHAND = "{.";
     
     // allow {^if}...{/if} and {^loop}...{/loop} by auto-expanding these
     public static final String BLOCKEND_SHORTHAND = "{/";
@@ -457,7 +457,6 @@ public class TemplateSet implements ContentSource, ChunkFactory
     public Chunk makeChunk()
     {
         Chunk c = new Chunk();
-        c.setTagBoundaries(tagStart,tagEnd);
         c.setMacroLibrary(this,this);
         shareContentSources(c);
         return c;
@@ -477,7 +476,6 @@ public class TemplateSet implements ContentSource, ChunkFactory
     public Chunk makeChunk(String templateName)
     {
         Chunk c = new Chunk();
-        c.setTagBoundaries(tagStart,tagEnd);
         c.setMacroLibrary(this,this);
         c.append( getSnippet(templateName) );
         shareContentSources(c);
@@ -499,37 +497,10 @@ public class TemplateSet implements ContentSource, ChunkFactory
     public Chunk makeChunk(String templateName, String extension)
     {
         Chunk c = new Chunk();
-        c.setTagBoundaries(tagStart,tagEnd);
         c.setMacroLibrary(this,this);
         c.append( getSnippet(templateName, extension) );
         shareContentSources(c);
         return c;
-    }
-
-    /**
-     * Default tag boundaries are "{~" and "}" but other styles may be used.
-     * Once this is called all calls to makeChunk will use the new values.
-     * @param tagStart the String that marks the beginning of a tag
-     * @param tagEnd the String that marks the end of tag
-     */
-    public void setTagBoundaries(String tagStart, String tagEnd)
-    {
-        this.tagStart = tagStart;
-        this.tagEnd = tagEnd;
-    }
-
-    /**
-     * For dynamic template formation, this forms a tag to be inserted.
-     * For example, if creating calendar month html on the fly, one might
-     * want to create on-the-fly tags for each day's content.  Using this
-     * method guarantees that the tag markers will match the ones in the
-     * existing templates.
-     * @param tagName
-     * @return tagStart + tagName + tagEnd
-     */
-    public String makeTag(String tagName)
-    {
-        return tagStart + tagName + tagEnd;
     }
 
     //
@@ -1107,14 +1078,6 @@ public class TemplateSet implements ContentSource, ChunkFactory
             // on to the next tag...
             if (cursor > -1) cursor = template.indexOf("{",cursor);
         }
-        
-        // change {~.literal} back to {^literal}
-        // {~.^} back to {^^} and {~.} back to {^}
-        /* erg, not right, just want to skip this whole business for entire literal span
-        if (template.indexOf(LITERAL_END_EXPANDED) > -1) {
-	        String tpl = TextFilter.applyRegex(template.toString(), "s/\\{\\.\\~(literal|\\^|)\\}/{^$1}/");
-	        template = new StringBuilder(tpl);
-        } */
         
         return template;
     }

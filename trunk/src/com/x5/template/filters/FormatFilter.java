@@ -4,6 +4,7 @@ import java.util.Locale;
 import java.util.MissingResourceException;
 
 import com.x5.template.Chunk;
+import com.x5.template.ChunkLocale;
 
 public class FormatFilter extends BasicFilter
 {
@@ -17,12 +18,12 @@ public class FormatFilter extends BasicFilter
         
         if (fmtString == null) return "";
         
-        String localeCode = null;
-        if (chunk != null && chunk.getLocale() != null) {
-            localeCode = chunk.getLocale().toString();
+        ChunkLocale locale = null;
+        if (chunk != null) {
+            locale = chunk.getLocale();
         }
         
-        return applyFormatString(text, fmtString, localeCode);
+        return applyFormatString(text, fmtString, locale);
     }
     
     public String getFilterName()
@@ -30,7 +31,7 @@ public class FormatFilter extends BasicFilter
         return "sprintf";
     }
     
-    private static String applyFormatString(String text, String formatString, String localeCode)
+    private static String applyFormatString(String text, String formatString, ChunkLocale locale)
     {
         // strip calling wrapper ie "sprintf(%.03f)" -> "%.03f"
         if (formatString.startsWith("sprintf(")) {
@@ -46,7 +47,7 @@ public class FormatFilter extends BasicFilter
             formatString = formatString.substring(1,formatString.length()-1);
         }
 
-        return formatNumberFromString(formatString, text, localeCode);
+        return formatNumberFromString(formatString, text, locale);
     }
 
     public static String formatNumberFromString(String formatString, String value)
@@ -54,34 +55,13 @@ public class FormatFilter extends BasicFilter
         return formatNumberFromString(formatString, value, null);
     }
     
-    public static Locale getLocale(String localeCode)
+    public static Locale getJavaLocale(ChunkLocale locale)
     {
-        if (localeCode != null && localeCode.contains("_")) {
-            String[] langAndCountry = localeCode.split("_");
-            if (langAndCountry.length > 1) {
-                String lang    = langAndCountry[0];
-                String country = langAndCountry[1];
-                if (lang != null && lang.trim().length() > 0) {
-                    if (country != null && country.trim().length() > 0) {
-                        Locale locale = new Locale(lang, country);
-                        // confirm that this is a valid locale
-                        try {
-                            if (locale.getISO3Country() != null) {
-                                if (locale.getISO3Language() != null) {
-                                    return locale;
-                                }
-                            }
-                        } catch (MissingResourceException e) {
-                        }
-                    }
-                }
-            }
-        }
-        
-        return null;
+        if (locale == null) return null;
+        return locale.getJavaLocale();
     }
     
-    public static String formatNumberFromString(String formatString, String value, String localeCode)
+    public static String formatNumberFromString(String formatString, String value, ChunkLocale chunkLocale)
     {
         // This assumes that the expr *ends* with eg %s or %d or %.3f
         // and the final char is the intended number format.
@@ -93,7 +73,7 @@ public class FormatFilter extends BasicFilter
         char expecting = formatString.charAt(formatString.length()-1);
         try {
             
-            Locale locale = getLocale(localeCode);
+            Locale locale = getJavaLocale(chunkLocale);
             
             if ("sS".indexOf(expecting) > -1) {
                 return String.format(locale, formatString, value);

@@ -44,8 +44,16 @@ public class SelectedFilter extends BasicFilter implements ChunkFilter
         if (args.length > 1) testValue = args[1];
         if (args.length > 2) token = args[2];
         
-        if (testValue.charAt(0) == '~') {
-            // this is a sneaky way of allowing {~xyz|sel(~tag)}
+        if (testValue.charAt(0) == '~' || testValue.charAt(0) == '$') {
+            
+            Object value = context.get(testValue.substring(1));
+            if (value != null && text.equals(value.toString())) {
+                return token;
+            } else {
+                return "";
+            }
+            
+            // this was a sneaky way of allowing {~xyz|sel(~tag)}
             // -- flip it into an onmatch, and let it get re-eval'ed:
             //
             // {~tag|onmatch(/^[text]$/,SELECTED_TOKEN)}
@@ -54,14 +62,16 @@ public class SelectedFilter extends BasicFilter implements ChunkFilter
             // final filter in the chain, but I can't imagine
             // wanting to filter the output token.
             //
-            // The more crazy crap like this that I do, the more
-            // I think the Chunk tag table needs to just get passed
-            // into applyTextFilter -- but, alas, with recursion
-            // resolution, this is not so simple.
+            // The more crazy crap like this that I did, the more
+            // I realized the Chunk tag table needed to just get passed
+            // into applyTextFilter.  done.
             //
+            
+            /*
             String xlation = testValue + "|onmatch(/^"
                 + RegexFilter.escapeRegex(text) + "$/," + token + ")";
             return TextFilter.magicBraces(context, xlation);
+            */
         }
         
         // simple case, compare to static text string

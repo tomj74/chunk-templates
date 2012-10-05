@@ -295,12 +295,6 @@ public class Chunk implements Map<String,Object>
     private String localeCode = null;
     private ChunkLocale locale = null;
     
-    public void setTagBoundaries(String tagStart, String tagEnd)
-    {
-        this.tagStart = tagStart;
-        this.tagEnd = tagEnd;
-    }
-
     public void setMacroLibrary(ContentSource repository, ChunkFactory factory)
     {
         this.macroLibrary = repository;
@@ -786,13 +780,14 @@ public class Chunk implements Map<String,Object>
     }
 
     /**
-     * Retrieves a tag replacement rule.  getTag responds outside the context
+     * Retrieves a tag replacement rule.  getTagValue() responds outside the context
      * of recursive tag replacement, so the return value may include unresolved
-     * tags.
+     * tags.  To iterate up the ancestor chain, use get() instead.
+     * 
      * @return The Chunk or Snippet etc. that this tag will resolve to, or null
      * if no rule yet exists.
      */
-    public Object getTag(String tagName)
+    public Object getTagValue(String tagName)
     {
         if (tags != null) {
             Object x = tags.get(tagName);
@@ -1102,7 +1097,7 @@ public class Chunk implements Map<String,Object>
             tagValue = altFetch(tagName, depth);
         } else if (hasValue(lookupName)) {
             // first look in this chunk's own tags
-            tagValue = getTag(lookupName);
+            tagValue = getTagValue(lookupName);
         } else {
             Vector<Chunk> parentContext = getCurrentParentContext();
             if (parentContext != null) {
@@ -1438,80 +1433,6 @@ public class Chunk implements Map<String,Object>
     	}
     }
 
-    private int findMatchingEndBrace(String template, int searchFrom)
-    {
-        int endPos = template.indexOf(tagEnd,searchFrom);
-        if (endPos < 0) return endPos;
-
-        // tricky business: ignore all tag markers inside a regex.
-        // also, preserve literals.
-
-        // search backwards for regex start
-        int x = endPos;
-        
-        /**
-         * literals are intercepted higher up the chain now.
-         * no need to scan for them here.
-        // {~.^} or {~.literal}
-        if (x - searchFrom == 1 && template.substring(searchFrom,x).equals(".")
-       		|| x - searchFrom == 8 && template.substring(searchFrom,x).equals(".literal")) {
-        	x = template.indexOf(TemplateSet.LITERAL_END_EXPANDED,x+1);
-        	if (x < 0) return x;
-        	return x + TemplateSet.LITERAL_END_EXPANDED.length() - 1;
-        }
-         */
-        
-        int regexPos = 0;
-        boolean isMatchOnly = false;
-        while (regexPos == 0 && x > searchFrom+1) {
-            char c = template.charAt(x);
-            if (c == '/') {
-                char preC = template.charAt(x-1);
-                if (preC == 's' && template.charAt(x-2) == '|') {
-                    regexPos = x-1;
-                } else {
-                    if (preC == 'm') preC = template.charAt(x-2); // skip over optional m
-                    if (preC == ',' || preC == '(') {
-                        regexPos = x-1;
-                        isMatchOnly = true;
-                    }
-                }
-            }
-            x--;
-        }
-        // no regex? valid endPos
-        if (regexPos == 0) return endPos;
-
-        // found regex? find end, make sure this end brace is not inside the regex.
-        int regexMid = RegexFilter.nextRegexDelim(template,regexPos+2);
-        int regexEnd = (isMatchOnly) ? regexMid : RegexFilter.nextRegexDelim(template,regexMid+1);
-
-        if (endPos > regexEnd) {
-            // brace is outside the regex, valid endpoint
-            return endPos;
-        } else {
-            // invalid brace, is inside regex.  recurse from here.
-            return findMatchingEndBrace(template, regexEnd+1);
-        }
-    }
-    
-    private void renderTag(Writer out, String tagName, int depth)
-    throws IOException
-    {
-        Object tagValue = resolveTagValue(tagName, depth);
-        // unresolved tags get put back the way we found
-        // them in case the final String which explode() returns
-        // is then fed into another Chunk which *does* have
-        // a value.
-        if (tagValue == null) {
-            out.append(tagStart);
-            out.append(tagName);
-            out.append(tagEnd);
-        } else {
-            explodeToPrinter(out, tagValue, depth+1);
-        }
-    }
-    
     /**
      * Clears all tag replacement rules.
      */
@@ -1599,7 +1520,7 @@ public class Chunk implements Map<String,Object>
 
     public Object put(String key, Object value)
     {
-        Object x = getTag(key);
+        Object x = getTagValue(key);
         set(key, value, "");
         return x;
     }
@@ -1742,7 +1663,7 @@ public class Chunk implements Map<String,Object>
     	Collections.sort(list);
 		for (String tag:list) {
 			for (int x=0; x<indent; x++) output.append(ind);
-			output.append('~');
+			output.append('$');
 			output.append(tag);
 			output.append(lf);
 		}
@@ -1812,20 +1733,14 @@ public class Chunk implements Map<String,Object>
         return locale;
     }
     
-    public boolean isConforming()
-    {
-    	if (tagStart.equals(TemplateSet.DEFAULT_TAG_START)) return true;
-    	return false;
-    }
-    
     /**
      * Useful utility function.  An efficient find-and-replace-all algorithm
      * for simple cases when regexp would be overkill.  IMO they should have
      * included this with String.
-     * @param x text body.
-     * @param find text to search for in x.
-     * @param replace text to insert in place of "find" -- defaults to empty String if null is passed.
-     * @return a new String based on x with all instances of "find" replaced with "replace"
+     * @param toSearch  text body.
+     * @param find  text to search for.
+     * @param replace  text to insert in place of "find" -- defaults to empty String if null is passed.
+     * @return a new String based on input with all instances of "find" replaced with "replace"
      */
     public static String findAndReplace(String toSearch, String find, String replace)
     {

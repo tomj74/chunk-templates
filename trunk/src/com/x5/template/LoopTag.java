@@ -30,6 +30,8 @@ public class LoopTag extends BlockTag
     
     //private static final String ON_EMPTY_MARKER = "{~.onEmpty}";
     //private static final String DIVIDER_MARKER = "{~.divider}";
+    private static final String FIRST_MARKER = "is_first";
+    private static final String LAST_MARKER = "is_last";
 
     public static void main(String[] args)
     {
@@ -299,6 +301,9 @@ public class LoopTag extends BlockTag
         Snippet dividerSnippet = null;
         boolean createArrayTags = false;
         boolean counterTags = false;
+        String counterTag = null;
+        String firstRunTag = null;
+        String lastRunTag = null;
         
         if (options != null) {
             if (options.containsKey("dividerSnippet")) {
@@ -318,6 +323,24 @@ public class LoopTag extends BlockTag
         	}
         	if (options.containsKey("counter_tags")) {
         	    counterTags = true;
+        	}
+        	if (options.containsKey("counter_tag")) {
+        	    counterTag = (String)options.get("counter_tag");
+        	    counterTag = eatTagSymbol(counterTag);
+        	}
+        	if (options.containsKey("first_last")) {
+        	    String tagNames = (String)options.get("first_last");
+        	    if (tagNames.indexOf(",") > 0) {
+        	        String[] userFirstLast = tagNames.split(",");
+        	        firstRunTag = eatTagSymbol(userFirstLast[0]);
+        	        lastRunTag  = eatTagSymbol(userFirstLast[1]);
+        	    }
+        	    if (firstRunTag == null || firstRunTag.length() == 0) {
+        	        firstRunTag = FIRST_MARKER;
+        	    }
+                if (lastRunTag == null || lastRunTag.length() == 0) {
+                    lastRunTag = LAST_MARKER;
+                }
         	}
         }
 
@@ -369,6 +392,9 @@ public class LoopTag extends BlockTag
                 rowX.set("0",counter);
                 rowX.set("1",counter+1);
             }
+            if (counterTag != null) {
+                rowX.set(counterTag, counter);
+            }
             
             if (dividerSnippet != null && counter > 0) {
                 dividerSnippet.render(out, context, depth);
@@ -410,6 +436,23 @@ public class LoopTag extends BlockTag
                     rowX.setOrDelete(prefix, record.get(SimpleTable.ANON_ARRAY_LABEL));
                 }
             }
+            
+            // if directed, set $is_first and $is_last tags at appropriate times
+            if (firstRunTag != null) {
+                if (counter == 0) {
+                    rowX.set(firstRunTag, "TRUE");
+                    if (prefix != null) rowX.set(prefix + "." + firstRunTag, "TRUE");
+                } else if (counter == 1) {
+                    rowX.unset(firstRunTag);
+                    if (prefix != null) rowX.unset(prefix + "." + firstRunTag);
+                }
+            }
+            if (lastRunTag != null) {
+                if (!data.hasNext()) {
+                    rowX.set(lastRunTag, "TRUE");
+                    if (prefix != null) rowX.set(prefix + "." + lastRunTag, "TRUE");
+                }
+            }
 
             // make sure chunk tags are resolved in context
             rowX.render(out,context);
@@ -418,8 +461,21 @@ public class LoopTag extends BlockTag
         }
         // no side effects!
         data.reset();
+        rowX.resetTags();
 
         //return rows.toString();
+    }
+    
+    private String eatTagSymbol(String tag)
+    {
+        if (tag == null) return null;
+        
+        char c0 = (tag.length() > 0) ? tag.charAt(0) : 0;
+        if (c0 == '$' || c0 == '~') {
+            return tag.substring(1);
+        }
+        
+        return tag;
     }
     
     public boolean hasBody(String openingTag)
@@ -714,7 +770,9 @@ public class LoopTag extends BlockTag
         }
         
         this.chunk = context;
-        fetchData((String)options.get("data"));
+        if (options != null) {
+            fetchData((String)options.get("data"));
+        }
         
         cookLoopToPrinter(out, context, true, depth);
     }
