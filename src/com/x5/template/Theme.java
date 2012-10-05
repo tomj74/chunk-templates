@@ -15,9 +15,6 @@ public class Theme implements ContentSource, ChunkFactory
 	private String themeLayerNames;
 	private String fileExtension;
 	
-	private String tagStart = TemplateSet.DEFAULT_TAG_START;
-	private String tagEnd = TemplateSet.DEFAULT_TAG_END;
-	
 	private static final String DEFAULT_THEMES_FOLDER = "themes";
 	
 	private String localeCode = null;
@@ -223,7 +220,6 @@ public class Theme implements ContentSource, ChunkFactory
     public Chunk makeChunk()
     {
         Chunk c = new Chunk();
-        c.setTagBoundaries(tagStart,tagEnd);
         c.setMacroLibrary(this,this);
         shareContentSources(c);
         c.setLocale(localeCode);
@@ -244,7 +240,6 @@ public class Theme implements ContentSource, ChunkFactory
     public Chunk makeChunk(String templateName)
     {
         Chunk c = new Chunk();
-        c.setTagBoundaries(tagStart,tagEnd);
         c.setMacroLibrary(this,this);
         c.append( getSnippet(templateName) );
         shareContentSources(c);
@@ -267,7 +262,6 @@ public class Theme implements ContentSource, ChunkFactory
     public Chunk makeChunk(String templateName, String extension)
     {
         Chunk c = new Chunk();
-        c.setTagBoundaries(tagStart,tagEnd);
         c.setMacroLibrary(this,this);
         c.append( getSnippet(templateName, extension) );
         shareContentSources(c);
@@ -294,11 +288,6 @@ public class Theme implements ContentSource, ChunkFactory
         }
     }
 
-	public String makeTag(String tagName)
-	{
-        return tagStart + tagName + tagEnd;
-	}
-	
 	/**
 	 * If your templates are packaged into a jar with your application code,
 	 * then you should use this method to tell chunk where your templates are.

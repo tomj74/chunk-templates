@@ -2,12 +2,16 @@ package com.x5.template;
 
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import com.x5.template.filters.BasicFilter;
 import com.x5.template.filters.ChunkFilter;
 import com.x5.template.filters.RegexFilter;
+import com.x5.util.TableData;
 
 /* TextFilter provides a library of text filtering functions
    to support in-template presentation transformations. */
@@ -105,6 +109,20 @@ public class TextFilter
         } else if (filter.equals("lc") || filter.equals("lower")) {
             // lowercase
             return text == null ? null : text.toLowerCase();
+        } else if (filter.startsWith("join(")) {
+            if (text != null) {
+                TableData array = InlineTable.parseTable(text);
+                if (array != null) {
+                    return joinInlineTable(array,filter);
+                }
+            }
+        } else if (filter.startsWith("get(")) {
+            if (text != null) {
+                TableData array = InlineTable.parseTable(text);
+                if (array != null) {
+                    return accessArrayIndex(array,filter);
+                }
+            }
         }
         
         // try to find a matching factory-standard stock filter for this job.
@@ -269,27 +287,17 @@ public class TextFilter
         if (output == null || output.length() == 0) return output;
         
         char firstChar = output.charAt(0);
-        if (firstChar == '~' || firstChar == '+' || firstChar == '$') {
-        	if (context == null || context.isConforming()) {
-        		return "{"+output+"}";
-        	} else {
-        		String tagOpen = context.makeTag("XXX");
-        		tagOpen = RegexFilter.applyRegex(tagOpen, "s/XXX.*//");
-        		
-        		String tag = context.makeTag(output);
-        		
-        		tag = Chunk.findAndReplace(tag, tagOpen+'~', tagOpen);
-        		tag = Chunk.findAndReplace(tag, tagOpen+'+', TemplateSet.INCLUDE_SHORTHAND);
-        		
-        		return tag;
-        	}
+        if (firstChar == '~' || firstChar == '$') {
+            return context != null ? context.makeTag(output) : "{"+output+"}";
         } else if (firstChar == '^' || firstChar == '.') {
         	if (context == null) {
-        		// internally, {^xyz} is just an alias for {~.xyz}
-        		return TemplateSet.DEFAULT_TAG_START+'.'+output.substring(1)+TemplateSet.DEFAULT_TAG_END;
+        	    /// turn .cmd into {.cmd}
+        		return TemplateSet.PROTOCOL_SHORTHAND+output.substring(1)+TemplateSet.DEFAULT_TAG_END;
         	} else {
         		return context.makeTag('.'+output.substring(1));
         	}
+        } else if (firstChar == '+') {
+            return "{"+output+"}";
         } else {
             return output;
         }
@@ -629,9 +637,20 @@ public class TextFilter
         return closeParen+1;
     }
     
+    public static String accessArrayIndex(TableData table, String getFilter)
+    {
+        return accessArrayIndex(extractListFromTable(table), getFilter);
+    }
+    
     public static String accessArrayIndex(String[] array, String getFilter)
     {
         if (array == null) return "";
+        return accessArrayIndex(Arrays.asList(array), getFilter);
+    }
+    
+    public static String accessArrayIndex(List<String> list, String getFilter)
+    {
+        if (list == null) return "";
         int parenPos = getFilter.indexOf('(');
         if (parenPos > 0) {
             String[] args = parseArgs(getFilter.substring(parenPos+1),false);
@@ -641,10 +660,10 @@ public class TextFilter
                 if (x < 0) {
                     // eg, -1 returns the last item in the array
                     // -2 return the 2nd-to-last, etc.
-                    x = array.length + x;
+                    x = list.size() + x;
                 }
-                if (x >= 0 && x < array.length) {
-                    return array[x];
+                if (x >= 0 && x < list.size()) {
+                    return list.get(x);
                 }
             } catch (NumberFormatException e) {
             }
@@ -652,10 +671,39 @@ public class TextFilter
         return "";
     }
     
+    private static List<String> extractListFromTable(TableData table)
+    {
+        if (table == null) return null;
+        
+        // create a string array from the first column of the table.
+        List<String> list = new ArrayList<String>();
+        
+        while (table.hasNext()) {
+            table.nextRecord();
+            String[] record = table.getRow();
+            list.add(record[0]);
+        }
+        
+        return list;
+    }
+    
+    public static String joinInlineTable(TableData table, String joinFilter)
+    {
+        return joinStringList(extractListFromTable(table), joinFilter);
+    }
+    
     public static String joinStringArray(String[] array, String joinFilter)
     {
-    	if (array == null) return "";
-    	if (array.length == 1) return array[0];
+        if (array == null) return "";
+        if (array.length == 1) return array[0];
+        
+        return joinStringList(Arrays.asList(array), joinFilter);
+    }
+    
+    public static String joinStringList(List<String> list, String joinFilter)
+    {
+    	if (list == null) return "";
+    	if (list.size() == 1) return list.get(0);
     	
     	String divider = null;
     	// the only arg is the divider
@@ -666,9 +714,11 @@ public class TextFilter
     	}
     	
     	StringBuilder x = new StringBuilder();
-    	for (int i=0; i<array.length; i++) {
+    	int i = 0;
+    	for (String s : list) {
     		if (i>0 && divider != null) x.append(divider);
-    		if (array[i] != null) x.append(array[i]);
+    		if (s != null) x.append(s);
+    		i++;
     	}
     	return x.toString();
     }

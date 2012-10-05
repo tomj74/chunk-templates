@@ -12,14 +12,12 @@ public class Snippet
 {
 	private List<SnippetPart> parts = null;
 	private String simpleText = null;
-	
+
 	private static HashMap<String,Snippet> snippetCache = new HashMap<String,Snippet>();
 	private static HashMap<String,Long> cacheAge = new HashMap<String,Long>();
-	
     private static long lastGC = 0;
 	private static long gcCounter = 0;
 	private static final int gcInterval = 500;
-	
 	private static final long CAN_GC_AFTER = 1000 * 60;
 	
 	private Snippet(String template)
@@ -27,6 +25,13 @@ public class Snippet
 	    parseParts(template);
 	}
 	
+	/*
+	public static Snippet getSnippet(String template)
+	{
+	    return new Snippet(template);
+	}*/
+	
+	/* premature optimization? */
 	public static Snippet getSnippet(String template)
 	{
 	    long timestamp = System.currentTimeMillis();
@@ -183,6 +188,7 @@ public class Snippet
                         // reset scan mode
                         marker = i+1;
                         tagStart = -1;
+                        insideTrToken = false;
 	                }
 	            } else if (c == '}') {
 	                if (!insideRegex && trailingBackslashes % 2 == 0) {
@@ -312,7 +318,7 @@ public class Snippet
     	                    // found {~tag|...(m/.../,...,m/.../,...)}
     	                    regexDelimCount = 1;
     	                    insideRegex = true;
-    	                } else if (c0 == ',' || c00 == '(') {
+    	                } else if (c0 == ',' || (c0 == '(' && c00 == 'h')) {
                             // found {~tag|...(/regex/,...,/regex/,...)}
     	                    regexDelimCount = 1;
     	                    insideRegex = true;

@@ -2,6 +2,8 @@ package com.x5.template;
 
 import java.util.HashMap;
 import java.util.IllegalFormatException;
+import java.util.Locale;
+import java.util.MissingResourceException;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import java.io.File;
@@ -213,7 +215,7 @@ public class ChunkLocale
         
         for (int i=0; i<args.length; i++) {
             String tagName = args[i];
-            if (tagName.startsWith("~")) {
+            if (tagName.startsWith("~") || tagName.startsWith("$")) {
                 Object val = context.get(tagName.substring(1));
                 String valString = (val == null ? "" : val.toString());
                 values[i] = valString;
@@ -230,6 +232,34 @@ public class ChunkLocale
         }
     }
 
+    public Locale getJavaLocale()
+    {
+        if (localeCode != null && localeCode.contains("_")) {
+            String[] langAndCountry = localeCode.split("_");
+            if (langAndCountry.length > 1) {
+                String lang    = langAndCountry[0];
+                String country = langAndCountry[1];
+                if (lang != null && lang.trim().length() > 0) {
+                    if (country != null && country.trim().length() > 0) {
+                        Locale locale = new Locale(lang, country);
+                        // confirm that this is a valid locale
+                        try {
+                            if (locale.getISO3Country() != null) {
+                                if (locale.getISO3Language() != null) {
+                                    // VALID LOCALE!  RETURN!
+                                    return locale;
+                                }
+                            }
+                        } catch (MissingResourceException e) {
+                        }
+                    }
+                }
+            }
+        }
+        
+        return null;
+    }
+    
     public String toString()
     {
         return this.localeCode;
