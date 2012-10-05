@@ -366,3 +366,9 @@ Hello
 {/body}
 {/exec}
 {#}
+
+
+{!---------------------------------------------}
+{#bug29}
+It doesn't matter what I put here, it gets overridden in the override layer.
+{#}

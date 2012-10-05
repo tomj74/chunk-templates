@@ -149,4 +149,25 @@ public class MacroTest
         
         assertEquals("a = 2.  x = 3.\n", c.toString());
     }
+    
+    @Test
+    public void includeSnippetFromOverrideMacro()
+    {
+        Theme theme = new Theme("test/base,test/override");
+        
+        Chunk c = theme.makeChunk();
+        // Well, the bug was that theme.fetch("...") no longer
+        // auto-expands unqualified references to fully-qualified refs.
+        //
+        // But really, you can't expect this.  It's far more valuable
+        // to have access to the original template *verbatim* via .fetch(),
+        // and just direct folks to use getSnippet() (which works fine)
+        // for all other contexts.
+        //////c.append(theme.fetch("macro_test#bug29")); <-- bad, breaks!
+        c.append(theme.getSnippet("macro_test#bug29"));
+        
+        String targetOutput = theme.fetch("macro_test#bug29_target_output");
+        
+        assertEquals(targetOutput, c.toString());
+    }
 }

@@ -48,6 +48,18 @@ public class LocaleTagTest
     }
     
     @Test
+    public void testManyTokens()
+    {
+        // don't get tripped up when a braced token follows an unbraced
+        // token (bug 74)
+        Chunk c = new Chunk();
+        c.set("color", "blue");
+        c.set("make", "lexus");
+        c.append("Bla bla bla _[car] - {_[A new %s %s made of %s!],$color,$make,plastic} bla bla");
+        assertEquals("Bla bla bla car - A new blue lexus made of plastic! bla bla", c.toString());
+    }
+    
+    @Test
     public void testRemoveClutterBraced()
     {
         // make sure locale-tag clutter is removed when template is processed
@@ -132,6 +144,25 @@ public class LocaleTagTest
         c.setLocale("fr_FR");
         c.append("Bla bla bla _[A new car!] bla bla");
         assertEquals("Bla bla bla Un nouveau auto! bla bla", c.toString());
+    }
+    
+    @Test
+    public void testFormatDefaultLocale()
+    {
+        Chunk c = new Chunk();
+        /////c.setLocale("fr_FR");
+        c.append("{$x:3000000|sprintf(%,.2f)}");
+        assertEquals("3,000,000.00", c.toString());
+    }
+
+    @Test
+    public void testFormatEuroLocale()
+    {
+        Chunk c = new Chunk();
+        c.setLocale("fr_FR");
+        c.append("{$x:3000000|sprintf(%,.2f)}");
+        String nbsp = "\u00A0"; // unicode non-breaking space
+        assertEquals("3"+nbsp+"000"+nbsp+"000,00", c.toString());
     }
 
 }
