@@ -2,8 +2,13 @@
 
 = Introduction =
 
-Chunk Template documentation is available here:
+Quick Start: Recipes & Examples
 
- http://www.x5software.com/chunk/wiki
+ http://www.x5software.com/chunk/examples/ChunkExample
+
+The full Chunk Template documentation wiki is here:
+
+ http://www.x5software.com/chunk/wiki/
+
 
 
