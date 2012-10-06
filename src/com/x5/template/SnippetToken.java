@@ -61,7 +61,7 @@ public class SnippetToken extends SnippetPart
         if (wholeTag.charAt(argsA) == ',') argsA++;
         
         String params = wholeTag.substring(argsA,argsB);
-        if (params != null && !params.trim().isEmpty()) {
+        if (params != null && params.trim().length() > 0) {
             String[] args = params.split(" *, *");
             tokenWithArgs.args = args;
         }
