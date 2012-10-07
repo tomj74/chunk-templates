@@ -324,7 +324,8 @@ public class TemplateSet implements ContentSource, ChunkFactory
         return template;
     }
     
-    private Class<?> grokCallerClass()
+    // default (package) visibility intentional
+    static Class<?> grokCallerClass()
     {
         Throwable t = new Throwable();
         StackTraceElement[] stackTrace = t.getStackTrace();

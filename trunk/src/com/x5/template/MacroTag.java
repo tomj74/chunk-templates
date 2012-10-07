@@ -210,6 +210,8 @@ public class MacroTag extends BlockTag
     {
         List<SnippetPart> parts = body.getParts();
         
+        if (parts == null) return;
+        
         for (int i=0; i<parts.size(); i++) {
             // seek until a tag definition {~tag_def=} is found
             SnippetPart part = parts.get(i);
