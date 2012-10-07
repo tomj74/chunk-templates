@@ -192,7 +192,19 @@ public class Snippet
 	                }
 	            } else if (c == '}') {
 	                if (!insideRegex && trailingBackslashes % 2 == 0) {
-	                    if (magicChar == '!') {
+	                    if (insideLiteral) {
+                            // scanning for end of literal
+                            if (isLiteralClose(template,magicChar,tagStart,i)) {
+                                String literalText = template.substring(marker,i+1);
+                                SnippetPart literal = new SnippetPart(literalText);
+                                literal.setLiteral(true);
+                                parts.add(literal);
+                                // reset...
+                                marker = i+1;
+                                insideLiteral = false;
+                            }
+                            tagStart = -1;
+	                    } else if (magicChar == '!') {
                             //char c0 = chars[i-1];
                             //char c00 = chars[i-2];
 	                        char c0 = template.charAt(i-1);
@@ -264,18 +276,6 @@ public class Snippet
                                 // keep scanning
                                 insideComment = true;
                             }
-	                    } else if (insideLiteral) {
-	                        // scanning for end of literal
-	                        if (isLiteralClose(template,magicChar,tagStart,i)) {
-	                            String literalText = template.substring(marker,i+1);
-	                            SnippetPart literal = new SnippetPart(literalText);
-	                            literal.setLiteral(true);
-	                            parts.add(literal);
-	                            // reset...
-	                            marker = i+1;
-	                            insideLiteral = false;
-	                        }
-                            tagStart = -1;
 	                    } else {
 	                        //////////////////////////////////////////////////////////
                             // FOUND TAG END, extract and add to sequence along with
@@ -433,8 +433,11 @@ public class Snippet
             return tag;
         } else if (magicChar == '^' || magicChar == '.') {
             String gooeyCenter = template.substring(tagStart+2,i);
-            // check for literal block
-            if (gooeyCenter.equals("literal") || gooeyCenter.equals("^")) return null;
+            // check for literal block (includes abandoned {^^} shorthand syntax)
+            if (gooeyCenter.equals("literal") || gooeyCenter.equals("^")) {
+                // null return signals literal-start to caller
+                return null;
+            }
             // expand ^ to ~.
             SnippetTag tag = new SnippetTag(wholeTag,"."+gooeyCenter);
             return tag;

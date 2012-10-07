@@ -170,4 +170,13 @@ public class MacroTest
         
         assertEquals(targetOutput, c.toString());
     }
+    
+    @Test
+    public void emptyExecTest()
+    {
+        Chunk c = new Chunk();
+        c.append("{.exec DOES_NOT_EXIST}{/exec}");
+        
+        assertEquals("",c.toString());
+    }
 }

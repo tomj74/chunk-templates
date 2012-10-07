@@ -76,19 +76,20 @@ public class ChunkLocale
             CsvReader reader = new CsvReader(in,charset);
             reader.setUseComments(true); // ignore lines beginning with #
             
-            String[] entry;
-            entry = reader.getValues();
+            String[] entry = null;
             
             translations = new HashMap<String,String>();
             
-            while (entry != null) {
-                if (entry.length > 1 && entry[0] != null && entry[1] != null) {
+            while (reader.readRecord()) {
+                entry = reader.getValues();
+
+                if (entry != null && entry.length > 1 && entry[0] != null && entry[1] != null) {
                     String key = entry[0];
                     String localString = entry[1];
                     translations.put(key,localString);
                 }
-                entry = reader.readRecord() ? reader.getValues() : null;
             }
+            
         } catch (IOException e) {
             System.err.println("ERROR loading locale DB: "+localeCode);
             e.printStackTrace(System.err);
@@ -120,12 +121,13 @@ public class ChunkLocale
     private InputStream locateLocaleDB(Chunk context)
     throws java.io.IOException
     {
-        // (1) if localePath is defined, check there for a file named xx_XX/translate.csv
-        String localePath = System.getProperty("chunk.localedb.path");
-        if (localePath != null) {
-            File folder = new File(localePath);
+        // (1) if chunk.localedb.path is defined,
+        // check there for a file named xx_XX/translate.csv
+        String sysLocalePath = System.getProperty("chunk.localedb.path");
+        if (sysLocalePath != null) {
+            File folder = new File(sysLocalePath);
             if (folder.exists()) {
-                File file = new File(folder,localeCode + "/translate.csv");
+                File file = new File(folder, localeCode + "/translate.csv");
                 if (file.exists()) {
                     return new FileInputStream(file);
                 }
@@ -137,8 +139,17 @@ public class ChunkLocale
         InputStream in = this.getClass().getResourceAsStream(path);
         if (in != null) return in;
         
+        // (2a) check the caller's class resources
+        Class classInApp = TemplateSet.grokCallerClass();
+        if (classInApp != null) {
+            in = classInApp.getResourceAsStream(path);
+            if (in != null) {
+                return in;
+            }
+        }
+        
         // (3a) TODO - use context to grok app's resource context
-        // and check there (eg, will work inside servlet context)
+        // and check there (eg, should work inside servlet context)
         
         // (3) check inside jars on the classpath...
         String cp = System.getProperty("java.class.path");

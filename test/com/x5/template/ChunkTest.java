@@ -250,9 +250,9 @@ public class ChunkTest
     public void testLiteral()
     {
         Chunk c = new Chunk();
-        c.append("Pass through! {~gronk:bubbles!} <!-- {^literal} --> passing through {~gronk:} <!-- {^} --> Pass on {~process_me:happily}!");
+        c.append("Pass through! {~gronk:bubbles!} {!--comment--} <!-- {^literal} --> {!--comment--} passing through {~gronk:} <!-- {^} --> Pass on {~process_me:happily}!");
         
-        assertEquals(c.toString(), "Pass through! bubbles! <!-- {^literal} --> passing through {~gronk:} <!-- {^} --> Pass on happily!");
+        assertEquals(c.toString(), "Pass through! bubbles!  <!-- {^literal} --> {!--comment--} passing through {~gronk:} <!-- {^} --> Pass on happily!");
     }
 
     @Test
