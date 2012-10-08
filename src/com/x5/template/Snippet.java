@@ -13,6 +13,7 @@ public class Snippet
 	private List<SnippetPart> parts = null;
 	private String simpleText = null;
 
+	private static boolean useCache = isCacheEnabled();
 	private static HashMap<String,Snippet> snippetCache = new HashMap<String,Snippet>();
 	private static HashMap<String,Long> cacheAge = new HashMap<String,Long>();
     private static long lastGC = 0;
@@ -25,14 +26,17 @@ public class Snippet
 	    parseParts(template);
 	}
 	
-	/*
 	public static Snippet getSnippet(String template)
 	{
-	    return new Snippet(template);
-	}*/
+	    if (Snippet.useCache) {
+	        return getSnippetFromCache(template);
+	    } else {
+	        return new Snippet(template);
+	    }
+	}
 	
-	/* premature optimization? */
-	public static Snippet getSnippet(String template)
+    /* premature optimization? */
+	private static Snippet getSnippetFromCache(String template)
 	{
 	    long timestamp = System.currentTimeMillis();
 	    
@@ -49,6 +53,16 @@ public class Snippet
 	        snippetCache.put(template, s);
 	        cacheAge.put(template, timestamp);
 	        return s;
+	    }
+	}
+	
+	private static boolean isCacheEnabled()
+	{
+	    String useCacheProperty = System.getProperty("chunk.snippetcache");
+	    if (useCacheProperty != null) {
+	        return true;
+	    } else {
+	        return false;
 	    }
 	}
 	

@@ -1244,14 +1244,9 @@ public class Chunk implements Map<String,Object>
     
     private Chunk makeChildChunk()
     {
-        if (chunkFactory == null) {
-            Chunk child = new Chunk();
-            child.setLocale(this.localeCode);
-            return child;
-        } else {
-            // presumably, chunkFactory will carry over correct locale
-            return chunkFactory.makeChunk();
-        }
+        Chunk child = chunkFactory == null ? new Chunk() : chunkFactory.makeChunk();
+        child.setLocale(this.localeCode);
+        return child;
     }
     
     private Object makeFilterOnion(Object tagValue, Chunk filterMeLater, String[] filters)

@@ -273,6 +273,29 @@ public class LoopTest
     }
     
     @Test
+    public void testLocaleBug()
+    {
+        Theme theme = new Theme("themes","test/base");
+        
+        Chunk chunkA = theme.makeChunk("chunk_test#looptest_nested_loops");
+        Chunk chunkB = theme.makeChunk("chunk_test#looptest_nested_loops");
+        chunkB.setLocale("fr_FR");
+        
+        String widgets = "[[widget_id,widget_name],[1,thingamabob],[2,car]]";
+        String wodgets = "[[wodget_id,wodget_name],[1,thingamabob],[2,car]]";
+        chunkA.set("widgets",widgets);
+        chunkA.set("wodgets",wodgets);
+        chunkB.set("widgets",widgets);
+        chunkB.set("wodgets",wodgets);
+        
+        assertEquals("thingamabob\n thingamabob *\n --\n voiture\n==\nvoiture\n thingamabob\n --\n voiture *\n",
+                chunkB.toString());
+        assertEquals("thingamabob\n thingamabob *\n --\n car\n==\ncar\n thingamabob\n --\n car *\n",
+                chunkA.toString());
+        
+    }
+    
+    @Test
     public void testDataReset()
     {
         Theme theme = new Theme("themes","test/base");
