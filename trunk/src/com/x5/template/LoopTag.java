@@ -26,6 +26,7 @@ public class LoopTag extends BlockTag
     private Snippet dividerSnippet = null;
     private Snippet rowSnippet = null;
     
+    // for speed
     private Chunk rowX;
     
     //private static final String ON_EMPTY_MARKER = "{~.onEmpty}";
@@ -346,9 +347,17 @@ public class LoopTag extends BlockTag
 
         ChunkFactory factory = context.getChunkFactory();
 
-        if (rowX == null) {
-            rowX = (factory == null) ? new Chunk() : factory.makeChunk();
-            rowX.append( rowSnippet );
+        if (this.rowX == null) {
+            this.rowX = (factory == null) ? new Chunk() : factory.makeChunk();
+            this.rowX.append( rowSnippet );
+        }
+        // make sure cached rowX chunk matches context locale
+        if (context.getLocale() == null) {
+            if (rowX.getLocale() != null) rowX.setLocale(null);
+        } else {
+            if (rowX.getLocale() == null || rowX.getLocale() != context.getLocale()) {
+                rowX.setLocale(context.getLocale().toString());
+            }
         }
 
         String prefix = null;

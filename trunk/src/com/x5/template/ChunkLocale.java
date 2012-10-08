@@ -216,7 +216,7 @@ public class ChunkLocale
             xlated = translations.get(string);
         }
         
-        if (!xlated.contains("%s") || args == null || context == null) {
+        if (args == null || context == null || !xlated.contains("%s")) {
             return xlated;
         }
         

@@ -1,15 +1,25 @@
 package com.x5.template.filters;
 
 import com.x5.template.Chunk;
+import com.x5.template.ChunkLocale;
 import com.x5.template.LocaleTag;
 
 public class TranslateFilter extends BasicFilter implements ChunkFilter
 {
 
     @Override
-    public String transformText(Chunk chunk, String text, String[] args)
+    public String transformText(Chunk context, String text, String[] args)
     {
-        return markForTranslation(text);
+        if (text == null) return null;
+        if (context == null) return text;
+        ChunkLocale translator = context.getLocale();
+        if (translator == null) return text;
+        
+        // should check for args and pass args[1:] to translator
+        // in case of "asdf %s asdf" format string?
+        // otherwise, not really necessary to pass context.
+        return translator.translate(text, null, context);
+        //return markForTranslation(text);
     }
 
     @Override

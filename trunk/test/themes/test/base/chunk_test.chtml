@@ -118,9 +118,9 @@
 {!---------------------------------------------}
 {#looptest_nested_loops}
  {^loop data="~widgets"}
-{~widget_name}
+{~widget_name|_}
   {^loop data="~wodgets"}
- {~wodget_name}{~wodget_name|sel(~widget_name, *)}
+ {~wodget_name|_}{~wodget_name|sel(~widget_name, *)}
   {^divider}
  --
   {/loop}
