@@ -194,6 +194,97 @@ NOT A TOASTER
 {#}
 
 
+{#looptest_whitespace}
+<ul>
+
+{.loop in $widgets as $w}
+<li>{$w.widget_name}</li>
+{/loop}
+
+</ul>
+<ol>
+
+ {.loop in $widgets as $w}
+<li>{$w.widget_name}</li>
+ {/loop}
+
+</ol>
+{#}
+
+
+{#tree_test}
+{.exec #print_x json}
+{"x":
+ {"name":"Bond",
+  "codename":"007",
+  "films":[{"name":"Goldfinger",
+            "year":"1964",
+            "actor":"Connery"},
+           {"name":"Casino Royale",
+            "year":"2006",
+            "actor":"Craig"}],
+  "enemies":[]
+  }
+}
+{/exec}
+{#}
+
+{#print_x}
+  {.if ($x|type == 'OBJECT') }
+{.exec #print_obj}{$obj=}{$x}{=}{/exec}
+  {.elseIf ($x|type == 'LIST') }
+{.exec #print_list}{$list=}{$x}{=}{/exec}
+  {.else}
+{$x}{/if}{#}
+
+{#print_obj}
+{.loop in $obj as $key:$val}
+<dt>{$key}</dt>
+  <dd>{.exec #print_x}{$x=}{$val}{=}{/exec}</dd>
+{.onEmpty}<i>[no attrs]</i>
+{/loop}
+{#}
+
+{#print_list}
+<ul>
+{.loop in $list as $item}
+ <li>{.exec #print_x}{$x=}{$item}{=}{/exec}</li>
+{.onEmpty}
+ <li><i>Empty List</i></li>
+{/loop}
+</ul>
+{#}
+
+{#tree_test_target_output}
+<dt>codename</dt>
+  <dd>007</dd>
+<dt>enemies</dt>
+  <dd><ul>
+ <li><i>Empty List</i></li>
+</ul>
+</dd>
+<dt>films</dt>
+  <dd><ul>
+ <li><dt>actor</dt>
+  <dd>Connery</dd>
+<dt>name</dt>
+  <dd>Goldfinger</dd>
+<dt>year</dt>
+  <dd>1964</dd>
+</li>
+ <li><dt>actor</dt>
+  <dd>Craig</dd>
+<dt>name</dt>
+  <dd>Casino Royale</dd>
+<dt>year</dt>
+  <dd>2006</dd>
+</li>
+</ul>
+</dd>
+<dt>name</dt>
+  <dd>Bond</dd>
+{#}
+
 {!---------------------------------------------}
 {#layer_test}
 Base Layer

@@ -1,7 +1,6 @@
 package com.x5.template.filters;
 
 import java.util.Locale;
-import java.util.MissingResourceException;
 
 import com.x5.template.Chunk;
 import com.x5.template.ChunkLocale;

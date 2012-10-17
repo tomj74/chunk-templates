@@ -2,8 +2,8 @@ package com.x5.template;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
+import java.util.HashMap;
 
-import org.junit.Before;
 import org.junit.Test;
 
 import com.x5.template.filters.BasicFilter;
@@ -304,6 +304,26 @@ public class TextFilterTest
     }
     
     @Test
+    public void testSelectedMatchVariableAlt()
+    {
+        Chunk c = new Chunk();
+        c.append("<option value=\"{$val}\" {$val|selected($var2)}>{$val|uc}</option>");
+        c.set("val","x");
+        c.set("var2","x");
+        assertEquals("<option value=\"x\"  selected=\"selected\" >X</option>",c.toString());
+    }
+    
+    @Test
+    public void testNotSelectedMatchVariableAlt()
+    {
+        Chunk c = new Chunk();
+        c.append("<option value=\"{$val}\" {~val|selected($var2)}>{$val|uc}</option>");
+        c.set("val","z");
+        c.set("var2","x");
+        assertEquals("<option value=\"z\" >Z</option>",c.toString());
+    }
+    
+    @Test
     public void testURLEncode()
     {
         Chunk c = new Chunk();
@@ -343,9 +363,11 @@ public class TextFilterTest
     public void testXMLEscape()
     {
         Chunk c = new Chunk();
-        c.set("abc","& ' \" <Tag>");
+        // should strip final (invalid) character, convert higher-than-FF chars to
+        // hex-escaped entities.
+        c.set("abc","& ' \" <Tag> \u00AE \u21D4 \u2122 "+Character.valueOf((char)2));
         c.append("test: {~abc|xmlescape}");
-        assertEquals("test: &amp; &apos; &quot; &lt;Tag&gt;", c.toString());
+        assertEquals("test: &amp; &apos; &quot; &lt;Tag&gt; ® &#x21d4; &#x2122; ", c.toString());
     }
 
     @Test
@@ -415,6 +437,16 @@ public class TextFilterTest
         assertEquals(c.toString(),"This is no longer MIXED CASE.");
     }
 
+    @Test
+    public void testUpperWithTurkishLocale()
+    {
+        Chunk c = new Chunk();
+        c.set("abc","i");
+        c.setLocale("tr_TR");
+        c.append("{$abc|uc}");
+        assertEquals(c.toString(),"İ");
+    }
+    
     @Test
     public void testLC()
     {
@@ -536,6 +568,24 @@ public class TextFilterTest
         System.setErr(new PrintStream(new ByteArrayOutputStream()));
         
         assertEquals("xxx..xxx",c.toString());
+    }
+    
+    @Test
+    public void testTypeFilter()
+    {
+        Theme theme = new Theme();
+        Chunk c = theme.makeChunk();
+        c.append("{$x|type} {$y|type} {$z|type} {$c|type} {$not_there|type}");
+        c.set("x","hello");
+        c.set("y",new String[]{"a","b","c"});
+        
+        HashMap<String,Object> z = new HashMap<String,Object>();
+        z.put("abc", "123");
+        c.set("z",z);
+        
+        c.set("c",c);
+        
+        assertEquals("STRING LIST OBJECT CHUNK NULL",c.toString());
     }
     
     public class LeftTrimFilter extends BasicFilter implements ChunkFilter

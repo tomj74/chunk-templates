@@ -54,6 +54,7 @@ public class SimpleTable implements TableData, Map<String,Object>
     	}
     }
 
+    @SuppressWarnings("rawtypes")
 	public SimpleTable(List list)
     {
 	    if (list == null) return;
@@ -65,7 +66,7 @@ public class SimpleTable implements TableData, Map<String,Object>
             records.add(record);
         }
     }
-
+	
     public String[] getColumnLabels()
 	{
 		return labels;

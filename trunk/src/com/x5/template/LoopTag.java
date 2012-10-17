@@ -16,7 +16,6 @@ import com.x5.util.TableData;
 
 public class LoopTag extends BlockTag
 {
-    private TableData data;
     private Chunk chunk;
     private String rowTemplate;
     private String emptyTemplate;
@@ -125,6 +124,15 @@ public class LoopTag extends BlockTag
                     if (loopVarPrefix.startsWith("~") || loopVarPrefix.startsWith("$")) {
                         loopVarPrefix = loopVarPrefix.substring(1);
                     }
+                    if (loopVarPrefix.contains(":")) {
+                        String[] labels = loopVarPrefix.split(":");
+                        String valuePrefix = labels[1];
+                        if (valuePrefix.startsWith("~") || valuePrefix.startsWith("$")) {
+                            valuePrefix = valuePrefix.substring(1);
+                        }
+                        options.put("keyname",labels[0]);
+                        options.put("valname",valuePrefix);
+                    }
                     options.put("name",loopVarPrefix);
                 }
             }
@@ -208,9 +216,11 @@ public class LoopTag extends BlockTag
         }*/
     }
 
-    private void fetchData(String dataVar)
+    @SuppressWarnings("rawtypes")
+    private TableData fetchData(String dataVar)
     {
-        this.data = null;
+        //this.data = null;
+        TableData data = null;
         
         if (dataVar != null) {
             int rangeMarker = dataVar.indexOf("[");
@@ -234,32 +244,49 @@ public class LoopTag extends BlockTag
 
                 if (chunk != null) {
                     Object dataStore = chunk.get(dataVar);
-                    if (dataStore instanceof TableData) {
-                        this.data = (TableData)dataStore;
-                    } else if (dataStore instanceof String) {
-                        this.data = InlineTable.parseTable((String)dataStore);
-                        ////registerOption("array_index_tags","FALSE");
-                    } else if (dataStore instanceof Snippet) {
-                        // simple strings are now encased in Snippet obj's
-                        Snippet snippetData = (Snippet)dataStore;
-                        this.data = InlineTable.parseTable(snippetData.toString());
-                    } else if (dataStore instanceof String[]) {
-                    	this.data = new SimpleTable((String[])dataStore);
-                    } else if (dataStore instanceof List) {
-                        // is it a list of strings? or a list of kindred objects?
-                        List list = (List)dataStore;
-                        if (list.size() > 0) {
-                            Object a = list.get(0);
-                            if (a instanceof String) {
-                                this.data = new SimpleTable(list);
-                            } else if (a instanceof Map) {
-                                this.data = new TableOfMaps(list);
+                    
+                    // if nec, follow pointers until data is reached
+                    int depth = 0;
+                    while (dataStore != null && depth < 10) {
+                        if (dataStore instanceof TableData) {
+                            data = (TableData)dataStore;
+                        } else if (dataStore instanceof String) {
+                            data = InlineTable.parseTable((String)dataStore);
+                            ////registerOption("array_index_tags","FALSE");
+                        } else if (dataStore instanceof Snippet) {
+                            // simple strings are now encased in Snippet obj's
+                            Snippet snippetData = (Snippet)dataStore;
+                            if (snippetData.isSimplePointer()) {
+                                dataStore = chunk.get(snippetData.getPointer());
+                                depth++;
+                                continue;
+                            } else {
+                                data = InlineTable.parseTable(snippetData.toString());
                             }
+                        } else if (dataStore instanceof String[]) {
+                        	data = new SimpleTable((String[])dataStore);
+                        } else if (dataStore instanceof List) {
+                            // is it a list of strings? or a list of kindred objects?
+                            List list = (List)dataStore;
+                            if (list.size() > 0) {
+                                Object a = list.get(0);
+                                if (a instanceof String) {
+                                    data = new SimpleTable(list);
+                                } else if (a instanceof Map) {
+                                    data = new TableOfMaps(list);
+                                }
+                            }
+                        } else if (dataStore instanceof Object[]) {
+                        	// assume array of objects that implement DataCapsule
+                        	data = DataCapsuleTable.extractData((Object[])dataStore);
+                            ////registerOption("array_index_tags","FALSE");
+                        } else if (dataStore instanceof Map) {
+                            Map object = (Map)dataStore;
+                            data = new ObjectTable(object);
                         }
-                    } else if (dataStore instanceof Object[]) {
-                    	// assume array of objects that implement DataCapsule
-                    	this.data = DataCapsuleTable.extractData((Object[])dataStore);
-                        ////registerOption("array_index_tags","FALSE");
+                        
+                        // only loop if following pointer
+                        break;
                     }
                 }
             } else {
@@ -267,11 +294,13 @@ public class LoopTag extends BlockTag
                 if (chunk != null) {
                 	String tableAsString = chunk.getTemplateSet().fetch(dataVar);
                 	if (tableAsString != null) {
-                	    this.data = InlineTable.parseTable(tableAsString);
+                	    data = InlineTable.parseTable(tableAsString);
                 	}
                 }
             }
         }
+        
+        return data;
     }
 
     private void registerOption(String param, String value)
@@ -280,19 +309,20 @@ public class LoopTag extends BlockTag
         options.put(param,value);
     }
 
-    private static final Pattern NON_LEGAL = Pattern.compile("[^A-Za-z0-9_-]");
-    
     public void cookLoopToPrinter(Writer out, Chunk context,
-            boolean isBlock, int depth)
+            boolean isBlock, int depth, TableData data)
     throws IOException
     {
         if (data == null || !data.hasNext()) {
             if (emptySnippet == null) {
-                if (isBlock) {
-                    out.append("[Loop error: Empty Table - please supply ^onEmpty section in ^loop block]");
-                } else {
-                    out.append("[Loop Error: Empty Table - please specify no_data template parameter in ^loop tag]");
+                String errMsg = "[Loop error: Empty Table - please "
+                    + (isBlock ? "supply .onEmpty section in .loop block]"
+                               : "specify no_data template parameter in .loop tag]");
+                
+                if (context == null || context.renderErrorsToOutput()) {
+                    out.append(errMsg);
                 }
+                if (context != null) context.logError(errMsg);
             } else {
                 emptySnippet.render(out, context, depth);
             }
@@ -305,6 +335,8 @@ public class LoopTag extends BlockTag
         String counterTag = null;
         String firstRunTag = null;
         String lastRunTag = null;
+        String objectKeyLabel = null;
+        String objectValueLabel = null;
         
         if (options != null) {
             if (options.containsKey("dividerSnippet")) {
@@ -343,8 +375,14 @@ public class LoopTag extends BlockTag
                     lastRunTag = LAST_MARKER;
                 }
         	}
+        	if (options.containsKey("valname")) {
+        	    objectValueLabel = (String)options.get("valname");
+                if (options.containsKey("keyname")) {
+                    objectKeyLabel = (String)options.get("keyname");
+                }
+        	}
         }
-
+        
         ChunkFactory factory = context.getChunkFactory();
 
         if (this.rowX == null) {
@@ -364,6 +402,13 @@ public class LoopTag extends BlockTag
         if (options != null && options.containsKey("name")) {
             String name = (String)options.get("name");
             prefix = name; //NON_LEGAL.matcher(name).replaceAll("");
+        }
+
+        // if looping over object, should provide names for key:value
+        if (objectValueLabel == null && data instanceof ObjectTable) {
+            // default to $attr:$[name] or $attr:$value
+            objectKeyLabel = "attr";
+            objectValueLabel = prefix == null ? prefix : "value";
         }
         
         String[] columnLabels = data.getColumnLabels();
@@ -411,7 +456,12 @@ public class LoopTag extends BlockTag
 
             Map<String,Object> record = data.nextRecord();
 
-            if (columnLabels != null) {
+            if (objectValueLabel != null) {
+                if (objectKeyLabel != null) {
+                    rowX.setOrDelete(objectKeyLabel, record.get(ObjectTable.KEY));
+                }
+                rowX.setOrDelete(objectValueLabel, record.get(ObjectTable.VALUE));
+            } else if (columnLabels != null) {
                 // loop backwards -- in case any headers are identical,
                 // this ensures the first such named column will be used
                 for (int i=columnLabels.length-1; i>-1; i--) {
@@ -433,6 +483,9 @@ public class LoopTag extends BlockTag
                     
                     String fieldName = prefix == null ? key : prefix + "." + key;
                     rowX.setOrDelete(fieldName, value);
+                }
+                if (prefix != null) {
+                    rowX.set(prefix, record);
                 }
             }
             
@@ -614,11 +667,6 @@ public class LoopTag extends BlockTag
         }
     }
     
-    private String smartTrim(String x)
-    {
-        return smartTrimString(x, false, isTrimAll());
-    }
-    
     private static final Pattern UNIVERSAL_LF = Pattern.compile("\n|\r\n|\r\r");
     
     private static String smartTrimString(String x, boolean ignoreAll, boolean isTrimAll)
@@ -739,37 +787,6 @@ public class LoopTag extends BlockTag
         return new Snippet(subParts);
     }
     
-    public String cookLoop(TableData data, Chunk context,
-            String rowTemplate, String emptyTemplate,
-            boolean isBlock)
-    {
-        Snippet rowSnippet = null;
-        Snippet emptySnippet = null;
-        if (isBlock) {
-            rowSnippet = rowTemplate == null ? null : Snippet.getSnippet(rowTemplate);
-            emptySnippet = emptyTemplate == null ? null : Snippet.getSnippet(emptyTemplate);
-        } else {
-            if (rowTemplate != null) rowSnippet = context.getTemplateSet().getSnippet(rowTemplate);
-            if (emptyTemplate != null) {
-                if (emptyTemplate.length() == 0) {
-                    emptySnippet = Snippet.getSnippet("");
-                } else {
-                    emptySnippet = context.getTemplateSet().getSnippet(emptyTemplate);
-                }
-            }
-        }
-        
-        try {
-            StringWriter out = new StringWriter();
-            cookLoopToPrinter(out,context,isBlock,1);
-            out.flush();
-            return out.toString();
-        } catch (IOException e) {
-            e.printStackTrace(System.err);
-            return "[Loop error: IOException "+e.getLocalizedMessage()+"]";
-        }
-    }
-    
     @Override
     public void renderBlock(Writer out, Chunk context, int depth)
         throws IOException
@@ -779,11 +796,13 @@ public class LoopTag extends BlockTag
         }
         
         this.chunk = context;
+        TableData data = null;
+        
         if (options != null) {
-            fetchData((String)options.get("data"));
+            data = fetchData((String)options.get("data"));
         }
         
-        cookLoopToPrinter(out, context, true, depth);
+        cookLoopToPrinter(out, context, true, depth, data);
     }
 
 }

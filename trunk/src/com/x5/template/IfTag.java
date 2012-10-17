@@ -16,17 +16,10 @@ public class IfTag extends BlockTag
     // else-if case: 0 is "then", 1 is first else-if, 2 is 2nd else-if, -1 is "else"
     private String primaryCond;
     
-    private Chunk context;
     private Snippet body;
     private boolean doTrim = true;
     
     private Map<String,String> options;
-    
-    public IfTag(String params, Chunk context)
-    {
-        this.context = context;
-        parseParams(params);
-    }
     
     public IfTag(String params, Snippet body)
     {

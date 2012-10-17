@@ -1,5 +1,6 @@
 package com.x5.template;
 
+import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -18,6 +19,8 @@ public class Theme implements ContentSource, ChunkFactory
 	private static final String DEFAULT_THEMES_FOLDER = "themes";
 	
 	private String localeCode = null;
+	private boolean renderErrs = true;
+	private PrintStream errLog = null;
 	
 	public Theme()
 	{
@@ -82,11 +85,11 @@ public class Theme implements ContentSource, ChunkFactory
         if (lastChar != '\\' && lastChar != '/' && lastChar != fs) {
             themesFolder += fs;
         }
-        this.themesFolder = themesFolder;
 		
 		String[] layerNames = parseLayerNames(themeLayerNames);
 		if (layerNames == null) {
 			TemplateSet simple = new TemplateSet(themesFolder,fileExtension,0);
+			if (!renderErrs) simple.signalFailureWithNull();
 			themeLayers.add(simple);
 		} else {
 			for (int i=0; i<layerNames.length; i++) {
@@ -165,6 +168,8 @@ public class Theme implements ContentSource, ChunkFactory
 	
 	private Snippet prettyFail(String templateName, String ext)
 	{
+	    if (!renderErrs && errLog == null) return null;
+	    
 		String prettyExt = ext;
 		if (prettyExt == null) {
 			TemplateSet baseLayer = themeLayers.get(0);
@@ -184,7 +189,12 @@ public class Theme implements ContentSource, ChunkFactory
 	    }
 	    
 	    err.append("] -->");
-	    return Snippet.getSnippet(err.toString());
+	    
+	    if (errLog != null) {
+	        Chunk.logChunkError(errLog, err.toString());
+	    }
+	    
+	    return renderErrs ? Snippet.getSnippet(err.toString()) : null;
 	}
 	
 	public String fetch(String itemName)
@@ -221,8 +231,10 @@ public class Theme implements ContentSource, ChunkFactory
     {
         Chunk c = new Chunk();
         c.setMacroLibrary(this,this);
+        // make sure chunk inherits theme settings
         shareContentSources(c);
         c.setLocale(localeCode);
+        c.setErrorHandling(renderErrs, errLog);
         return c;
     }
 
@@ -242,8 +254,10 @@ public class Theme implements ContentSource, ChunkFactory
         Chunk c = new Chunk();
         c.setMacroLibrary(this,this);
         c.append( getSnippet(templateName) );
+        // make sure chunk inherits theme settings
         shareContentSources(c);
         c.setLocale(localeCode);
+        c.setErrorHandling(renderErrs, errLog);
         return c;
     }
 
@@ -264,8 +278,10 @@ public class Theme implements ContentSource, ChunkFactory
         Chunk c = new Chunk();
         c.setMacroLibrary(this,this);
         c.append( getSnippet(templateName, extension) );
+        // make sure chunk inherits theme settings
         shareContentSources(c);
         c.setLocale(localeCode);
+        c.setErrorHandling(renderErrs, errLog);
         return c;
     }
 
@@ -336,6 +352,12 @@ public class Theme implements ContentSource, ChunkFactory
                 customFilters.put(alias,filter);
             }
         }
+    }
+    
+    public void setErrorHandling(boolean renderErrs, PrintStream errLog)
+    {
+        this.renderErrs = renderErrs;
+        this.errLog = errLog;
     }
 
 }

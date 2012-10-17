@@ -1,7 +1,6 @@
 package com.x5.template.filters;
 
 import com.x5.template.Chunk;
-import com.x5.template.TextFilter;
 
 public class SelectedFilter extends BasicFilter implements ChunkFilter
 {

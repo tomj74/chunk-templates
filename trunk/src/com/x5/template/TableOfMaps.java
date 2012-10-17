@@ -10,6 +10,7 @@ public class TableOfMaps implements TableData
     private List<Map<String,Object>> data;
     int cursor = -1;
 
+    @SuppressWarnings({"unchecked","rawtypes"})
     public TableOfMaps(List list)
     {
         this.data = (List<Map<String,Object>>)list;

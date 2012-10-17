@@ -15,7 +15,6 @@ import java.net.URL;
 import java.nio.charset.Charset;
 import java.nio.charset.IllegalCharsetNameException;
 import java.nio.charset.UnsupportedCharsetException;
-import java.text.Format;
 
 import com.csvreader.CsvReader;
 
@@ -118,6 +117,7 @@ public class ChunkLocale
         return Charset.defaultCharset();
     }
     
+    @SuppressWarnings("rawtypes")
     private InputStream locateLocaleDB(Chunk context)
     throws java.io.IOException
     {

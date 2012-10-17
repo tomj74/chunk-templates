@@ -2,7 +2,6 @@ package com.x5.template;
 
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.FileReader;
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -1003,7 +1002,7 @@ public class TemplateSet implements ContentSource, ChunkFactory
         // this regex: s/^\s*({^\/?(...)[^}]*})\s*/$1/g removes leading and trailing whitespace
         // from lines that only contain {^loop} ...
         // NB: this regex will not catch {^if (~cond =~ /\/x{1,3}/)} but it's already nigh-unreadable...
-        return RegexFilter.applyRegex(template, "s/^\\s*(\\{(\\^|\\~\\.)\\/?(loop|if|else|elseIf|divider|onEmpty)([^\\}]*|[^\\}]*\\/[^\\/]*\\/[^\\}]*)\\})[ \\t]*$/$1/gm");
+        return RegexFilter.applyRegex(template, "s/^[ \\t]*(\\{(\\^|\\~\\.)\\/?(loop|if|else|elseIf|divider|onEmpty|body)([^\\}]*|[^\\}]*\\/[^\\/]*\\/[^\\}]*)\\})[ \\t]*$/$1/gm");
     }
     
     public static String expandShorthand(String template)

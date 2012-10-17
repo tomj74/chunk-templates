@@ -216,6 +216,19 @@ public class LoopTest
     }
     
     @Test
+    public void testWhitespaceStrip()
+    {
+        Theme theme = new Theme("test/base");
+        
+        Chunk c = theme.makeChunk("chunk_test#looptest_whitespace");
+        String widgets = "[[widget_id,widget_name],[1,thingamabob],[2,doodad]]";
+        c.set("widgets",widgets);
+        
+        assertEquals("<ul>\n\n<li>thingamabob</li>\n<li>doodad</li>\n\n</ul>\n<ol>\n\n<li>thingamabob</li>\n<li>doodad</li>\n\n</ol>\n",
+                c.toString());
+    }
+    
+    @Test
     public void testBadCloseTag()
     {
         Theme theme = new Theme("themes","test/base,test/override");
@@ -270,6 +283,17 @@ public class LoopTest
 
         String output = c.toString();
         assertEquals(output,"WEBATDPLUS\n");
+    }
+    
+    @Test
+    public void testTreePrinter()
+    {
+        Theme theme = new Theme("test/base");
+        
+        Chunk c = theme.makeChunk("chunk_test#tree_test");
+        
+        String output = theme.fetch("chunk_test#tree_test_target_output");
+        assertEquals(output,c.toString());
     }
     
     @Test

@@ -4,7 +4,6 @@ import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -68,6 +67,8 @@ public class TextFilter
             // standard args(x,y,z) case
             filterName = filter.substring(0,parenPos);
             filterArgs = parseArgs(filter.substring(parenPos+1));
+        } else {
+            filterArgs = new String[]{filterName};
         }
         
         // if custom filter is registered with this name, it takes precedence
@@ -103,12 +104,6 @@ public class TextFilter
                 text = Chunk.findAndReplace(text,"'","\\'");
             }
             return text;
-        } else if (filter.equals("uc") || filter.equals("upper")) {
-            // uppercase
-            return text == null ? null : text.toUpperCase();
-        } else if (filter.equals("lc") || filter.equals("lower")) {
-            // lowercase
-            return text == null ? null : text.toLowerCase();
         } else if (filter.startsWith("join(")) {
             if (text != null) {
                 TableData array = InlineTable.parseTable(text);
@@ -123,6 +118,8 @@ public class TextFilter
                     return accessArrayIndex(array,filter);
                 }
             }
+        } else if (filter.equals("type")) {
+            return text == null ? "NULL" : "STRING";
         }
         
         // try to find a matching factory-standard stock filter for this job.
@@ -722,6 +719,63 @@ public class TextFilter
     	}
     	return x.toString();
     }
+
+    public static String typeFilter(Chunk context, Object tagValue)
+    {
+        return _typeFilter(context, tagValue, 0);
+    }
     
+    private static String _typeFilter(Chunk context, Object tagValue, int depth)
+    {
+        if (depth > 7) {
+            return "CIRCULAR_POINTER";
+        }
+        
+        if (tagValue == null) {
+            return "NULL";
+        } else if (tagValue instanceof String) {
+            // make sure it's not an inline table
+            if (isInlineTable((String)tagValue)) {
+                return "LIST";
+            } else {
+                return "STRING";
+            }
+        } else if (tagValue instanceof Snippet) {
+            if (isInlineTable(tagValue.toString())) {
+                return "LIST";
+            } else {
+                Snippet snippet = (Snippet)tagValue;
+                if (snippet.isSimplePointer()) {
+                    String tagRef = snippet.getPointer();
+                    // recurse (but, not forever)
+                    return _typeFilter(context, context.get(tagRef), depth+1);
+                } else {
+                    return "STRING";
+                }
+            }
+        } else if (tagValue instanceof Chunk) {
+            // Chunk is a Map, but not really, but it's not just a string either
+            // so let's intercept it here and give it its own label
+            return "CHUNK";
+        } else if (tagValue instanceof String[] || tagValue instanceof List
+                || tagValue instanceof Object[] || tagValue instanceof com.x5.util.TableData) {
+            return "LIST";
+        } else if (tagValue instanceof Map || tagValue instanceof com.x5.util.DataCapsule) {
+            return "OBJECT";
+        }
+        
+        return "UNKNOWN";
+    }
+
+    private static boolean isInlineTable(String value)
+    {
+     // make sure it's not an inline table
+        TableData inlineTable = InlineTable.parseTable(value);
+        if (inlineTable != null) {
+            return true;
+        } else {
+            return false;
+        }
+    }
 
 }
