@@ -495,6 +495,7 @@ public class CsvReader {
 		}
 	}
 
+	@SuppressWarnings("unchecked")
 	public void setHeaders(String[] headers) {
 		headersHolder.Headers = headers;
 
@@ -1223,6 +1224,7 @@ public class CsvReader {
 	 *                Thrown if an error occurs while reading data from the
 	 *                source stream.
 	 */
+	@SuppressWarnings("unchecked")
 	public boolean readHeaders() throws IOException {
 		boolean result = readRecord();
 
@@ -1706,7 +1708,7 @@ public class CsvReader {
 	private class UserSettings {
 		// having these as publicly accessible members will prevent
 		// the overhead of the method call that exists on properties
-		public boolean CaseSensitive;
+		////public boolean CaseSensitive;
 
 		public char TextQualifier;
 
@@ -1731,7 +1733,7 @@ public class CsvReader {
 		public boolean CaptureRawRecord;
 
 		public UserSettings() {
-			CaseSensitive = true;
+			////CaseSensitive = true;
 			TextQualifier = Letters.QUOTE;
 			TrimWhitespace = true;
 			UseTextQualifier = true;
@@ -1746,6 +1748,7 @@ public class CsvReader {
 		}
 	}
 
+	@SuppressWarnings("rawtypes")
 	private class HeadersHolder {
 		public String[] Headers;
 

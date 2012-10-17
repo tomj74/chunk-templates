@@ -17,6 +17,7 @@ public abstract class BasicFilter implements ChunkFilter
     public BasicFilter() {}
 
     public static ChunkFilter[] stockFilters = new ChunkFilter[]{
+        new AlternateFilter(),
         new Base64DecodeFilter(),
         new Base64EncodeFilter(),
         new CalcFilter(),
@@ -28,6 +29,7 @@ public abstract class BasicFilter implements ChunkFilter
         new HexFilter(),
         new HexUpperFilter(),
         new IndentFilter(),
+        new LetterCaseFilter(),
         new MD5HexFilter(),
         new MD5Base64Filter(),
         new OnEmptyFilter(),
@@ -42,7 +44,6 @@ public abstract class BasicFilter implements ChunkFilter
         new TranslateFilter(),
         new URLDecodeFilter(),
         new URLEncodeFilter(),
-        new AlternateFilter(),
     };
     
     public static Map<String,ChunkFilter> getStockFilters()

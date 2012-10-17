@@ -49,4 +49,19 @@ public class SnippetBlockTag extends SnippetTag
     {
         return snippetText + body.toString() + tagClose.toString();
     }
+    
+    public SnippetTag getOpenTag()
+    {
+        return tagOpen;
+    }
+    
+    public Snippet getBody()
+    {
+        return body;
+    }
+    
+    public SnippetTag getCloseTag()
+    {
+        return tagClose;
+    }
 }

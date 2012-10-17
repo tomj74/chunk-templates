@@ -347,4 +347,43 @@ public class ChunkTest
         
         assertEquals("<script>$(document).ready(function(){$('selector').doSomething(':','test');});</script>",c.toString());
     }
+    
+    @Test
+    public void testBlockSpanningAppends()
+    {
+        String tpl = "{.exec @inline xml}";
+        String xml = "<values><item><description>hello</description></item></values>";
+        String tpl2 = "{.body}{$item.description}{/body}{/exec}";
+        
+        Chunk c = new Chunk();
+        c.append(tpl);
+        c.append(xml);
+        c.append(tpl2);
+        
+        assertEquals("hello", c.toString());
+    }
+
+    @Test
+    public void testBlockSpanningAppendsWithChunk()
+    {
+        String tpl = "{.exec @inline xml}";
+        String xml = "<values><item><description>hello</description></item></values>";
+        String tpl2 = "{.body}{$item.description}";
+        Chunk inTheMiddle = new Chunk();
+        String tpl3 = "{/body}{/exec}";
+        
+        inTheMiddle.set("hello", "cello");
+        inTheMiddle.append(" {$hello}");
+
+        Chunk c = new Chunk();
+        c.append(tpl);
+        c.append(xml);
+        c.append(tpl2);
+        c.append(inTheMiddle);
+        inTheMiddle.set("hello", "fellow");
+        c.append(inTheMiddle);
+        c.append(tpl3);
+        
+        assertEquals("hello fellow fellow", c.toString());
+    }
 }

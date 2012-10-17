@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Vector;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -562,8 +563,7 @@ public class Snippet
 	                    // and offer options wrt, exclude errors
 	                    // in final output, etc.
 	                    String errMsg = "[ERROR in template! "+helper.getBlockStartMarker()+" block with no matching end marker! ]";
-	                    SnippetPart errorPart = new SnippetPart(errMsg);
-	                    errorPart.setLiteral(true);
+	                    SnippetError errorPart = new SnippetError(errMsg);
 	                    bodyParts.add(i+1,errorPart);
 	                    i++;
 	                }
@@ -630,33 +630,6 @@ public class Snippet
 	    }
 	}
 
-    public void append(Snippet toAdd)
-    {
-        if (simpleText != null) {
-            if (toAdd.simpleText != null) {
-                this.simpleText += toAdd.simpleText;
-            } else {
-                this.parts = toAdd.parts;
-                if (simpleText.length() > 0) {
-                    SnippetPart firstPart = new SnippetPart(simpleText);
-                    firstPart.setLiteral(true);
-                    this.parts.add(0,firstPart);
-                }
-                this.simpleText = null;
-            }
-        } else {
-            if (toAdd.simpleText != null) {
-                if (toAdd.simpleText.length() > 0) {
-                    SnippetPart lastPart = new SnippetPart(toAdd.simpleText);
-                    lastPart.setLiteral(true);
-                    this.parts.add(lastPart);
-                }
-            } else {
-                parts.addAll(toAdd.parts);
-            }
-        }
-    }
-
     public Snippet copy()
     {
         if (simpleText != null) {
@@ -681,4 +654,96 @@ public class Snippet
         
         return new Snippet(listOfOne);
     }
+
+    /**
+     * Let's say your whole snippet is just {$x}
+     * In certain contexts, it's nice to resolve to the value of
+     * x instead of the chunk-evaluation of x into a string.
+     */
+    boolean isSimplePointer()
+    {
+        if (parts != null && parts.size() == 1) {
+            SnippetPart onlyPart = parts.get(0);
+            if (onlyPart instanceof SnippetTag) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    String getPointer()
+    {
+        if (isSimplePointer()) {
+            SnippetPart onlyPart = parts.get(0);
+            SnippetTag tag = (SnippetTag)onlyPart;
+            return tag.getTag();
+        }
+        return null;
+    }
+    
+    static Snippet consolidateSnippets(Vector<Snippet> template)
+    {
+        if (template == null) return null;
+        if (template.size() == 1) return template.get(0);
+        // can't just slap all parts together,
+        // since block tag might start in one snippet and end in another.
+        // so, first FLATTEN all the pieces, then run through groupBlocks
+        List<SnippetPart> merged = new ArrayList<SnippetPart>();
+        for (int i=0; i<template.size(); i++) {
+            Snippet s = template.get(i);
+            merged.addAll(s.ungroupBlocks());
+        }
+        
+        Snippet voltron = new Snippet(merged);
+        voltron.groupBlocks(voltron.parts);
+        
+        return voltron;
+    }
+    
+    private List<SnippetPart> ungroupBlocks()
+    {
+        if (parts == null) {
+            if (simpleText.length() < 1) {
+                return null;
+            } else {
+                List<SnippetPart> onePart = new ArrayList<SnippetPart>();
+                SnippetPart simplePart = new SnippetPart(simpleText);
+                simplePart.setLiteral(true);
+                onePart.add(simplePart);
+                return onePart;
+            }
+        } else {
+            // best case: no blocks
+            boolean noBlocks = true;
+            for (SnippetPart part : parts) {
+                if (part instanceof SnippetBlockTag || part instanceof SnippetError) {
+                    noBlocks = false;
+                    break;
+                }
+            }
+            if (noBlocks) {
+                return parts;
+            }
+            // otherwise...
+            List<SnippetPart> flat = new ArrayList<SnippetPart>();
+            for (SnippetPart part : parts) {
+                if (part instanceof SnippetBlockTag) {
+                    // flatten block tag...
+                    //  how to detect un-closed block tag?
+                    SnippetBlockTag block = (SnippetBlockTag)part;
+                    flat.add(block.getOpenTag());
+                    Snippet body = block.getBody();
+                    flat.addAll(body.ungroupBlocks());
+                    flat.add(block.getCloseTag());
+                } else if (part instanceof SnippetError) {
+                    // should qualify this somehow but for now, just
+                    // lose the error.
+                } else {
+                    flat.add(part);
+                }
+            }
+            return flat;
+        }
+    }
+    
 }

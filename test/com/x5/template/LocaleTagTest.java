@@ -1,7 +1,5 @@
 package com.x5.template;
 
-import java.util.Formatter;
-
 import org.junit.Test;
 import static org.junit.Assert.*;
 
