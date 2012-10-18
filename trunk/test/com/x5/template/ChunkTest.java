@@ -229,6 +229,20 @@ public class ChunkTest
     }
     
     @Test
+    public void testBackticksNewSyntax()
+    {
+        // TODO: add some tests for backtick edge cases
+        // (eg, what if ~id is not defined, what if ~name21 is not defined)
+        Chunk c = new Chunk();
+        c.set("name", "Bob");
+        c.set("name21", "Rob");
+        c.set("id", "21");
+        c.append("Hello, my name is {~name`$id`}!");
+        
+        assertEquals(c.toString(), "Hello, my name is Rob!");
+    }
+    
+    @Test
     public void testUncappedLiteral()
     {
         Chunk c = new Chunk();

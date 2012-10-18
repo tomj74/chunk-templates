@@ -1060,10 +1060,10 @@ public class Chunk implements Map<String,Object>
     	
     	String embeddedTag = lookupName.substring(backtickA+2,backtickB);
     	char typeChar = lookupName.charAt(backtickA+1);
-    	if (typeChar == '^') {
+    	if (typeChar == '^' || typeChar == '.') {
     		embeddedTag = '.'+embeddedTag;
-    	} else if (typeChar != '~') {
-    		// only ^ and ~ are legal for now
+    	} else if (typeChar != '~' && typeChar != '$') {
+    		// only ^ and ~ (and $) are legal for now
     		return lookupName;
     	}
     	
