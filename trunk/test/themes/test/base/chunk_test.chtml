@@ -256,33 +256,33 @@ NOT A TOASTER
 {#}
 
 {#tree_test_target_output}
+<dt>name</dt>
+  <dd>Bond</dd>
 <dt>codename</dt>
   <dd>007</dd>
+<dt>films</dt>
+  <dd><ul>
+ <li><dt>name</dt>
+  <dd>Goldfinger</dd>
+<dt>year</dt>
+  <dd>1964</dd>
+<dt>actor</dt>
+  <dd>Connery</dd>
+</li>
+ <li><dt>name</dt>
+  <dd>Casino Royale</dd>
+<dt>year</dt>
+  <dd>2006</dd>
+<dt>actor</dt>
+  <dd>Craig</dd>
+</li>
+</ul>
+</dd>
 <dt>enemies</dt>
   <dd><ul>
  <li><i>Empty List</i></li>
 </ul>
 </dd>
-<dt>films</dt>
-  <dd><ul>
- <li><dt>actor</dt>
-  <dd>Connery</dd>
-<dt>name</dt>
-  <dd>Goldfinger</dd>
-<dt>year</dt>
-  <dd>1964</dd>
-</li>
- <li><dt>actor</dt>
-  <dd>Craig</dd>
-<dt>name</dt>
-  <dd>Casino Royale</dd>
-<dt>year</dt>
-  <dd>2006</dd>
-</li>
-</ul>
-</dd>
-<dt>name</dt>
-  <dd>Bond</dd>
 {#}
 
 {!---------------------------------------------}

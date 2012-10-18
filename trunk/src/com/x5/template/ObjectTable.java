@@ -5,9 +5,11 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.SortedMap;
 
 import com.x5.util.TableData;
 
@@ -76,7 +78,9 @@ public class ObjectTable implements TableData, Map<String,Object>
     private List getOrderedKeys()
     {
         List keys = new ArrayList(obj.keySet());
-        Collections.sort(keys);
+        if (!(obj instanceof LinkedHashMap || obj instanceof SortedMap)) {
+            Collections.sort(keys);
+        }
         return keys;
     }
 

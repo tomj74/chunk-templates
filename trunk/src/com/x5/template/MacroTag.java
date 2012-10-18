@@ -11,7 +11,9 @@ import com.x5.util.LiteXml;
 import net.minidev.json.JSONArray;
 import net.minidev.json.JSONObject;
 import net.minidev.json.JSONValue;
-//import net.minidev.json.parser.ParseException;
+import net.minidev.json.parser.JSONParser;
+import static net.minidev.json.parser.ContainerFactory.FACTORY_ORDERED;
+import static net.minidev.json.parser.JSONParser.MODE_RFC4627;
 
 public class MacroTag extends BlockTag
 {
@@ -124,15 +126,16 @@ public class MacroTag extends BlockTag
             System.err.println("Error: template uses json-formatted args in exec, but json-smart jar is not in the classpath!");
         }
         
-        Object parsedValue = JSONValue.parse(json);
-        if (parsedValue instanceof JSONObject) {
-            JSONObject defs = (JSONObject)parsedValue;
+        Object parsedValue = JSONValue.parseKeepingOrder(json);
+        if (parsedValue instanceof Map) {
+            Map defs = (Map)parsedValue;
             importJSONDefs(defs);
-        } else if (parsedValue instanceof JSONArray) {
+        } else if (parsedValue instanceof JSONArray || parsedValue instanceof List) {
             System.err.println("Error processing template: exec expects JSON object, not JSON array.");
         }
     }
     
+    @SuppressWarnings("unchecked")
     private void parseDefsJsonStrict(Snippet body)
     {
         try {
@@ -147,11 +150,11 @@ public class MacroTag extends BlockTag
                 System.err.println("Error: template uses json-formatted args in exec, but json-smart jar is not in the classpath!");
             }
             
-            Object parsedValue = JSONValue.parseStrict(json);
-            if (parsedValue instanceof JSONObject) {
-                JSONObject defs = (JSONObject)parsedValue;
+            Object parsedValue = parseStrictJsonKeepingOrder(json);
+            if (parsedValue instanceof Map) {
+                Map<String,Object> defs = (Map<String,Object>)parsedValue;
                 importJSONDefs(defs);
-            } else if (parsedValue instanceof JSONArray) {
+            } else if (parsedValue instanceof JSONArray || parsedValue instanceof List) {
                 System.err.println("Error processing template: exec expects JSON object, not JSON array.");
             }
         } catch (Exception e) {
@@ -159,9 +162,17 @@ public class MacroTag extends BlockTag
         }
     }
     
-    private void importJSONDefs(JSONObject defs)
+    private Object parseStrictJsonKeepingOrder(String json)
+    throws net.minidev.json.parser.ParseException
     {
-        this.macroDefs = (Map<String,Object>)defs;
+        // This wasn't one of the stock parse options, but, not too
+        // hard to cobble together.
+        return new JSONParser(MODE_RFC4627).parse(json, FACTORY_ORDERED);
+    }
+    
+    private void importJSONDefs(Map<String,Object> defs)
+    {
+        this.macroDefs = defs;
     }
     
     private void parseDefsSimplified(Snippet body)
