@@ -400,4 +400,27 @@ public class ChunkTest
         
         assertEquals("hello fellow fellow", c.toString());
     }
+    
+    @Test
+    public void commentMagicWhitespaceTest()
+    {
+        Theme theme = new Theme("test/base");
+        Chunk c = theme.makeChunk("whitespace_test");
+        
+        String targetOutput = "Line\n    Line\n    Line\n    Line\n    {$tag}\n    Line\n\n";
+        
+        assertEquals(targetOutput, c.toString());
+    }
+    
+    @Test
+    public void commentAfterIfTest()
+    {
+        Theme theme = new Theme("test/base");
+        Chunk c = theme.makeChunk("whitespace_test#comment_after_if");
+        
+        String targetOutput = "    Line\n    Line\n    Line\n";
+        
+        assertEquals(targetOutput, c.toString());
+    }
+    
 }

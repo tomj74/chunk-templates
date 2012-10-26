@@ -12,8 +12,9 @@ import com.x5.util.TableData;
 public class SimpleTable implements TableData, Map<String,Object>
 {
 	private String[] labels;
-    private ArrayList<String[]> records;
+    private List<String[]> records;
     private int cursor = -1;
+    private int size = 0;
     private Map<String,Integer> columnIndex;
     ///private Map<String,Object> currentRecord;
     
@@ -79,9 +80,12 @@ public class SimpleTable implements TableData, Map<String,Object>
 
 	public String[] getRow()
 	{
-        if (cursor < 0) cursor = 0;
+        if (cursor < 0) {
+            cursor = 0;
+            size = records == null ? 0 : records.size();
+        }
 
-        if (records != null && records.size() > cursor) {
+        if (size > cursor) {
             return records.get(cursor);
         } else {
             return null;
@@ -90,8 +94,11 @@ public class SimpleTable implements TableData, Map<String,Object>
 
 	public boolean hasNext()
 	{
-        if (records != null && records.size() > cursor + 1) {
+        if (size > cursor + 1) {
             return true;
+        } else if (size == 0) {
+            size = records == null ? 0 : records.size();
+            return (size > cursor + 1);
         } else {
             return false;
         }
@@ -100,30 +107,14 @@ public class SimpleTable implements TableData, Map<String,Object>
 	public Map<String, Object> nextRecord()
 	{
         cursor++;
-        if (records != null && records.size() > cursor) {
+        if (size > cursor) {
             return this;
+        } else if (size == 0) {
+            size = records == null ? 0 : records.size();
+            return (size > cursor) ? this : null;
         } else {
             return null;
         }
-        
-        /*
-        String[] values = getRow();
-
-        if (values == null) return null;
-
-        if (currentRecord == null) {
-            currentRecord = new HashMap<String,Object>(values.length);
-        } else {
-            currentRecord.clear();
-        }
-
-        for (int i=0; i<labels.length; i++) {
-            String label = labels[i];
-            currentRecord.put(label,values[i]);
-        }
-
-        return currentRecord;
-        */
 	}
 	
 	public void reset()

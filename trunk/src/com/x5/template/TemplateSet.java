@@ -558,11 +558,12 @@ public class TemplateSet implements ContentSource, ChunkFactory
                     }
                 }
             }
-            // don't append blank line where comment was stripped.
-            if (!killedComment || line.trim().length() > 0) {
-                sbTemp.append(line);
-                if (brTemp.ready()) sbTemp.append("\n");
-            }
+            sbTemp.append(line);
+            // This will not add newline at EOF even if present in template file
+            // Is this the Right Thing to do?
+            // And if not, how would we even detect a trailing newline in the file?
+            // ie since readLine() returns the same string either way.
+            if (brTemp.ready()) sbTemp.append("\n");
         }
         addToCache(name,extension,sbTemp);
         return sbTemp;
@@ -1005,12 +1006,6 @@ public class TemplateSet implements ContentSource, ChunkFactory
         return RegexFilter.applyRegex(template, "s/^[ \\t]*(\\{(\\^|\\~\\.)\\/?(loop|if|else|elseIf|divider|onEmpty|body)([^\\}]*|[^\\}]*\\/[^\\/]*\\/[^\\}]*)\\})[ \\t]*$/$1/gm");
     }
     
-    public static String expandShorthand(String template)
-    {
-        StringBuilder x = new StringBuilder(template);
-        return expandShorthand(null,x).toString();
-    }
-
     public static StringBuilder expandShorthand(String name, StringBuilder template)
     {
     	// do NOT place in cache if ^super directive is found
@@ -1216,6 +1211,12 @@ public class TemplateSet implements ContentSource, ChunkFactory
                 }
             } else if ((a == ')' || a == 'e' || a == 'c') && (b == '.' || b == ' ')) {
                 // e for include, c for exec
+                if (expanded == null) expanded = new StringBuilder();
+                expanded.append(tagDirective.substring(tagCursor,hashPos));
+                expanded.append(fullRef);
+                tagCursor = hashPos;
+            } else if (b == '(' && a == 'r') {
+                // {$tag|filter(#ref)}
                 if (expanded == null) expanded = new StringBuilder();
                 expanded.append(tagDirective.substring(tagCursor,hashPos));
                 expanded.append(fullRef);

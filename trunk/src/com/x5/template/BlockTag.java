@@ -67,5 +67,10 @@ public abstract class BlockTag
     {
         return true;
     }
+    
+    public boolean doSmartTrimAroundBlock()
+    {
+        return false;
+    }
 
 }

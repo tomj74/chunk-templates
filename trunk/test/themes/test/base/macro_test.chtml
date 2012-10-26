@@ -347,6 +347,18 @@ She said "hello "ladies"!"
 
 
 {!---------------------------------------------}
+{#filter_exec}
+{$some_tag|filter(#every_other)}
+{$some_num|filter(#currency_usd)}
+{#}
+
+
+{!---------------------------------------------}
+{#every_other}{$x:|s/(.)./$1/g}{#}
+{#currency_usd}{$x:|sprintf($%,.2f)}{#}
+
+
+{!---------------------------------------------}
 {#json_array}{!-- template engine should not blow up when it encounters json array --}
 {.exec @inline json}
 ["3","4"]

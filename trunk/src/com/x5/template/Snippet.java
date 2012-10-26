@@ -554,9 +554,10 @@ public class Snippet
                         SnippetBlockTag blockTag = new SnippetBlockTag(tag,subBodyParts,endTag);
 	                    bodyParts.add(i,blockTag);
 	                    
-	                    // this is good, but what about smart trim before block start?
-	                    // can't always rely on templateSet to remove block tag indents.
-	                    smartTrimAfterBlockEnd(bodyParts,i+1);
+	                    if (blockTag.doSmartTrimAroundBlock()) {
+	                        smartTrimBeforeBlockStart(bodyParts,blockTag,i-1);
+	                        smartTrimAfterBlockEnd(bodyParts,blockTag,i+1);
+	                    }
 	                } else {
 	                    // unmatched block tag!!  output error notice.
 	                    // TODO should create a SnippetErrorPart class
@@ -572,9 +573,122 @@ public class Snippet
 	    }
 	}
 	
+	private boolean smartTrimBeforeBlockStart(List<SnippetPart> parts, SnippetBlockTag blockTag, int prevPartIdx)
+	{
+	    if (prevPartIdx < 0) return false;
+	    
+	    // first, ensure that block body begins with (whitespace+)LF
+	    // if not, abort -- smart-trim is not warranted.
+	    if (blockBodyStartsOnSameLine(blockTag)) {
+	        // abort
+	        return false;
+	    }
+    
+	    SnippetPart prevPart = parts.get(prevPartIdx);
+	    
+	    // skip non-rendering comments
+	    while (prevPart instanceof SnippetComment) {
+	        prevPartIdx--;
+	        if (prevPartIdx < 0) return false;
+	        prevPart = parts.get(prevPartIdx);
+	    }
+	    
+	    if (!prevPart.isLiteral()) {
+	        if (prevPart instanceof SnippetBlockTag) {
+	            prevPart = ((SnippetBlockTag)prevPart).getCloseTag();
+	        } else {
+	            // abort
+	            return false;
+	        }
+	    }
+	    
+        String text = prevPart.getText();
+        if (text.length() == 0) {
+            return smartTrimBeforeBlockStart(parts, blockTag, prevPartIdx-1);
+        }
+        
+        // if the block ends with LF + whitespace, trim whitespace
+        int i = text.length() - 1;
+        char c = text.charAt(i);
+        boolean eatWhitespace = false;
+        while (Character.isWhitespace(c)) {
+            if (c == '\n' || c == '\r') {
+                i++;
+                eatWhitespace = true;
+                break;
+            }
+            i--;
+            if (i<0) {
+                i = 0;
+                if (prevPartIdx == 0) {
+                    // beginning of snippet is also a "new line"
+	                eatWhitespace = true;
+                } else {
+	                // Still just whitespace so far,
+	                // no newlines -- should keep scanning
+                    // backwards through parts.  recurse.
+                    if (smartTrimBeforeBlockStart(parts, blockTag, prevPartIdx-1)) {
+                        eatWhitespace = true;
+                    } else {
+                        return false;
+                    }
+                }
+                break;
+            }
+            c = text.charAt(i);
+        }
+        
+        if (eatWhitespace) {
+            prevPart.setText( text.substring(0,i) );
+            // TODO preserve eaten space as non-rendering part?
+        }
+        
+        return eatWhitespace;
+	}
+	
     private static final Pattern UNIVERSAL_LF = Pattern.compile("\n|\r\n|\r\r");
 
-    private void smartTrimAfterBlockEnd(List<SnippetPart> parts, int nextPartIdx)
+    private boolean blockBodyStartsOnSameLine(SnippetBlockTag blockTag)
+    {
+        Snippet blockBody = blockTag.getBody();
+        if (blockBody.parts != null) {
+            int i = 0;
+            while (i < blockBody.parts.size()) {
+                SnippetPart firstPart = blockBody.parts.get(i);
+                // skip comments... unless comment already ate LF
+                if (firstPart instanceof SnippetComment) {
+                    String commentText = firstPart.toString();
+                    if (commentText.charAt(commentText.length()-1) != '}') {
+                        // ate linefeed already, but it was there.
+                        // do not abort.
+                        return false;
+                    }
+                    i++;
+                    continue;
+                }
+                
+                // must start with (whitespace)+LF or no smart-trim
+                if (firstPart.isLiteral()) {
+                    String text = firstPart.getText();
+                    Matcher m = UNIVERSAL_LF.matcher(text);
+                    if (m.find()) {
+                        int firstLF = m.start();
+                        if (text.substring(0,firstLF).trim().length() == 0) {
+                            // trim this too?
+                        } else {
+                            // abort! no smart-trim.
+                            return true;
+                        }
+                    }
+                }
+                return false;
+            }
+        }
+        
+        return false;
+    }
+    
+    private void smartTrimAfterBlockEnd(List<SnippetPart> parts, SnippetBlockTag blockTag, int nextPartIdx)
 	{
 	    if (parts.size() <= nextPartIdx) return;
 	    SnippetPart nextPart = parts.get(nextPartIdx);
@@ -600,6 +714,9 @@ public class Snippet
 	            int firstLF = m.start();
 	            if (text.substring(0,firstLF).trim().length() == 0) {
 	                nextPart.setText( text.substring(m.end()) );
+	                // shift whitespace into blockTag's end-tag?
+	                // or make a non-rendering part?
+	                blockTag.getCloseTag().snippetText += text.substring(0,m.end());
 	            }
 	        }
 	    }

@@ -22,7 +22,7 @@ import com.x5.util.DataCapsuleReader;
 import com.x5.util.TableData;
 
 // Project Title: Chunk
-// Description: Template Util
+// Description: Template Engine
 // Copyright: Waived. Use freely.
 // Author: Tom McClure
 
@@ -32,7 +32,7 @@ import com.x5.util.TableData;
  *
  * <P>
  * Assign an initial template (you can stitch on bits of additional template<BR>
- * content as you go) with placeholder tags -- eg {~my_tag} -- and then<BR>
+ * content as you go) with placeholder tags -- eg {$my_tag} -- and then<BR>
  * set up replacement rules for those tags like so:
  *
  * <PRE>
@@ -43,10 +43,9 @@ import com.x5.util.TableData;
  * </PRE>
  *
  * <P>
- * <B>NB: Template {~tags} are bounded by curly brackets, not (parentheses).<BR>
- * And don't forget the ~squiggle (aka tilde, pronounced "TILL-duh").</B>  Also,<BR>
- * be careful to always close off {#sub_templates}bla bla bla{#} with a single<BR>
- * hash mark surrounded by curly brackets.
+ * <B>NB: Template {$tags} are bounded by curly brackets, not (parentheses).<BR>
+ * Be careful to always close off {#sub_templates}bla bla bla{#} with a single<BR>
+ * hash mark surrounded by curly brackets/braces.
  *
  * <P>
  * TemplateSet is handy if you have a folder with lots of html templates.<BR>
@@ -54,13 +53,13 @@ import com.x5.util.TableData;
  * without using TemplateSet:
  *
  * <PRE>
- *    String templateBody = "Hello {~name}!  Your balance is ${~balance}."
- *         + "Pleasure serving you, {~name}!";
+ *    String templateBody = "Hello {$name}!  Your balance is ${$balance}."
+ *         + "Pleasure serving you, {$name}!";
  *    Chunk myChunk = new Chunk();
  *
- *    // .add() and .set() may be called in any order
+ *    // .append() and .set() may be called in any order
  *    // because tag replacement is delayed until the .toString() call.
- *    myChunk.add( templateBody );
+ *    myChunk.append( templateBody );
  *    myChunk.set("name", user.getName());
  *    myChunk.set("balance", user.getBalance());
  *    System.out.println( myChunk.toString() );
@@ -85,15 +84,16 @@ import com.x5.util.TableData;
  * connected to like-named tags?</B>  ie, if I write a template file like this:
  *
  * <PRE>
- * bla bla bla {~myTemplate} foo foo foo
- * {#myTemplate}Hello {~name}!{#}
+ * bla bla bla {$myTemplate} foo foo foo
+ * {#myTemplate}Hello {$name}!{#}
  * </PRE>
  *
  * <P>
  * A: No*.  To keep things simple and reduce potential for confusion, Chunk<BR>
  * does not auto-magically fill any tags based on naming conventions or<BR>
- * in-template directives.  You must explicitly define this rule via set:<BR>
- *   set("myTemplate", templates.get("file.myTemplate"));
+ * in-template directives.  You must explicitly invoke the "include command:<BR>
+ * 
+ *   bla bla bla {.include #myTemplate} foo foo foo
  *
  * <P>* Actually, this documentation is outdated, and several extensions to the<BR>
  * original template syntax are now available:
@@ -105,7 +105,7 @@ import com.x5.util.TableData;
  *           * macro-style templating<BR>
  *           * extending the system to access alternate template repositories<BR>
  *
- * <P>Complete details are here: <a href="http://www.dagblastit.com/src/template/howto.html">http://www.dagblastit.com/src/template/howto.html</a>
+ * <P>Complete details are here: <a href="http://www.x5software.com/chunk/">http://www.x5software.com/chunk</a>
  *
  * <P>
  * <B>Q: My final output says "infinite recursion detected."  What gives?</B>
@@ -114,19 +114,19 @@ import com.x5.util.TableData;
  * A: You did some variation of this:
  * <PRE>
  *   TEMPLATE:
- *     bla bla bla {~name}
- *     {#name_info}My name is {~name}{#}
+ *     bla bla bla {$name}
+ *     {#name_info}My name is {$name}{#}
  *
  *   CODE:
- *     ...set("name", templates.get("file#name_info"));
+ *     ...set("name", theme.getSnippet("file#name_info"));
  *     ...toString();
  * </PRE>
  *
  * <P>
- * The outer template gets its {~name} tag replaced with "My name is {~name}" --<BR>
+ * The outer template gets its {$name} tag replaced with "My name is {$name}" --<BR>
  * then, that replacement value is scanned for any tags that might need to be<BR>
- * swapped out for their values.  It finds {~name} and, using the rule you gave,<BR>
- * replaces it with "My name is {~name}" so we now have My name is My name is ...<BR>
+ * swapped out for their values.  It finds {$name} and, using the rule you gave,<BR>
+ * replaces it with "My name is {$name}" so we now have My name is My name is ...<BR>
  * ad infinitum.
  *
  * <P>
@@ -149,13 +149,13 @@ import com.x5.util.TableData;
  * <PRE>
  *   TEMPLATE:
  *     bla bla bla
- *     {~memberMenu:}
+ *     {$memberMenu:}
  *     {#member_menu}this that etc{#}
  *     foo foo foo
  *
  *   CODE:
  *     if (isLoggedIn) {
- *          myChunk.set("memberMenu", templates.get("file.member_menu"));
+ *          myChunk.set("memberMenu", theme.getSnippet("file#member_menu"));
  *     }
  * </PRE>
  *
@@ -167,35 +167,12 @@ import com.x5.util.TableData;
  * <B>Q: Are tag names and subtemplate names case sensitive?</B>
  *
  * <P>
- * A: Yes. I prefer to use mixed case in {~tagNames} with first letter<BR>
+ * A: Yes. I prefer to use mixed case in {$tagNames} with first letter<BR>
  * lowercase.  In my experience this aids readability since tags are similar<BR>
  * to java variables in concept and that is the java case convention for<BR>
  * variables.   Similarly, I prefer lowercase with underscores for all<BR>
  * {#sub_template_names}{#} since templates tend to be defined within html<BR>
  * files which are typically named in all lowercase.
- *
- * <P>
- * <B>Q: I defined a whole lot of subtemplates in one file.  Do I have to<BR>
- * specify the filename stub over and over every time I fetch a subtemplate?</B>
- *
- * <P>
- * A: Nope!  You can now make a TemplateSet out of a single template file.<BR>
- * For example, these two pieces of code are equivalent:<BR>
- *
- * <PRE>
- *    // old way
- *    TemplateSet html = getTemplates();
- *    Chunk myTable = html.makeChunk("my_file.table");
- *    Chunk myRow   = html.makeChunk("my_file.row");
- *    Chunk myCell  = html.makeChunk("my_file.cell");
- *
- *    // new way, less repetitious
- *    TemplateSet html = getTemplates();
- *    TemplateSet myHtml = html.getSubset("my_file");
- *    Chunk myTable = myHtml.makeChunk("table");
- *    Chunk myRow   = myHtml.makeChunk("row");
- *    Chunk myCell  = myHtml.makeChunk("cell");
- * </PRE>
  *
  * <P>
  * ADVANCED USES
@@ -221,7 +198,7 @@ import com.x5.util.TableData;
  *    Chunk row = templates.makeChunk("my_table.my_row");
  *    Chunk cell = templates.makeChunk("my_table.my_cell");
  *
- *    rows.set("backgroundColor", getRowColor() );
+ *    rows.set("background_color", getRowColor() );
  *
  *    while (dataSet.hasMoreData()) {
  *        DataObj data = dataSet.nextDataObj();
@@ -240,7 +217,7 @@ import com.x5.util.TableData;
  *        rows.append( row.toString() );
  *    }
  *
- *    table.set("tableRows",rows);
+ *    table.set("table_rows",rows);
  *    System.out.println( table.toString() );
  * </PRE>
  *
@@ -248,33 +225,35 @@ import com.x5.util.TableData;
  * Possible contents of my_table.html:
  *
  * &lt;TABLE&gt;
- * {~tableRows}
+ * {$table_rows}
  * &lt;/TABLE&gt;
  *
  * {#my_row}
- * &lt;TR bgcolor="{~backgroundColor}"&gt;
- *  &lt;TD&gt;{~id} - {~name}&lt;/TD&gt;
- *  {~cells}
+ * &lt;TR bgcolor="{$background_color}"&gt;
+ *  &lt;TD&gt;{$id} - {$name}&lt;/TD&gt;
+ *  {$cells}
  * &lt;/TR&gt;
  * {#}
  *
  * {#my_cell}
- * &lt;TD&gt;{~cellContent}&lt;/TD&gt;
+ * &lt;TD&gt;{$cellContent}&lt;/TD&gt;
  * {#}
  * </PRE>
  *
  * Copyright: waived, free to use<BR>
  * Company: <A href="http://www.x5software.com/">X5 Software</A><BR>
- * Updates: <A href="http://www.x5software.com/chunk/wiki/">Chunk Documentation</A><BR>
+ * Updates: <A href="http://www.x5software.com/chunk/">Chunk Documentation</A><BR>
  *
  * @author Tom McClure
- * @version 1.5
+ * @version 2.0.1
  */
 
 public class Chunk implements Map<String,Object>
 {
     public static final int HASH_THRESH = 8;
     public static final int DEPTH_LIMIT = 17;
+    
+    public static final String VERSION = "2.0.1";
 
     protected Snippet templateRoot = null;
     private String[] firstTags = new String[HASH_THRESH];
@@ -297,7 +276,7 @@ public class Chunk implements Map<String,Object>
     
     // print errors to output?
     private boolean renderErrs = true;
-    private PrintStream errLog = System.err;
+    private PrintStream errLog = null;
     
     // package visibility
     void setMacroLibrary(ContentSource repository, ChunkFactory factory)
@@ -334,17 +313,8 @@ public class Chunk implements Map<String,Object>
                 template = new Vector<Snippet>();
                 template.addElement(templateRoot);
                 template.addElement(toAdd);
-                //templateRoot.append(toAdd);
             } else {
                 template.addElement(toAdd);
-                /*
-                Object last = template.lastElement();
-                if (last instanceof Snippet) {
-                    // combine snippets into one snippet
-                    ((Snippet)last).append(toAdd);
-                } else {
-                    template.addElement(toAdd);
-                }*/
             }
         }
     }
@@ -356,7 +326,7 @@ public class Chunk implements Map<String,Object>
     {
     	if (toAdd == null) return;
     	
-    	// cut string into snippets-to-process and literals
+    	// parse string into snippets-to-process and literals etc.
     	Snippet snippet = Snippet.getSnippet(toAdd);
     	append(snippet);
     }
@@ -390,7 +360,7 @@ public class Chunk implements Map<String,Object>
      * previous rules for this tagName.  Do not include the tag boundary
      * markers in the tagName, ie
      * GOOD: set("this","that")
-     * BAD: set("{~this}","that")
+     * BAD: set("{$this}","that")
      *
      * @param tagName will be ignored if null.
      * @param tagValue will be translated to the empty String if null -- use setOrDelete() instead of set() if you don't need/want this behavior.
@@ -456,11 +426,11 @@ public class Chunk implements Map<String,Object>
      * be protected from the engine in that second pass.
      * 
      * To prevent re-processing higher up the chain, encase your string
-     * in {^literal}{/literal} tags, with the tradeoff that they will
+     * in {.literal}{/literal} tags, with the tradeoff that they will
      * appear in your final output.  This is by design, so the literal
      * will be preserved even after multiple passes through the engine.
      * 
-     * Typical workaround: <!-- {^literal} --> ... <!-- {/literal} -->
+     * Typical workaround: <!-- {.literal} --> ... <!-- {/literal} -->
      * 
      * Or, just be super-careful to use setLiteral() again when placing
      * pre-processed output into higher-level chunks.
@@ -893,18 +863,8 @@ public class Chunk implements Map<String,Object>
     private Object altFetch(String tagName, int depth, boolean ignoreParentContext)
     {
         String tagValue = null;
-
-       
-        /**
-         * literals are intercepted higher up so theoretically we do not
-         * need to handle literals here...
-        // a ^literal block
-        if (tagName.startsWith(".^") || tagName.startsWith(".literal")) {
-        	return tagName;
-        }
-         */
         
-        // the ^calc(...) fn
+        // the .calc(...) fn
         if (tagName.startsWith(".calc(")) {
             String eval = null;
             try {
@@ -917,31 +877,16 @@ public class Chunk implements Map<String,Object>
             return eval;
         }
         
-        /** 
-         * in theory, should never see these tags here anymore?
-         *
-        if (tagName.startsWith(".if")) {
-            String result = IfTag.evalIf(tagName, this);
-            
-            return result;
+        if (tagName.startsWith(".version")) {
+            return VERSION;
         }
-
-        // the ^loc locale tag
-        if (tagName.startsWith(".loc")) {
-            String translation = LocaleTag.translate(tagName,this);
-            
-            return translation;
-        }
-
-         *
-         */
         
-        // the ^loop(...) fn
+        // the .loop(...) fn
         if (tagName.startsWith(".loop")) {
             return LoopTag.expandLoop(tagName,this,depth);
         }
         
-        // the ^tagStack fn
+        // the .tagStack fn
         if (tagName.startsWith(".tagStack")) {
     		String format = "text";
     		if (tagName.contains("html")) {
@@ -967,7 +912,7 @@ public class Chunk implements Map<String,Object>
         
         // parse content source "protocol"
         int delimPos = tagName.indexOf(".",1);
-        int spacePos = tagName.indexOf(" ",1); // {^include abc#xyz} is ok too
+        int spacePos = tagName.indexOf(" ",1); // {.include abc#xyz} is ok too
         if (delimPos < 0 && spacePos < 0) {
             if (tagName.startsWith("./")) {
                 // extra end tag, pass through
@@ -985,7 +930,7 @@ public class Chunk implements Map<String,Object>
         // for this to work, caller must have already provided an object which
         // implements com.x5.template.ContentSource
         //  -- then templates can delegate to this source using the syntax
-        // {^protocol.itemName}   eg {^wiki.About_Us}  or {^include.#some_template}
+        // {.protocol.itemName}   eg {.wiki.About_Us}  or {.include.#some_template}
 
         // strip away filters, defaults
         String cleanItemName = itemName;
@@ -1075,28 +1020,6 @@ public class Chunk implements Map<String,Object>
     	return resolveBackticks(dynLookupName, depth);
     }
     
-    // detect the following jQuery/prototype problem cases and bail!
-    // function(){$('selector').doSomething(":")}
-    // function(){$.whatever; x = y ? z : a; }
-    //
-    // parens, semicolons, quotes and ? can *not* legally appear
-    // before pipe or colon
-    // 
-    private static final Pattern TRICKY_JS = Pattern.compile("^[^|:]*[\\(\\;\\?\"\"\'\'].*$");
-    
-    private boolean isInvalidTag(String tagName)
-    {
-        // starts with . then, must assume it is valid cmd tag
-        if (tagName.charAt(0) == '.') return false;
-        
-        Matcher m = TRICKY_JS.matcher(tagName);
-        if (m.find()) {
-            return true;
-        } else {
-            return false;
-        }
-    }
-    
     protected Object resolveTagValue(String tagName, int depth)
     {
         return _resolveTagValue(tagName, depth, false);
@@ -1113,16 +1036,17 @@ public class Chunk implements Map<String,Object>
     // table level.
     protected Object _resolveTagValue(String tagName, int depth, boolean ignoreParentContext)
     {
-        if (isInvalidTag(tagName)) return null;
+        // no need to test for this here -- gets caught when snippet is parsed/compiled.
+        //if (isInvalidTag(tagName)) return null;
         
     	if (tagName.indexOf('`') > -1) {
     		tagName = resolveBackticks(tagName, depth);
     	}
         String lookupName = tagName;
 
-        //strip off the default if provided eg {~tagName:333} means use 333
+        //strip off the default if provided eg {$tagName:333} means use 333
         // if no specific value is provided.
-        //strip filters as well eg {~tagName|s/xx/yy/}
+        //strip filters as well eg {$tagName|s/xx/yy/}
         int colonPos = tagName.indexOf(':');
         int pipePos = tagName.indexOf('|');
         if (pipePos > -1) pipePos = confirmPipe(tagName,pipePos);
@@ -1201,17 +1125,17 @@ public class Chunk implements Map<String,Object>
             if (defValue != null && defValue.length() > 0) {
                 // now allowing tag/include syntax in the default value
                 //
-                // eg: {~my_unsupplied_tag:~some_other_tag} morph into another tag
-                //     {~my_unsupplied_tag:~.include.some.template} replace w/template
-                //     {~my_unsupplied_tag:+some.template} same as above but discouraged (cryptic)
+                // eg: {$my_unsupplied_tag:$some_other_tag} morph into another tag
+                //     {$my_unsupplied_tag:.include.some.template} replace w/template
+                //     {$my_unsupplied_tag:+some.template} same as above but discouraged (cryptic)
                 //
                 // or, handled below, nothing fancy
-                //     {~my_unsupplied_tag:simple default} default to "simple default"
-                //     {~my_unsupplied_tag:} default to empty string
+                //     {$my_unsupplied_tag:simple default} default to "simple default"
+                //     {$my_unsupplied_tag:} default to empty string
                 //
                 // but nested tags in the default area are still not allowed:
-                //     {~my_unsupplied_tag:not {~other_tag}} NOT VALID
-                //     {~my_unsupplied_tag:{~other_tag}} NOT VALID
+                //     {$my_unsupplied_tag:not {$other_tag}} NOT VALID
+                //     {$my_unsupplied_tag:{$other_tag}} NOT VALID
                 char firstChar = defValue.charAt(0);
                 if (firstChar == '~' || firstChar == '$' || firstChar == '+' || firstChar == '^' || firstChar == '.') {
                     if (filter == null) {
@@ -1335,10 +1259,10 @@ public class Chunk implements Map<String,Object>
     
     // pipe denotes a request to apply a filter
     // colon denotes a default value
-    // they may come in either order {~tag_name:hello there|url} or {~tag_name|url:hello there}
+    // they may come in either order {$tag_name:hello there|url} or {$tag_name|url:hello there}
     //
     // In retrospect, I probably should have considered a nice legible syntax like
-    // {~tag_name default="hello there" filter="url"}
+    // {$tag_name default="hello there" filter="url"}
     private String[] parseTagTokens(String tagName, int pipePos, int colonPos)
     {
         String filter = null;
@@ -1561,9 +1485,9 @@ public class Chunk implements Map<String,Object>
     
     /**
      * formatTagStack and outputTags help implement the
-     * {^tagStack} debug feature, for template writers
+     * {.tagStack} debug feature, for template writers
      * to see what tags are available during development.
-     * use {^tagStack(html)} to make output more readable in a web page.
+     * use {.tagStack(html)} to make output more readable in a web page.
      * 
      * @param format
      * @return
