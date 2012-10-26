@@ -604,6 +604,11 @@ public class LoopTag extends BlockTag
         return "/loop";
     }
     
+    public boolean doSmartTrimAroundBlock()
+    {
+        return true;
+    }
+    
     private void smartTrim(List<SnippetPart> subParts)
     {
         smartTrimSnippetParts(subParts, isTrimAll());

@@ -359,4 +359,8 @@ public class MacroTag extends BlockTag
         return MACRO_END_MARKER;
     }
 
+    public boolean doSmartTrimAroundBlock()
+    {
+        return true;
+    }
 }

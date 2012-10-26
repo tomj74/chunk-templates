@@ -283,6 +283,11 @@ public class IfTag extends BlockTag
         }
     }*/
     
+    public boolean doSmartTrimAroundBlock()
+    {
+        return true;
+    }
+    
     private String trimLeft(String x)
     {
         if (x == null) return null;

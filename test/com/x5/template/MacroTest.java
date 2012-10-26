@@ -179,4 +179,25 @@ public class MacroTest
         
         assertEquals("",c.toString());
     }
+    
+    @Test
+    public void execFilterTest()
+    {
+        Theme theme = new Theme("test/base");
+        Chunk c = theme.makeChunk("macro_test#filter_exec");
+        
+        c.set("some_tag","Rumpelstiltskin");
+        c.set("some_num","24999");
+        
+        assertEquals("Rmesitkn\n$24,999.00\n",c.toString());
+    }
+
+    @Test
+    public void execFilterNullTest()
+    {
+        Theme theme = new Theme("test/base");
+        Chunk c = theme.makeChunk("macro_test#filter_exec");
+        
+        assertEquals("\n\n",c.toString());
+    }
 }

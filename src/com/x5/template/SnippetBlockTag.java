@@ -64,4 +64,13 @@ public class SnippetBlockTag extends SnippetTag
     {
         return tagClose;
     }
+
+    public boolean doSmartTrimAroundBlock()
+    {
+        if (renderer != null && renderer.doSmartTrimAroundBlock()) {
+            return true;
+        } else {
+            return false;
+        }
+    }
 }

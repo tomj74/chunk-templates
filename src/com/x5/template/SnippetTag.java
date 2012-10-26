@@ -13,11 +13,6 @@ public class SnippetTag extends SnippetPart
         this.tag = tag;
     }
     
-    public boolean isSimpleTag()
-    {
-        return true;
-    }
-    
     public boolean isTag()
     {
         return true;
