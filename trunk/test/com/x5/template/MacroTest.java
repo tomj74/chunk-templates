@@ -1,5 +1,9 @@
 package com.x5.template;
 
+import java.io.ByteArrayOutputStream;
+import java.io.OutputStream;
+import java.io.PrintStream;
+
 import org.junit.Test;
 import static org.junit.Assert.*;
 
@@ -59,18 +63,46 @@ public class MacroTest
     public void jsonBadArgsTest()
     {
         Theme theme = new Theme("test/base");
-        Chunk c = theme.makeChunk("macro_test#bad_json");
         
-        assertEquals("Hello\n",c.toString());
+        // log to myerr
+        OutputStream myErr = new ByteArrayOutputStream();
+        
+        theme.setErrorHandling(true, new PrintStream(myErr));
+        Chunk c = theme.makeChunk("macro_test#bad_json");
+        c.toString();
+        
+        String targetOutput = "Error processing template: exec expected JSON object, not String.\n";
+        String err = myErr.toString();
+        // strip timestamp
+        int errStart = err.indexOf("Error");
+        if (errStart > 0) {
+            err = err.substring(errStart);
+        }
+        
+        assertEquals(targetOutput,err);
     }
     
     @Test
     public void jsonArrayArgsTest()
     {
         Theme theme = new Theme("test/base");
-        Chunk c = theme.makeChunk("macro_test#json_array");
         
-        assertEquals("Hello\n",c.toString());
+        // log to myErr
+        OutputStream myErr = new ByteArrayOutputStream();
+        
+        theme.setErrorHandling(true, new PrintStream(myErr));
+        Chunk c = theme.makeChunk("macro_test#json_array");
+        c.toString();
+        
+        String targetOutput = "Error processing template: exec expected JSON object, not JSON array.\n";
+        String err = myErr.toString();
+        // strip timestamp
+        int errStart = err.indexOf("Error");
+        if (errStart > 0) {
+            err = err.substring(errStart);
+        }
+        
+        assertEquals(targetOutput,err);
     }
     
     @Test

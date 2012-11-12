@@ -130,9 +130,8 @@ public class Snippet
 	    // first pass was just to catch literals. reset.
         simpleText = null;
 
-	    // oh yeah -- we're going old-school
-	    ///char[] chars = template.toCharArray();
 	    char c, c2;
+	    
 	    // how many regex delims left before tag parser has to wake up again
 	    int regexDelimCount = 0;
 	    
@@ -220,69 +219,13 @@ public class Snippet
                             }
                             tagStart = -1;
 	                    } else if (magicChar == '!') {
-                            //char c0 = chars[i-1];
-                            //char c00 = chars[i-2];
+	                        // seeking end of comment
 	                        char c0 = template.charAt(i-1);
                             char c00 = template.charAt(i-2);
                             if (c0 == '-' && c00 == '-') {
-                                // FOUND COMMENT END
-                                // FIXME move this whole block its own separate method
-                                
-                                // strip comment into non-rendering part
-                                if (parts == null) parts = new ArrayList<SnippetPart>();
-                                String precedingComment = null;
-                                
-                                int startOfThisLine = marker;
-                                if (marker < tagStart) {
-                                    precedingComment = template.substring(marker,tagStart);
-                                    
-                                    // might need to strip empty line left by stripped comment.
-                                    // locate the start of this line by backtracking
-                                    int lineBreakPos = precedingComment.lastIndexOf('\n');
-                                    if (lineBreakPos > -1) {
-                                        startOfThisLine = marker + lineBreakPos + 1;
-                                    }
-                                    
-                                }
-                                
-                                // If eating comment leaves empty line, eat empty line too.
-                                //
-                                // ie, IF the span between final linebreak and tag is all whitespace
-                                // (or tag is not preceded by anything but whitespace)
-                                // *AND* the template following the comment begins with whitespace
-                                // and a linebreak (or the template-end), eat the preceding whitespace
-                                // and skip past the end of line.
-                                if (startOfThisLine == tagStart || template.substring(startOfThisLine,tagStart).trim().length()==0) {
-                                    // locate end of this line
-                                    int endOfLine = template.indexOf('\n',i+1);
-                                    if (endOfLine < 0) {
-                                        endOfLine = len;
-                                    }
-                                    if (template.substring(i+1,endOfLine).trim().length()==0) {
-                                        // yep, need to eat empty line and linebreak
-                                        if (startOfThisLine < tagStart) {
-                                            // strip leading whitespace from preceding static
-                                            // and shift that whitespace into the comment text
-                                            precedingComment = template.substring(marker,startOfThisLine);
-                                            tagStart = startOfThisLine;
-                                        }
-                                        // skip ahead to end of condemned line
-                                        i = (endOfLine == len) ? endOfLine-1 : endOfLine;
-                                    }
-                                }
-                                
-                                // preserve static leading up to comment
-                                if (precedingComment != null) {
-                                    SnippetPart literal = new SnippetPart(precedingComment);
-                                    literal.setLiteral(true);
-                                    parts.add(literal);
-                                }
-                                
-                                // this grabs the comment tag as well as any surrounding
-                                // whitespace that's being eaten (see above)
-                                String wholeComment = template.substring(tagStart,i+1);
-                                SnippetComment comment = new SnippetComment(wholeComment);
-                                parts.add(comment);
+                                // FOUND COMMENT END - extract
+                                i = extractComment(marker, tagStart, i, template, len);
+
                                 tagStart = -1;
                                 marker = i+1;
                                 insideComment = false;
@@ -503,33 +446,67 @@ public class Snippet
         return wackyTag;
     }
 
-    /*
-    private int eatRestOfLineAfterBlockEndTag(char[] chars, int startAt)
-	{
-	    int cutPoint = startAt;
-	    for (int i=startAt; i<chars.length; i++) {
-	        char c = chars[i];
-	        if (c == ' ' || c == '\t') {
-	            // keep eating
-	            cutPoint = i+1;
-	        } else if (c == '\n') {
-	            // done eating (unix)
-	            cutPoint = i+1;
-	            break;
-	        } else if (c == '\r') {
-	            // done eating (MAC/Win)
-	            cutPoint = i+2;
-	            if (cutPoint > chars.length) cutPoint--;
-	            break;
-	        } else {
-	            // content on this line!  abandon meal!
-	            cutPoint = startAt;
-	            break;
-	        }
-	    }
-	    return cutPoint;
-	}*/
-	
+    private int extractComment(int marker, int tagStart, int i, String template, int len)
+    {
+        // strip comment into non-rendering part
+        if (parts == null) parts = new ArrayList<SnippetPart>();
+        String precedingComment = null;
+        
+        int startOfThisLine = marker;
+        if (marker < tagStart) {
+            precedingComment = template.substring(marker,tagStart);
+            
+            // might need to strip empty line left by stripped comment.
+            // locate the start of this line by backtracking
+            int lineBreakPos = precedingComment.lastIndexOf('\n');
+            if (lineBreakPos > -1) {
+                startOfThisLine = marker + lineBreakPos + 1;
+            }
+            
+        }
+        
+        // If eating comment leaves empty line, eat empty line too.
+        //
+        // ie, IF the span between final linebreak and tag is all whitespace
+        // (or tag is not preceded by anything but whitespace)
+        // *AND* the template following the comment begins with whitespace
+        // and a linebreak (or the template-end), eat the preceding whitespace
+        // and skip past the end of line.
+        if (startOfThisLine == tagStart || template.substring(startOfThisLine,tagStart).trim().length()==0) {
+            // locate end of this line
+            int endOfLine = template.indexOf('\n',i+1);
+            if (endOfLine < 0) {
+                endOfLine = len;
+            }
+            if (template.substring(i+1,endOfLine).trim().length()==0) {
+                // yep, need to eat empty line and linebreak
+                if (startOfThisLine < tagStart) {
+                    // strip leading whitespace from preceding static
+                    // and shift that whitespace into the comment text
+                    precedingComment = template.substring(marker,startOfThisLine);
+                    tagStart = startOfThisLine;
+                }
+                // skip ahead to end of condemned line
+                i = (endOfLine == len) ? endOfLine-1 : endOfLine;
+            }
+        }
+        
+        // preserve static leading up to comment
+        if (precedingComment != null) {
+            SnippetPart literal = new SnippetPart(precedingComment);
+            literal.setLiteral(true);
+            parts.add(literal);
+        }
+        
+        // this grabs the comment tag as well as any surrounding
+        // whitespace that's being eaten (see above)
+        String wholeComment = template.substring(tagStart,i+1);
+        SnippetComment comment = new SnippetComment(wholeComment);
+        parts.add(comment);
+        
+        return i;
+    }
+    
 	private void groupBlocks(List<SnippetPart> bodyParts)
 	{
 	    for (int i=0; i<bodyParts.size(); i++) {
@@ -552,17 +529,14 @@ public class Snippet
 	                    groupBlocks(subBodyParts);
 	                    
                         SnippetBlockTag blockTag = new SnippetBlockTag(tag,subBodyParts,endTag);
-	                    bodyParts.add(i,blockTag);
-	                    
+                        bodyParts.add(i,blockTag);
+                        
 	                    if (blockTag.doSmartTrimAroundBlock()) {
 	                        smartTrimBeforeBlockStart(bodyParts,blockTag,i-1);
 	                        smartTrimAfterBlockEnd(bodyParts,blockTag,i+1);
 	                    }
 	                } else {
 	                    // unmatched block tag!!  output error notice.
-	                    // TODO should create a SnippetErrorPart class
-	                    // and offer options wrt, exclude errors
-	                    // in final output, etc.
 	                    String errMsg = "[ERROR in template! "+helper.getBlockStartMarker()+" block with no matching end marker! ]";
 	                    SnippetError errorPart = new SnippetError(errMsg);
 	                    bodyParts.add(i+1,errorPart);

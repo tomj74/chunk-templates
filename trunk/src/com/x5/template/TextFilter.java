@@ -30,6 +30,34 @@ public class TextFilter
         return filters;
     }
     
+    /* haven't thought this through just yet...
+    public static Object applyFilter(Chunk context, String filter, Object data)
+    {
+        if (filter == null) return data;
+        
+        if (data instanceof String) {
+            return applyTextFilter(context, filter, (String)data);
+        }
+            
+        // filters might be daisy-chained
+        int pipePos = findNextFilter(filter);
+        if (pipePos >= 0) {
+            String firstFilter = filter.substring(0,pipePos);
+            String nextFilters = filter.substring(pipePos+1);
+            data = applyFilter(context, firstFilter, data);
+            return applyFilter(context, nextFilters, data);
+        }
+        
+        // try to find a matching factory-standard stock filter for this job.
+        ChunkFilter stockFilter = filters.get(filterName);
+        if (stockFilter == null) {
+            return text;
+        } else {
+            return stockFilter.transformText(context, text, filterArgs);
+        }
+        
+    }*/
+    
     public static String applyTextFilter(Chunk context, String filter, String text)
     {
         if (filter == null) return text;

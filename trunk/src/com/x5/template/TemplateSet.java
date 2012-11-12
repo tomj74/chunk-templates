@@ -161,9 +161,9 @@ public class TemplateSet implements ContentSource, ChunkFactory
      * Makes a template "factory" which reads in template files from the
      * file system in the templatePath folder.  Caches for refreshMins.
      * Uses "extensions" for the default file extension (do not include dot).
-     * @param templatePath folder where template files are located.
-     * @param extensions appends dot plus this String to a template name stub to find template files.
-     * @param refreshMins returns template from cache unless this many minutes have passed.
+     * @param templatePath  folder where template files are located.
+     * @param extension     appends dot plus this String to a template name stub to find template files.
+     * @param refreshMins   returns template from cache unless this many minutes have passed.
      */
     public TemplateSet(String templatePath, String extension, int refreshMins)
     {
@@ -901,85 +901,6 @@ public class TemplateSet implements ContentSource, ChunkFactory
         }
         return line;
     }    
-
-    /*
-    private String getNextTemplateLine(String name, String extension,
-    								   BufferedReader brTemp, StringBuilder sbTemp)
-    	throws IOException, EndOfSnippetException
-    {
-        String line = brTemp.readLine();
-        if (line == null) return null;
-        
-        int comPos = line.indexOf(COMMENT_START);
-        int subPos = line.indexOf(SUB_START);
-        int subEndPos = line.indexOf(SUB_END);
-        int litPos = findLiteralMarker(line);
-        
-        // special handling for literal blocks & comments
-        while (litPos > -1 || comPos > -1) {
-        	// if end-marker present, kick out if it's not inside a comment or a literal block
-        	if (subEndPos > -1) {
-        		if ((litPos < 0 || subEndPos < litPos) && (comPos < 0 || comPos < subEndPos)) {
-        			break;
-        		}
-        	}
-        	// if start-marker present, kick out if it's not inside a comment or a literal block
-        	if (subPos > -1) {
-        		if ((litPos < 0 || subPos < litPos) && (comPos < 0 || comPos < subPos)) {
-        			break;
-        		}
-        	}
-        	// first, preserve any literal blocks
-        	while (litPos > -1 && (comPos < 0 || comPos > litPos)) {
-        		if (subEndPos < 0 || subEndPos > litPos) {
-        			line = getLiteralLines(litPos, line, brTemp, sbTemp);
-        			// skipped literal block. re-scan for markers.
-        			comPos = line.indexOf(COMMENT_START);
-                    subPos = line.indexOf(SUB_START);
-        			subEndPos = line.indexOf(SUB_END);
-        			litPos = findLiteralMarker(line);
-        		} else {
-        			break;
-        		}
-        	}
-        	
-        	// next, strip out any comments
-        	while (comPos > -1 && (subPos < 0 || subPos > comPos) && (subEndPos < 0 || subEndPos > comPos) && (litPos < 0 || litPos > comPos)) {
-        	    int lenBefore = line.length();
-        		line = stripComment(comPos,line,brTemp);
-        		int lenAfter = line.length();
-        		if (lenBefore != lenAfter && line.trim().length() == 0) {
-        		    // if after removing comment, line is blank, don't output a blank line
-        		    return SKIP_BLANK_LINE;
-        		}
-                // re-scan for markers
-                comPos = line.indexOf(COMMENT_START);
-                subPos = line.indexOf(SUB_START);
-                subEndPos = line.indexOf(SUB_END);
-                litPos = findLiteralMarker(line);
-        	}
-        }
-        
-        // keep reading lines until end marker
-        if (subPos > -1 || subEndPos > -1) {
-            if (subEndPos > -1 && (subPos == -1 || subEndPos <= subPos)) {
-                // wrap it up
-                sbTemp.append(line.substring(0,subEndPos));
-                throw new EndOfSnippetException(line.substring(subEndPos+SUB_END.length()));
-            } else if (subPos > -1) {
-                int subNameEnd = line.indexOf(SUB_NAME_END, subPos + SUB_START.length());
-                if (subNameEnd > -1) {
-                    sbTemp.append(line.substring(0,subPos));
-                    String subName = line.substring(subPos + SUB_START.length(),subNameEnd);
-                    String restOfLine = line.substring(subNameEnd + SUB_NAME_END.length());
-                    line = readAndCacheSubTemplate(name + "." + subName, extension, brTemp, restOfLine);
-                    // if after removing subtemplate, line is blank, don't output a blank line
-                    if (line.length() < 1) return SKIP_BLANK_LINE;
-                }
-            }
-        }
-        return line;
-    }*/
     
     private void addToCache(String name, String extension, StringBuilder template)
     {

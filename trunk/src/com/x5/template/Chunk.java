@@ -375,7 +375,7 @@ public class Chunk implements Map<String,Object>
      * at append(Chunk c).
      * @param tagName will be ignored if null.
      * @param tagValue will be translated to the empty String if null.
-     * @see append(Chunk c)
+     * @see #append(Chunk)
      */
     public void set(String tagName, Chunk tagValue)
     {
