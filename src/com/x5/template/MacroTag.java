@@ -2,6 +2,7 @@ package com.x5.template;
 
 import java.io.IOException;
 import java.io.Writer;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -20,6 +21,8 @@ public class MacroTag extends BlockTag
     private String templateRef;
     private Snippet template;
     private Map<String,Object> macroDefs;
+    
+    private List<String> inputErrs = null;
 
     public static final String MACRO_MARKER = "exec";
     public static final String MACRO_END_MARKER = "/exec";
@@ -123,7 +126,7 @@ public class MacroTag extends BlockTag
             Class.forName("net.minidev.json.JSONValue");
             // it exists on the classpath
         } catch (ClassNotFoundException e) {
-            System.err.println("Error: template uses json-formatted args in exec, but json-smart jar is not in the classpath!");
+            logInputError("Error: template uses json-formatted args in exec, but json-smart jar is not in the classpath!");
         }
         
         Object parsedValue = JSONValue.parseKeepingOrder(json);
@@ -131,7 +134,9 @@ public class MacroTag extends BlockTag
             Map defs = (Map)parsedValue;
             importJSONDefs(defs);
         } else if (parsedValue instanceof JSONArray || parsedValue instanceof List) {
-            System.err.println("Error processing template: exec expects JSON object, not JSON array.");
+            logInputError("Error processing template: exec expected JSON object, not JSON array.");
+        } else if (parsedValue instanceof String && parsedValue.toString().trim().length() > 0) {
+            logInputError("Error processing template: exec expected JSON object, not String.");
         }
     }
     
@@ -147,7 +152,7 @@ public class MacroTag extends BlockTag
                 Class.forName("net.minidev.json.JSONValue");
                 // it exists on the classpath
             } catch (ClassNotFoundException e) {
-                System.err.println("Error: template uses json-formatted args in exec, but json-smart jar is not in the classpath!");
+                logInputError("Error: template uses json-formatted args in exec, but json-smart jar is not in the classpath!");
             }
             
             Object parsedValue = parseStrictJsonKeepingOrder(json);
@@ -155,11 +160,20 @@ public class MacroTag extends BlockTag
                 Map<String,Object> defs = (Map<String,Object>)parsedValue;
                 importJSONDefs(defs);
             } else if (parsedValue instanceof JSONArray || parsedValue instanceof List) {
-                System.err.println("Error processing template: exec expects JSON object, not JSON array.");
+                logInputError("Error processing template: exec expected JSON object, not JSON array.");
+            } else if (parsedValue instanceof String && parsedValue.toString().trim().length() > 0) {
+                logInputError("Error processing template: exec expected JSON object, not String.");
             }
         } catch (Exception e) {
             e.printStackTrace(System.err);
         }
+    }
+    
+    private void logInputError(String errMsg)
+    {
+        if (inputErrs == null) inputErrs = new ArrayList<String>();
+        
+        inputErrs.add(errMsg);
     }
     
     private Object parseStrictJsonKeepingOrder(String json)
@@ -343,6 +357,20 @@ public class MacroTag extends BlockTag
         } else {
             // no template! bail
             return;
+        }
+        
+        // any problems with input?  now is the time to raise red flag.
+        if (inputErrs != null) {
+            if (context.renderErrorsToOutput()) {
+                for (String err : inputErrs) {
+                    out.append('[');
+                    out.append(err);
+                    out.append(']');
+                }
+            }
+            for (String err : inputErrs) {
+                context.logError(err);
+            }
         }
         
         macro.setMultiple(macroDefs);

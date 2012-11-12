@@ -134,49 +134,6 @@ public class LiteXml
         
         return myAttrs.get(attr);
     }
-    
-    /*
-    public String getAttribute(String attr)
-    {
-        // locate attributes
-        if (xml == null) return null;
-        // assume attribute names and values do not contain > (hey, this is Lite, right?)
-        int tagEndPos = xml.indexOf('>');
-        // malformed? (no >)?
-        if (tagEndPos < 0) return null;
-        int spacePos = xml.indexOf(' ');
-        // no attributes? (no spaces before >)
-        if (spacePos < 0 || spacePos > tagEndPos) return null;
-        // pull out just the attribute definitions
-        String attrs = xml.substring(spacePos+1,tagEndPos);
-        // find our attribute
-        int attrPos = attrs.indexOf(attr);
-        if (attrPos < 0) return null;
-        // find the equals sign
-        int eqPos = attrs.indexOf('=',attrPos + attr.length());
-        // find the opening quote
-        int begQuotePos = attrs.indexOf('"',eqPos);
-        if (begQuotePos < 0) return null;
-        // find the closing quote
-        int endQuotePos = begQuotePos+1;
-        do {
-            endQuotePos = attrs.indexOf('"',endQuotePos);
-            if (endQuotePos < 0) return null;
-            if (attrs.charAt(endQuotePos-1) == '\\') {
-                // escaped quote, doesn't count -- keep seeking
-                // FIXME should count num of consec escapes
-                // since, if preceded by even num of escapes,
-                // this char is actually not escaped.
-                endQuotePos++;
-            }
-        } while (endQuotePos < attrs.length() && attrs.charAt(endQuotePos) != '"');
-        if (endQuotePos < attrs.length()) {
-            return attrs.substring(begQuotePos+1,endQuotePos);
-        } else {
-            // never found closing quote
-            return null;
-        }
-    }*/
 
     private String getRawNodeValue()
     {
@@ -229,7 +186,7 @@ public class LiteXml
      * only returns nodes which match specified nodetype.
      *
      * @param nodeType
-     * @return
+     * @return matching child nodes as an array of LiteXml objects
      */
     public LiteXml[] getChildNodes(String nodeType)
     {
@@ -272,7 +229,7 @@ public class LiteXml
      * potentially large number of child nodes, we build an array of child node
      * positions that doubles in size as capacity needs increase.
      *
-     * @return
+     * @return any child nodes as an array of LiteXml objects
      */
     public LiteXml[] getChildNodes()
     {
