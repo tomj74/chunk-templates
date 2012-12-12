@@ -19,6 +19,7 @@ import com.x5.template.filters.Calc;
 import com.x5.template.filters.RegexFilter;
 import com.x5.util.DataCapsule;
 import com.x5.util.DataCapsuleReader;
+import com.x5.util.ObjectDataMap;
 import com.x5.util.TableData;
 
 // Project Title: Chunk
@@ -131,7 +132,7 @@ import com.x5.util.TableData;
  *
  * <P>
  * This situation is detected by assuming recursion depth will not normally go<BR>
- * deeper than 7.  If you legitimately need to nest templates that deep, you<BR>
+ * deeper than 17.  If you legitimately need to nest templates that deep, you<BR>
  * can flatten out the recursion by doing a .toString() expansion partway<BR>
  * through the nest OR you can tweak the depth limit value in the Chunk.java<BR>
  * source code.
@@ -236,7 +237,7 @@ import com.x5.util.TableData;
  * {#}
  *
  * {#my_cell}
- * &lt;TD&gt;{$cellContent}&lt;/TD&gt;
+ * &lt;TD&gt;{$cell_content}&lt;/TD&gt;
  * {#}
  * </PRE>
  *
@@ -245,7 +246,7 @@ import com.x5.util.TableData;
  * Updates: <A href="http://www.x5software.com/chunk/">Chunk Documentation</A><BR>
  *
  * @author Tom McClure
- * @version 2.0.1
+ * @version 2.1
  */
 
 public class Chunk implements Map<String,Object>
@@ -253,7 +254,9 @@ public class Chunk implements Map<String,Object>
     public static final int HASH_THRESH = 8;
     public static final int DEPTH_LIMIT = 17;
     
-    public static final String VERSION = "2.0.1";
+    public static final String VERSION = "2.1";
+    
+    private static final String TRUE = "TRUE";
 
     protected Snippet templateRoot = null;
     private String[] firstTags = new String[HASH_THRESH];
@@ -460,21 +463,17 @@ public class Chunk implements Map<String,Object>
         if (tagName == null) return;
         // ensure that tagValue is either a String or a Chunk (or some tabular data)
         if (tagValue != null) {
+            tagValue = coercePrimitivesToString(tagValue);
             if (tagValue instanceof Chunk || tagValue instanceof TableData) {
                 // don't treat chunk or tabledata as a Map
             } else if (tagValue instanceof Map) {
-                try {
-                    extractObjectParams(tagName,(Map<String,Object>)tagValue);
-                } catch (ClassCastException e) {
-                    // well, we tried...
-                    e.printStackTrace(System.err);
-                }
+                // great, a map!
             } else if (!(tagValue instanceof String
         			|| tagValue instanceof Snippet
         			|| tagValue instanceof List
         			|| tagValue instanceof Object[])) {
-        		// force to string
-        		tagValue = tagValue.toString();
+        		// force to map
+        		tagValue = new ObjectDataMap(tagValue);
         	}
         }
         if (tagValue == null) {
@@ -506,22 +505,28 @@ public class Chunk implements Map<String,Object>
     }
     
     /**
-     * extractObjectParams() pre-exposes object parameters as tag values
-     * with tag names of {$objname.paramname} so the tag resolver doesn't
-     * need to parse the period -- a "shortcut" that might need to be
-     * revisited/refactored.
-     * 
-     * @param prefix
-     * @param params
+     * Make bean properties available to template
      */
-    private void extractObjectParams(String prefix, Map<String,Object> params)
+    public void setToBean(String tagName, Object bean)
     {
-        String nullStr = null;
-        
-        for (String key : params.keySet()) {
-            String fullKey = prefix + '.' + key;
-            set(fullKey, params.get(key), nullStr);
-        }
+        setToBean(tagName, bean, null);
+    }
+    
+    /**
+     * Make bean properties available to template
+     */
+    public void setToBean(String tagName, Object bean, String ifNull)
+    {
+        Map boxedBean = ObjectDataMap.wrapBean(bean);
+        set(tagName, boxedBean, ifNull);
+    }
+    
+    /**
+     * For convenience, sets a flag to "TRUE" - to reverse, call unset("flag")
+     */
+    public void set(String tagName)
+    {
+        set(tagName, TRUE);
     }
 
     /**
@@ -972,30 +977,6 @@ public class Chunk implements Map<String,Object>
         return tagValue;
     }
 
-    /**
-     * Don't interpret pipes from an includeIf(...) regex as filter markers
-     */
-    private int confirmPipe(String tagName, int pipePos)
-    {
-        int doesntCountParen = tagName.indexOf("includeIf(");
-        if (doesntCountParen < 0) {
-            // also have to check for expanded {+(...)} syntax
-            doesntCountParen = tagName.indexOf("include.(");
-        }
-        if (doesntCountParen < 0) return pipePos;
-        // skip to the end-paren and search from there
-        int nextSlash = tagName.indexOf("/",doesntCountParen+7);
-        int nextParen = tagName.indexOf(")",doesntCountParen+7);
-        // for the pipe not to count, has to be in /reg|ex/
-        if (nextSlash < 0 || nextParen < 0) return pipePos;
-        if (nextParen < nextSlash) return pipePos;
-        // okay, we found a regex. find the end of the regex.
-        int regexEnd = RegexFilter.nextRegexDelim(tagName,nextSlash+1);
-        nextParen = tagName.indexOf(")",regexEnd+1);
-        if (nextParen < 0 || nextParen < pipePos) return pipePos;
-        return tagName.indexOf("|",nextParen+1);
-    }
-    
     private String resolveBackticks(String lookupName, int depth)
     {
     	int backtickA = lookupName.indexOf('`');
@@ -1020,158 +1001,124 @@ public class Chunk implements Map<String,Object>
     	return resolveBackticks(dynLookupName, depth);
     }
     
-    protected Object resolveTagValue(String tagName, int depth)
+    protected Object resolveTagValue(SnippetTag tag, int depth)
     {
-        return _resolveTagValue(tagName, depth, false);
+        return _resolveTagValue(tag, depth, false);
     }
-
-    // resolveTagValue responds in the context of an explosion tree.
-    // ie, if the tag has not been set in this chunk, it goes up the
-    // chain of parent chunks for the first one able to resolve the
-    // tag into a value.  For example, several row chunks might share
-    // a whole-table parent chunk.  Some of the tags in the row are
-    // set differently in each row but some will always resolve the
-    // same throughout the whole table -- rather than set it over and
-    // over the same in each row, the tag is given a value once at the
-    // table level.
-    protected Object _resolveTagValue(String tagName, int depth, boolean ignoreParentContext)
+    
+    protected Object _resolveTagValue(SnippetTag tag, int depth, boolean ignoreParentContext)
     {
-        // no need to test for this here -- gets caught when snippet is parsed/compiled.
-        //if (isInvalidTag(tagName)) return null;
+        String[] path = tag.getPath();
+        int segment = 0;
+        String segmentName = path[segment];
         
-    	if (tagName.indexOf('`') > -1) {
-    		tagName = resolveBackticks(tagName, depth);
-    	}
-        String lookupName = tagName;
-
-        //strip off the default if provided eg {$tagName:333} means use 333
-        // if no specific value is provided.
-        //strip filters as well eg {$tagName|s/xx/yy/}
-        int colonPos = tagName.indexOf(':');
-        int pipePos = tagName.indexOf('|');
-        if (pipePos > -1) pipePos = confirmPipe(tagName,pipePos);
-
-        if (colonPos > 0 || pipePos > 0) {
-            int firstMod = (colonPos > 0) ? colonPos : pipePos;
-            if (pipePos > 0 && pipePos < colonPos) firstMod = pipePos;
-            lookupName = tagName.substring(0,firstMod);
+        if (segmentName.indexOf('`') > -1) {
+            segmentName = resolveBackticks(segmentName, depth);
         }
         
         Object tagValue = null;
-
-        if (lookupName.charAt(0) == '.') {
-            // if the tag starts with a period, we need to delegate
-            tagValue = altFetch(tagName, depth);
-        } else if (hasValue(lookupName)) {
-            // first look in this chunk's own tags
-            tagValue = getTagValue(lookupName);
+        
+        if (segmentName.charAt(0) == '.') {
+            tagValue = altFetch(segmentName, depth);
+        } else if (hasValue(segmentName)) {
+            tagValue = getTagValue(segmentName);
         } else {
             Vector<Chunk> parentContext = getCurrentParentContext();
             if (parentContext != null) {
                 // now look in ancestors (iteration, not recursion, so sue me)
                 for (Chunk ancestor : parentContext) {
-                    tagValue = ancestor._resolveTagValue(lookupName, depth, true);
+                    tagValue = ancestor._resolveTagValue(tag, depth, true);
                     if (tagValue != null) break;
                 }
             }
         }
-
-        // apply filter if provided
-        if (tagValue != null) {
-            if (pipePos > 0) {
-                /*
-                String filters = parseTagTokens(tagName, pipePos, colonPos)[0];
-                // ack! should do this post-expansion
-                return TextFilter.applyTextFilter(filters, (String)tagValue);
-                */
-
-            	// tagValue could be some complex entity --
-                // delay filter application until it has been expanded into a string
-                Chunk filterMeLater = makeChildChunk();
-
-                // set up filters to be applied from the inside out
-                String filter = parseTagTokens(tagName, pipePos, colonPos)[0];
-                String[] filters = TextFilter.splitFilters(filter);
-                // innermost first...
-                // 3rd arg to set is ignored if 2nd arg is non-null,
-                // so I'm just passing the filters string to hit the right method
-                filterMeLater.set("oneTag",tagValue,filter);
-                filterMeLater.append("{~oneTag}");
-                filterMeLater.delayedFilter = filters[0];
-                
-                return makeFilterOnion(tagValue, filterMeLater, filters);
+        
+        if (ignoreParentContext) {
+            return tagValue;
+        }
+        
+        segment++;
+        // If path has more segments, drill deeper until reference is resolved
+        // or path-map hits dead end
+        while (path.length > segment && tagValue != null) {
+            if (tagValue instanceof Map) {
+                segmentName = resolveBackticks(path[segment], depth);
+                Map obj = (Map)tagValue;
+                tagValue = obj.get(segmentName);
+                segment++;
+                // Sometimes dotted tags are not actually buried
+                // deep inside objects... cf LoopTag $x.first
+                // This is a hacky way to allow single-depth refs to work
+                if (tagValue == null && path.length == segment) {
+                    String fakeRef = path[segment-2] + "." + segmentName;
+                    tagValue = getTagValue(fakeRef);
+                }
             } else {
-                // no filter, no need to subchunk
+                tagValue = null;
+            }
+        }
+        // convert primitives to string
+        if (!(tagValue instanceof String)) {
+            tagValue = coercePrimitivesToString(tagValue);
+        }
+        
+        String filters = tag.getFilters();
+        
+        if (tagValue == null) {
+            
+            String tagDefault = tag.getDefaultValue();
+            if (filters != null && (tag.applyFiltersFirst() || tagDefault == null)) {
+                // filtering may result in null being transformed to not null
+                String filteredNull = TextFilter.applyTextFilter(this, filters, null);
+                if (filteredNull != null) {
+                    return filteredNull;
+                }
+            }
+            if (tag.applyFiltersFirst()) {
+                return tagDefault;
+            } else if (filters != null) {
+            	return TextFilter.applyTextFilter(this, filters, tagDefault);
+            } else {
+                return tagDefault;
+            }
+            
+        } else {
+        
+            if (filters == null) {
                 return tagValue;
             }
+            
+            // tagValue could be some complex entity --
+            // delay filter application until it has been expanded into a string
+            Chunk filterMeLater = makeChildChunk();
+            
+            String[] filterSequence = TextFilter.splitFilters(filters);
+            // innermost first...
+            // 3rd arg to set is ignored if 2nd arg is non-null,
+            // so I'm just passing the filters string to hit the right method
+            filterMeLater.set("oneTag",tagValue,"");
+            filterMeLater.append("{~oneTag}");
+            filterMeLater.delayedFilter = filterSequence[0];
+            
+            return makeFilterOnion(tagValue, filterMeLater, filterSequence);
+            
         }
-
-        // reached here? no value supplied.  template might contain a default...
-        if (colonPos > 0) {
-            String defValue = null;
-            String filter = null;
-            String order = TextFilter.FILTER_LAST;
-            if (pipePos > 0) {
-                // apply filter if provided
-                String[] tokens = parseTagTokens(tagName, pipePos, colonPos);
-                filter   = tokens[0];
-                defValue = tokens[1];
-                order    = tokens[2];
-            } else {
-                // everything after the colon is a default value
-                defValue = tagName.substring(colonPos+1);
-            }
-
-            if (defValue != null && defValue.length() > 0) {
-                // now allowing tag/include syntax in the default value
-                //
-                // eg: {$my_unsupplied_tag:$some_other_tag} morph into another tag
-                //     {$my_unsupplied_tag:.include.some.template} replace w/template
-                //     {$my_unsupplied_tag:+some.template} same as above but discouraged (cryptic)
-                //
-                // or, handled below, nothing fancy
-                //     {$my_unsupplied_tag:simple default} default to "simple default"
-                //     {$my_unsupplied_tag:} default to empty string
-                //
-                // but nested tags in the default area are still not allowed:
-                //     {$my_unsupplied_tag:not {$other_tag}} NOT VALID
-                //     {$my_unsupplied_tag:{$other_tag}} NOT VALID
-                char firstChar = defValue.charAt(0);
-                if (firstChar == '~' || firstChar == '$' || firstChar == '+' || firstChar == '^' || firstChar == '.') {
-                    if (filter == null) {
-                        return '{'+defValue+'}';
-                    } else if (order.equals(TextFilter.FILTER_FIRST)) {
-                        String filtered = TextFilter.applyTextFilter(this, filter, null);
-                        if (filtered != null) {
-                            return filtered;
-                        } else {
-                            return '{'+defValue+'}';
-                        }
-                    } else {
-                        return '{'+defValue+'|'+filter+'}';
-                    }
-                }
-            }
-            // reached here?  simple case: no funny chained replacement business
-            if (filter != null) {
-                if (order.equals(TextFilter.FILTER_FIRST)) {
-                    String filtered = TextFilter.applyTextFilter(this, filter, null);
-                    return (filtered != null) ? filtered : defValue;
-                } else {
-                    return TextFilter.applyTextFilter(this, filter, defValue);
-                }
-            } else {
-                return defValue;
-            }
+    }
+    
+    private Object coercePrimitivesToString(Object o)
+    {
+        if (o instanceof Integer || o instanceof Long || o instanceof Character) {
+            return o.toString();
+        } else if (o instanceof Boolean) {
+            return ((Boolean)o).booleanValue() ? "TRUE" : null;
         } else {
-            if (pipePos > 0) {
-                // apply filter if provided
-                String filter = tagName.substring(pipePos+1);
-                return TextFilter.applyTextFilter(this, filter, null);
-            } else {
-                return null;
-            }
+            return o;
         }
+    }
+
+    protected Object resolveTagValue(String tagName, int depth)
+    {
+        return _resolveTagValue(SnippetTag.parseTag(tagName), depth, false);
     }
     
     @SuppressWarnings("rawtypes")
@@ -1257,55 +1204,6 @@ public class Chunk implements Map<String,Object>
         return array;
     }
     
-    // pipe denotes a request to apply a filter
-    // colon denotes a default value
-    // they may come in either order {$tag_name:hello there|url} or {$tag_name|url:hello there}
-    //
-    // In retrospect, I probably should have considered a nice legible syntax like
-    // {$tag_name default="hello there" filter="url"}
-    private String[] parseTagTokens(String tagName, int pipePos, int colonPos)
-    {
-        String filter = null;
-        String defValue = null;
-
-        String order = TextFilter.FILTER_LAST;
-
-        if (colonPos < 0) {
-            // no colon token, just pipe
-            filter = tagName.substring(pipePos+1);
-        } else if (pipePos < colonPos) {
-            // both tokens, pipe before colon
-            //
-            // ok, so colon CAN appear inside regex or onmatch() etc
-            // these need to be IGNORED!!
-            //
-            // pipe may NOT appear in default value, so at least we can limit our scan to the final filter
-            int finalPipe = TextFilter.grokFinalFilterPipe(tagName,pipePos);
-            int nextColon = tagName.indexOf(":",finalPipe+1);
-            if (nextColon < 0) {
-                // lucked out, colon was fake-out, embedded in earlier filter
-                filter = tagName.substring(pipePos+1);
-            } else {
-                int startScan = TextFilter.grokValidColonScanPoint(tagName,finalPipe+1);
-                nextColon = tagName.indexOf(":",startScan);
-                if (nextColon < 0) {
-                    // colon was fake-out
-                    filter = tagName.substring(pipePos+1);
-                } else {
-                    filter = tagName.substring(pipePos+1,nextColon);
-                    defValue = tagName.substring(nextColon+1);
-                    order = TextFilter.FILTER_FIRST;
-                }
-            }
-        } else {
-            // both tokens, colon before pipe
-            filter = tagName.substring(pipePos+1);
-            defValue = tagName.substring(colonPos+1,pipePos);
-        }
-
-        return new String[]{ filter, defValue, order };
-    }
-
     /**
      * Clears all tag replacement rules.
      */

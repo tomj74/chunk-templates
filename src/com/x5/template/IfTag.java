@@ -263,26 +263,6 @@ public class IfTag extends BlockTag
         return m.find();
     }
     
-    /*
-    private void smartTrim(List<SnippetPart> subParts)
-    {
-        if (subParts != null && subParts.size() > 0) {
-            SnippetPart firstPart = subParts.get(0);
-            if (firstPart.isLiteral()) {
-                String trimmed = isTrimAll() ? trimLeft(firstPart.getText())
-                        : smartTrim(firstPart.getText(), true);
-                firstPart.setText(trimmed);
-            }
-            if (isTrimAll()) {
-                SnippetPart lastPart = subParts.get(subParts.size()-1);
-                if (lastPart.isLiteral()) {
-                    String trimmed = trimRight(lastPart.getText());
-                    lastPart.setText(trimmed);
-                }
-            }
-        }
-    }*/
-    
     public boolean doSmartTrimAroundBlock()
     {
         return true;

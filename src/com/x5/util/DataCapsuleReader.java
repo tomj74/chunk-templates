@@ -120,21 +120,8 @@ public class DataCapsuleReader
 	// transmogrify converts getDatePretty to date_pretty
 	private static String transmogrify(String s)
 	{
-		String spaced = splitCamelCase(s);
-		return spaced.toLowerCase().replaceFirst("^get_", "");
-	}
-	
-	// splitCamelCase converts SimpleXMLStuff to Simple_XML_Stuff
-	private static String splitCamelCase(String s)
-	{
-	   return s.replaceAll(
-	      String.format("%s|%s|%s",
-	         "(?<=[A-Z])(?=[A-Z][a-z])",
-	         "(?<=[^A-Z])(?=[A-Z])",
-	         "(?<=[A-Za-z])(?=[^A-Za-z])"
-	      ),
-	      "_"
-	   );
+		String spaced = ObjectDataMap.splitCamelCase(s);
+		return spaced.replaceFirst("^get_", "");
 	}
 	
 	public String[] getColumnLabels(String altPrefix)

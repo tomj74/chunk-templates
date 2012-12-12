@@ -274,11 +274,18 @@ public class LoopTag extends BlockTag
                                     data = new SimpleTable(list);
                                 } else if (a instanceof Map) {
                                     data = new TableOfMaps(list);
+                                } else {
+                                    // last-ditch effort to extract data, treat as POJOs
+                                    data = TableOfMaps.boxObjectList((List)dataStore);
                                 }
                             }
                         } else if (dataStore instanceof Object[]) {
                         	// assume array of objects that implement DataCapsule
                         	data = DataCapsuleTable.extractData((Object[])dataStore);
+                        	if (data == null) {
+                        	    // last-ditch effort to extract data, treat as POJOs
+                        	    data = TableOfMaps.boxObjectArray((Object[])dataStore);
+                        	}
                             ////registerOption("array_index_tags","FALSE");
                         } else if (dataStore instanceof Map) {
                             Map object = (Map)dataStore;
@@ -461,37 +468,44 @@ public class LoopTag extends BlockTag
                     rowX.setOrDelete(objectKeyLabel, record.get(ObjectTable.KEY));
                 }
                 rowX.setOrDelete(objectValueLabel, record.get(ObjectTable.VALUE));
-            } else if (columnLabels != null) {
-                // loop backwards -- in case any headers are identical,
-                // this ensures the first such named column will be used
-                for (int i=columnLabels.length-1; i>-1; i--) {
-                    String field = columnLabels[i];
-                    Object value = record.get(field);
-                    // prefix with eg x. if prefix supplied
-                    String fieldName = prefix == null ? field : prefixedLabels[i];
-                    rowX.setOrDelete(fieldName, value);
+            } else {
+                if (prefix != null) {
+                    rowX.set(prefix, record);
                     if (createArrayTags) {
-                        rowX.setOrDelete(anonIndices[i], value);
-                        if (prefix != null) {
+                        for (int i=columnLabels.length-1; i>-1; i--) {
+                            String field = columnLabels[i];
+                            Object value = record.get(field);
                             rowX.setOrDelete(prefixedIndices[i], value);
                         }
                     }
-                }
-            } else {
-                for (String key : record.keySet()) {
-                    Object value = record.get(key);
-                    
-                    String fieldName = prefix == null ? key : prefix + "." + key;
-                    rowX.setOrDelete(fieldName, value);
-                }
-                if (prefix != null) {
-                    rowX.set(prefix, record);
+                } else {
+                    if (columnLabels == null) {
+                        for (String key : record.keySet()) {
+                            Object value = record.get(key);
+                            
+                            String fieldName = key;
+                            rowX.setOrDelete(fieldName, value);
+                        }
+                    } else {
+                        // loop backwards -- in case any headers are identical,
+                        // this ensures the first such named column will be used
+                        for (int i=columnLabels.length-1; i>-1; i--) {
+                            String field = columnLabels[i];
+                            Object value = record.get(field);
+                            // prefix with eg x. if prefix supplied
+                            String fieldName = field;
+                            rowX.setOrDelete(fieldName, value);
+                            if (createArrayTags) {
+                                rowX.setOrDelete(anonIndices[i], value);
+                            }
+                        }
+                    }
                 }
             }
             
             // for anonymous one-column tables (aka a string array)
-            // allow loop in ~array as x to use {~x} for the value --
-            // otherwise template has to have {~x[0]} or {~x.anonymous}
+            // allow loop in $array as x to use {$x} for the value --
+            // otherwise template has to have {$x[0]} or {$x.anonymous}
             // which is silly.
             if (prefix != null && columnLabels != null) {
                 if (columnLabels.length == 1 && columnLabels[0].equals(SimpleTable.ANON_ARRAY_LABEL)) {

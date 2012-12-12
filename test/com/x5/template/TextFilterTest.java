@@ -541,18 +541,7 @@ public class TextFilterTest
         
         assertEquals("boo! foo! boo hoo!", c.toString());
     }
-    
-    @Test
-    public void testUserFilter()
-    {
-        Theme theme = new Theme();
-        theme.registerFilter(new LeftTrimFilter());
-        Chunk c = theme.makeChunk();
-        c.append("xxx{~name|ltrim}xxx");
-        c.set("name","  \nBob  ");
-        assertEquals("xxxBob  xxx",c.toString());
-    }
-    
+
     @Test
     public void testPoorlyBehavedUserFilter()
     {
@@ -586,6 +575,17 @@ public class TextFilterTest
         c.set("c",c);
         
         assertEquals("STRING LIST OBJECT CHUNK NULL",c.toString());
+    }
+    
+    @Test
+    public void testUserFilter()
+    {
+        Theme theme = new Theme();
+        theme.registerFilter(new LeftTrimFilter());
+        Chunk c = theme.makeChunk();
+        c.append("xxx{~name|ltrim}xxx");
+        c.set("name","  \nBob  ");
+        assertEquals("xxxBob  xxx",c.toString());
     }
     
     public class LeftTrimFilter extends BasicFilter implements ChunkFilter
