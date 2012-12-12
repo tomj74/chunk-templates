@@ -171,7 +171,7 @@ public class SimpleTable implements TableData, Map<String,Object>
     {
         if (labels == null) return null;
         if (columnIndex == null) indexColumns();
-        if (columnIndex != null) {
+        if (columnIndex != null && columnIndex.containsKey(key)) {
             String[] record = getRow();
             return record[columnIndex.get(key)];
         } else {

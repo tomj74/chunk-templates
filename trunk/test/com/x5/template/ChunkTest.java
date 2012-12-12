@@ -1,5 +1,8 @@
 package com.x5.template;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.junit.Test;
 import static org.junit.Assert.*;
 
@@ -423,4 +426,227 @@ public class ChunkTest
         assertEquals(targetOutput, c.toString());
     }
     
+    @Test
+    public void escapeMagicDefaultTest()
+    {
+        Theme theme = new Theme();
+        Chunk c = theme.makeChunk();
+        c.append("{$x:\\.000314159|sprintf(%.2e)}");
+        
+        assertEquals("3.14e-04",c.toString());
+    }
+    
+    @Test
+    public void simplePOJOTest()
+    {
+        Theme theme = new Theme();
+        Chunk c = theme.makeChunk();
+        c.append("{$x.name} {$x.age} {$x.pi|sprintf(%.02f)} {$x.is_active:FALSE}");
+        c.set("x", new Thing("Bob",28,true));
+        
+        assertEquals("Bob 28 3.14 TRUE", c.toString());
+    }
+    
+    @Test
+    public void simpleBeanTest()
+    {
+        Theme theme = new Theme();
+        Chunk c = theme.makeChunk();
+        c.append("{$x.name} {$x.age} {$x.pi|sprintf(%.02f)} {$x.is_active:FALSE} {$x.secret:SECRET-IS-SAFE}");
+        
+        ThingBean bean = new ThingBean();
+        bean.setAge(28);
+        bean.setName("Bob");
+        bean.setActive(true);
+        
+        c.setToBean("x", bean);
+        
+        assertEquals("Bob 28 3.14 TRUE SECRET-IS-SAFE", c.toString());
+    }
+    
+    @Test
+    public void arrayOfPOJOTest()
+    {
+        Theme theme = new Theme();
+        Chunk c = theme.makeChunk();
+        c.append("{.loop in $list as $x}{$x.name} {$x.age} {$x.pi|sprintf(%.02f)} {$x.is_active:FALSE}{/loop}");
+        c.set("list", new Thing[]{new Thing("Bob",28,true)});
+        
+        assertEquals("Bob 28 3.14 TRUE", c.toString());
+    }
+    
+    @Test
+    public void listOfPOJOTest()
+    {
+        Theme theme = new Theme();
+        Chunk c = theme.makeChunk();
+        c.append("{.loop in $list as $x}{$x.name} {$x.age} {$x.pi|sprintf(%.02f)} {$x.is_active:FALSE}{/loop}");
+        List<Thing> list = new ArrayList<Thing>();
+        list.add(new Thing("Bob",28,true));
+        c.set("list", list);
+        
+        assertEquals("Bob 28 3.14 TRUE", c.toString());
+    }
+    
+    @Test
+    public void POJOFieldVisibilityTest()
+    {
+        Theme theme = new Theme();
+        Chunk c = theme.makeChunk();
+        c.append("{$x.name} {$x.age} {$x.pi|sprintf(%.02f)} {$x.is_active:FALSE} {$x.hidden:invisible} {$x.hiddentwo:invisible}");
+        c.set("x", new Thing("Bob",28,true));
+        
+        assertEquals("Bob 28 3.14 TRUE invisible invisible", c.toString());
+    }
+    
+    @Test
+    public void circularPOJOTest()
+    {
+        Theme theme = new Theme();
+        Chunk c = theme.makeChunk();
+        c.append("{$x.name} {$x.age} {$x.pi|sprintf(%.02f)} {$x.is_active:FALSE} {$x.boss.name}\n");
+        c.append("{.loop in $x.children as $child}{$child.name} {/loop}");
+        c.set("x", new CircularThing("Bob",28,false));
+        
+        assertEquals("Bob 28 3.14 FALSE Bob\nBob Bob ", c.toString());
+    }
+    
+    /**
+     * for POJO test
+     */
+    public static class Thing
+    {
+        String name;
+        int age;
+        double pi = Math.PI;
+        boolean isActive;
+        // these fields should not be visible to the template
+        protected String hidden;
+        private String hiddentwo;
+        
+        public Thing(String name, int age, boolean isActive)
+        {
+            this.name = name;
+            this.age = age;
+            this.isActive = isActive;
+            // these fields should not be visible to the template
+            this.hidden = "hidden";
+            this.hiddentwo = "hidden";
+        }
+    }
+    
+    /**
+     * for Circular-references POJO test
+     */
+    public static class CircularThing
+    {
+        String name;
+        int age;
+        double pi = Math.PI;
+        boolean isActive;
+        CircularThing boss;
+        CircularThing[] children;
+        
+        public CircularThing(String name, int age, boolean isActive)
+        {
+            this.name = name;
+            this.age = age;
+            this.isActive = isActive;
+            // I am my own boss!
+            this.boss = this;
+            // I traveled back in time, I am my own dad!
+            this.children = new CircularThing[]{this,this};
+        }
+    }
+    
+    /**
+     * for bean tests
+     */
+    public static class ThingBean implements java.io.Serializable
+    {
+        private String name;
+        private int age;
+        private double pi = Math.PI;
+        private boolean isActive;
+        private ThingBean boss;
+        private ThingBean[] children;
+        
+        private String secret = "BIG SECRET";
+        
+        public ThingBean()
+        {
+            this.boss = this;
+            this.children = new ThingBean[]{this,this};
+        }
+        
+        public String getName()
+        {
+            return name;
+        }
+        
+        public int getAge()
+        {
+            return age;
+        }
+        
+        public double getPi()
+        {
+            return pi;
+        }
+        
+        public boolean isActive()
+        {
+            return isActive;
+        }
+        
+        public ThingBean getBoss()
+        {
+            return boss;
+        }
+        
+        public ThingBean[] getChildren()
+        {
+            return children;
+        }
+        
+        public void setName(String name)
+        {
+            this.name = name;
+        }
+
+        public void setAge(int age)
+        {
+            this.age = age;
+        }
+        
+        public void setPi(double pi)
+        {
+            this.pi = pi;
+        }
+        
+        public void setActive(boolean isActive)
+        {
+            this.isActive = isActive;
+        }
+        
+        public void setBoss(ThingBean boss)
+        {
+            this.boss = boss;
+        }
+        
+        public void setChildren(ThingBean[] children)
+        {
+            this.children = children;
+        }
+        
+        private void setSecret(String secret)
+        {
+            this.secret = secret;
+        }
+        
+        private String getSecret()
+        {
+            return secret;
+        }
+    }
 }
