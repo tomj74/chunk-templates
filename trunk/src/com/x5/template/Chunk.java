@@ -246,7 +246,7 @@ import com.x5.util.TableData;
  * Updates: <A href="http://www.x5software.com/chunk/">Chunk Documentation</A><BR>
  *
  * @author Tom McClure
- * @version 2.1
+ * @version 2.1.1
  */
 
 public class Chunk implements Map<String,Object>
@@ -254,7 +254,7 @@ public class Chunk implements Map<String,Object>
     public static final int HASH_THRESH = 8;
     public static final int DEPTH_LIMIT = 17;
     
-    public static final String VERSION = "2.1";
+    public static final String VERSION = "2.1.1";
     
     private static final String TRUE = "TRUE";
 
@@ -555,7 +555,7 @@ public class Chunk implements Map<String,Object>
     {
         set(tagName, Long.toString(tagValue));
     }
-
+    
     /**
      * For convenience, auto-converts StringBuilder to String and creates
      * tag replacement rule.  Overwrites any existing rule with this tagName.
@@ -1105,12 +1105,13 @@ public class Chunk implements Map<String,Object>
         }
     }
     
+    // unbox and stringify primitive wrapper objects
     private Object coercePrimitivesToString(Object o)
     {
-        if (o instanceof Integer || o instanceof Long || o instanceof Character) {
-            return o.toString();
-        } else if (o instanceof Boolean) {
+        if (o instanceof Boolean) {
             return ((Boolean)o).booleanValue() ? "TRUE" : null;
+        } else if (o != null && ObjectDataMap.isWrapperType(o.getClass())) {
+            return o.toString();
         } else {
             return o;
         }

@@ -32,6 +32,50 @@ public class ChunkTest
         c.set("name","Harold");
         assertEquals("Hello, my name is Harold!",c.toString());
     }
+    
+    @Test
+    public void testPrimitiveSet()
+    {
+        Chunk c = new Chunk();
+        c.append("{~d|sprintf(%.11f)} ");
+        c.append("{~D|sprintf(%.11f)} ");
+        c.append("{~f|sprintf(%.02f)} ");
+        c.append("{~F|sprintf(%.02f)} ");
+        c.append("{~int} ");
+        c.append("{~Int} ");
+        c.append("{~long} ");
+        c.append("{~Long} ");
+        c.append("{~bool} ");
+        c.append("{~Bool} ");
+        c.append("{~char} ");
+        c.append("{~Char} ");
+        c.append("{~byte} ");
+        c.append("{~Byte} ");
+        Double d = new Double(Math.E);
+        c.set("D",d);
+        c.set("d",d.doubleValue());
+        Float f = new Float(Math.PI);
+        c.set("F",f);
+        c.set("f",f.floatValue());
+        Long l = new Long(4111111111111111L);
+        c.set("Long",l);
+        c.set("long",l.longValue());
+        Integer i = new Integer(-3);
+        c.set("Int",i);
+        c.set("int",i.intValue());
+        Character ch = new Character('C');
+        c.set("Char",ch);
+        c.set("char",ch.charValue());
+        Boolean b = new Boolean(true);
+        c.set("Bool",b);
+        c.set("bool",b.booleanValue());
+        Byte byt = new Byte((byte)127);
+        c.set("Byte",byt);
+        c.set("byte",byt.byteValue());
+        assertEquals("2.71828174591 2.71828174591 3.14 3.14 -3 -3 "
+                     + "4111111111111111 4111111111111111 TRUE TRUE C C 127 127 ",
+                     c.toString());
+    }
 
     @Test
     public void testSimpleExpandWithDefault()
@@ -441,10 +485,10 @@ public class ChunkTest
     {
         Theme theme = new Theme();
         Chunk c = theme.makeChunk();
-        c.append("{$x.name} {$x.age} {$x.pi|sprintf(%.02f)} {$x.is_active:FALSE}");
+        c.append("{$x.name} {$x.age} {$x.e|sprintf(%.02f)} {$x.pi|sprintf(%.02f)} {$x.is_active:FALSE}");
         c.set("x", new Thing("Bob",28,true));
         
-        assertEquals("Bob 28 3.14 TRUE", c.toString());
+        assertEquals("Bob 28 2.72 3.14 TRUE", c.toString());
     }
     
     @Test
@@ -452,7 +496,7 @@ public class ChunkTest
     {
         Theme theme = new Theme();
         Chunk c = theme.makeChunk();
-        c.append("{$x.name} {$x.age} {$x.pi|sprintf(%.02f)} {$x.is_active:FALSE} {$x.secret:SECRET-IS-SAFE}");
+        c.append("{$x.name} {$x.age} {$x.e|sprintf(%.02f)} {$x.pi|sprintf(%.02f)} {$x.is_active:FALSE} {$x.secret:SECRET-IS-SAFE}");
         
         ThingBean bean = new ThingBean();
         bean.setAge(28);
@@ -461,7 +505,7 @@ public class ChunkTest
         
         c.setToBean("x", bean);
         
-        assertEquals("Bob 28 3.14 TRUE SECRET-IS-SAFE", c.toString());
+        assertEquals("Bob 28 2.72 3.14 TRUE SECRET-IS-SAFE", c.toString());
     }
     
     @Test
@@ -519,6 +563,7 @@ public class ChunkTest
         String name;
         int age;
         double pi = Math.PI;
+        Double e = new Double(Math.E);
         boolean isActive;
         // these fields should not be visible to the template
         protected String hidden;
@@ -567,6 +612,7 @@ public class ChunkTest
         private String name;
         private int age;
         private double pi = Math.PI;
+        private Double e = new Double(Math.E);
         private boolean isActive;
         private ThingBean boss;
         private ThingBean[] children;
@@ -592,6 +638,11 @@ public class ChunkTest
         public double getPi()
         {
             return pi;
+        }
+        
+        public Double getE()
+        {
+            return e;
         }
         
         public boolean isActive()

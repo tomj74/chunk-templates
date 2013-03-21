@@ -367,7 +367,7 @@ public class TextFilterTest
         // hex-escaped entities.
         c.set("abc","& ' \" <Tag> \u00AE \u21D4 \u2122 "+Character.valueOf((char)2));
         c.append("test: {~abc|xmlescape}");
-        assertEquals("test: &amp; &apos; &quot; &lt;Tag&gt; ® &#x21d4; &#x2122; ", c.toString());
+        assertEquals("test: &amp; &apos; &quot; &lt;Tag&gt; \u00AE &#x21d4; &#x2122; ", c.toString());
     }
 
     @Test
@@ -444,7 +444,7 @@ public class TextFilterTest
         c.set("abc","i");
         c.setLocale("tr_TR");
         c.append("{$abc|uc}");
-        assertEquals(c.toString(),"İ");
+        assertEquals(c.toString(),"\u0130");
     }
     
     @Test
