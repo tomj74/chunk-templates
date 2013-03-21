@@ -9,6 +9,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -34,6 +35,28 @@ public class ObjectDataMap implements Map
     
     private static final Map<String,Object> EMPTY_MAP = new HashMap<String,Object>();
     
+    private static final HashSet<Class<?>> WRAPPER_TYPES = getWrapperTypes();
+
+    private static HashSet<Class<?>> getWrapperTypes()
+    {
+        HashSet<Class<?>> ret = new HashSet<Class<?>>();
+        ret.add(Boolean.class);
+        ret.add(Character.class);
+        ret.add(Byte.class);
+        ret.add(Short.class);
+        ret.add(Integer.class);
+        ret.add(Long.class);
+        ret.add(Float.class);
+        ret.add(Double.class);
+        ret.add(Void.class);
+        return ret;
+    }
+    
+    public static boolean isWrapperType(Class<?> clazz)
+    {
+        return WRAPPER_TYPES.contains(clazz);
+    }
+
     public ObjectDataMap(Object pojo)
     {
         this.object = pojo;
@@ -150,7 +173,7 @@ public class ObjectDataMap implements Map
             if (((Boolean)paramValue).booleanValue()) {
                 pickle.put(paramName, "TRUE");
             }
-        } else if (paramClass.isPrimitive()) {
+        } else if (paramClass.isPrimitive() || isWrapperType(paramClass)) {
             pickle.put(paramName, paramValue.toString());
         } else if (paramValue == this) {
             // tiny optimization
