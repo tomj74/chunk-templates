@@ -1,0 +1,386 @@
+{!-- macro_test.chtml contains test suite snippets for
+  -- checking macro functionality --}
+
+
+{!---------------------------------------------}
+{#simple_test.deprecated}
+{!-- this syntax has been deprecated --}
+{* #SIMPLE_TEST_MACRO *}
+ {~kind_of_food = burrito}
+ {~kind_of_drink=}sangria{=}
+ {~host=}{~host_name}{=}
+{*}
+{#}
+
+
+{!---------------------------------------------}
+{#simple_test}
+{^exec #SIMPLE_TEST_MACRO}
+ {~kind_of_food = burrito}
+ {~kind_of_drink=}sangria{=}
+ {~host=}{~host_name}{=}
+{/exec}
+{#}
+
+
+{!---------------------------------------------}
+{#SIMPLE_TEST_MACRO}
+Once I ate a {~kind_of_food} and drank some {~kind_of_drink} at {~host}'s house and I had awful indigestion afterwards.
+{#}
+
+
+{!---------------------------------------------}
+{#table_test}
+{^exec #TABLE}
+ {~some_data=}[[item,price],[spoon,.2],[fork,.3],[knife,1.03]]{=}
+{/exec}
+{#}
+
+
+{!---------------------------------------------}
+{#simplified_syntax_test}
+{^exec #SIMPLE_TEST_MACRO }
+ {~kind_of_food = burrito}
+ {~kind_of_drink=sangria}
+ {~host=}{~host_name}{=}
+ {~multiline_value=}This value spans<br/>
+multiple lines!<br/>
+{=}
+ {~some_data=}[[item,price],[spoon,.2],[fork,.3],[knife,1.03]]{=}
+{/exec}
+{#}
+
+
+{!---------------------------------------------}
+{#std_fmt_expected_output}
+Once I ate a burrito and drank some sangria at Harry's house and I had awful indigestion afterwards.
+{#}
+
+
+{!---------------------------------------------}
+{#simplified_syntax_test_loser}
+{!-- Macro arg-formatting is very flexible.  "chunk" is the default.
+
+     The default arg-passing format is designed for maximum readability
+     and minimum typing/escaping of <html values="xxx">.
+     
+   * Lines that begin with ~ (after trimming any leading whitespace)
+     mark a new label.
+     
+   * Values begin after a single colon (:).
+     * Leading and trailing whitespace are trimmed from the value.
+     * Trailing newlines are not trimmed from a multi-line value.
+
+   * Where leading or trailing whitespace needs to be precisely preserved,
+     three quote-styles are available:
+       'single quote' (may contain unescaped single quotes)
+       "double quote" (may contain unescaped double quotes)
+       {{curly-brace quote}} (may contain unescaped single/double quotes)
+
+   * Lines that begin with tilde (~) within {{curly-brace quotes}} will not
+     be interpreted as a value label.
+     
+   * Later repetitions of a label will overwrite the value for that macro call.
+   
+  DECIDED NOT TO IMPLEMENT THIS FORMAT - "chunk" is now synonymous with "original"
+   
+  --}
+{^exec #SIMPLE_TEST_MACRO }
+ ~kind_of_food  : burrito
+ ~kind_of_drink : sangria
+ ~host          : {~host_name}
+ ~quoted_value  : ' gherkin : schmerkin '
+ ~quoted_value2 : " gherkin : schmerkin "
+ ~four_colons   : ::::
+ 
+ ~multiline_value :
+This value spans<br/>
+multiple lines!<br/>
+
+ ~multiline_value_preserve_whitespace : {{
+This value spans<br/>
+multiple lines!<br/>
+}}
+
+ ~some_data     : [[item,price],[spoon,.2],[fork,.3],[knife,1.03]]
+{/exec}
+{#}
+
+
+{!---------------------------------------------}
+{#simplified_syntax_test_json_strict}
+{!-- Strict json is also available as a macro-arg format.
+
+     Array values may be used in loops eg {^loop in ~array as x}...{~x}...{/loop}
+     or arrays of strings may be output using the join filter {~array|join(,)}
+
+     Object parameters may be accessed using standard dot-syntax like so:
+       {~obj.name} {~obj.id}
+
+     Same idea for nested objects:
+       {~obj.child.name}
+  --}
+{^exec #HAIRY_MACRO json-strict}
+{"kind_of_food":"burrito",
+ "kind_of_drink":"sangria",
+ "host":"{~host_name}",
+ "value_with_quotes":"value with \"quotes\"",
+ "multiline_value":"This value spans<br/>\nmultiple lines!<br/>\n",
+ "some_data":"[[item,price],[spoon,.2],[fork,.3],[knife,1.03]]",
+ "array":["1","2","3"],
+ "obj":{"name":"bob","id":3,"boss":{"name":"joe","id":4}},
+ "null_value":null,
+ "numeric_value":123
+}
+{/exec}
+{#}
+
+
+{!---------------------------------------------}
+{#simplified_syntax_test_json}
+{!-- default json is a less-strict dialect of json which allows:
+   * unquoted labels
+   * string values may be double-quoted OR single-quoted
+   * trailing commas!
+  --}
+{^exec #HAIRY_MACRO json}
+{ kind_of_food  : 'burrito',
+  kind_of_drink : "sangria",
+  host          : "{~host_name}",
+  value_with_quotes : 'value with "quotes"',
+  multiline_value   : "This value spans<br/>\nmultiple lines!<br/>\n",
+  some_data     : "[[item,price],[spoon,.2],[fork,.3],[knife,1.03]]",
+  array         : ["1","2","3"],
+  obj           : {name:"bob",id:3,boss:{name:"joe",id:4}},
+  null_value    : null,
+  numeric_value : 123,
+}
+{/exec}
+{#}
+
+
+{!---------------------------------------------}
+{#HAIRY_MACRO}
+We ate {~kind_of_food}.
+We drank {~kind_of_drink}.
+We partied at {~host}'s house.
+We yelled {~array|join(,):no array}!
+We had {~null_value:nothing} to say.
+We counted up to {~numeric_value:42}.
+We like {~value_with_quotes} every day.
+The guy named {~obj.name} is emp. no. {~obj.id}.
+His boss is {~obj.boss.name}.
+{~multiline_value}
+{^loop in ~some_data as i}
+{~i.item} {~i.price|sprintf($%,.2f)}
+{/loop}
+{^loop in ~array as x}
+{~x}{^divider}-{/divider}{^onEmpty}
+{/loop}
+
+{#}
+
+
+{!---------------------------------------------}
+{#json_test_expected_output}
+We ate burrito.
+We drank sangria.
+We partied at Bob's house.
+We yelled 1,2,3!
+We had nothing to say.
+We counted up to 123.
+We like value with "quotes" every day.
+The guy named bob is emp. no. 3.
+His boss is joe.
+This value spans<br/>
+multiple lines!<br/>
+
+spoon $0.20
+fork $0.30
+knife $1.03
+1-2-3
+{#}
+
+
+{!---------------------------------------------}
+{#simplified_syntax_test_xml}
+{!-- macro values may even be passed using simple xml.
+
+  Notes:
+   * Lightweight xml parser does no special namespace handling or validation
+   * Enclosing <values></values> tags are optional.
+   * If element names are repeated, earlier values are overwritten.
+   * Nested xml elements will be available as {~parent.childparam}
+      * Make sure to escape angle-brackets in HTML or enclose in CDATA envelope
+     
+  --}
+{^exec #HAIRY_MACRO xml}
+<values>
+ <kind_of_food>burrito</kind_of_food>
+ <kind_of_drink>sangria</kind_of_drink>
+ <host>{~host_name}</host>
+ <value_with_quotes>value with "quotes"</value_with_quotes>
+ <obj>
+   <name>bob</name>
+   <id>3</id>
+   <boss>
+     <name>joe</name>
+     <id>4</id>
+   </boss>
+ </obj>
+ 
+ <multiline_value>This value spans&lt;br/&gt;
+multiple lines!&lt;br/&gt;
+</multiline_value>
+
+ <multiline_cdata_value><![CDATA[This value spans<br/>
+multiple lines!<br/>
+]]></multiline_cdata_value>
+
+ <some_data>[[item,price],[spoon,.2],[fork,.3],[knife,1.03]]</some_data>
+ 
+ <null_value/>
+</values>
+{/exec}
+{#}
+
+
+{!---------------------------------------------}
+{#xml_test_expected_output}
+We ate burrito.
+We drank sangria.
+We partied at Bob's house.
+We yelled no array!
+We had nothing to say.
+We counted up to 42.
+We like value with "quotes" every day.
+The guy named bob is emp. no. 3.
+His boss is joe.
+This value spans<br/>
+multiple lines!<br/>
+
+spoon $0.20
+fork $0.30
+knife $1.03
+
+{#}
+
+
+{!---------------------------------------------}
+{#TABLE}
+<table>
+{^loop in ~some_data as i}
+<tr><td>{~i.item}</td><td>{~i.price|sprintf($%,.2f)}</td></tr>
+{/loop}
+</table>
+{#}
+
+
+{!---------------------------------------------}
+{#assignment_trick_test}
+{^exec #SIMPLE_TEST_MACRO}
+ {~kind_of_food = burrito}
+ {~kind_of_drink=}sangria{=}
+ {~host=}{^if (~kind_of_food == burrito)}Jane{^else}{~host_name}{/if}{=}
+{/exec}
+{#}
+
+
+{!---------------------------------------------}
+{#table_of_maps_test}
+{^exec #MAP_LOOP json}
+{ items :
+ [
+  { price: 20, id: 3, name: weeble},
+  { id: 4, price:40, name:marble },
+  { id: 19, price:23, name:stubble }
+ ]
+}
+{/exec}
+{#}
+
+
+{!---------------------------------------------}
+{#table_of_maps_expected_output}
+3 - weeble $20.00<br/>
+4 - marble $40.00<br/>
+19 - stubble $23.00<br/>
+{#}
+
+
+{!---------------------------------------------}
+{#MAP_LOOP}
+{^loop in ~items}
+{~id} - {~name} {~price|sprintf($%,.2f)}<br/>
+{/loop}
+{#}
+
+
+{!---------------------------------------------}
+{#xml_with_attributes}
+{!-- macro value test using xml with attributes.
+     attributes should be visible as param_name@attr_name
+  --}
+{^exec @inline xml}
+<values>
+ <obj_with_attrs xyz="hello" foo="\\bar\\" abc="I hate &quot;air-quotes&quot;" baz="hello \"ladies\"" />
+</values>
+{^body}
+
+I said {~obj_with_attrs@xyz}.
+foo is {~obj_with_attrs@foo}.
+He said "{~obj_with_attrs@abc}."
+She said "{~obj_with_attrs@baz}!"
+{/body}
+{/exec}
+{#}
+
+
+{!---------------------------------------------}
+{#xml_with_attrs_expected_output}
+
+I said hello.
+foo is \bar\.
+He said "I hate "air-quotes"."
+She said "hello "ladies"!"
+{#}
+
+
+{!---------------------------------------------}
+{#filter_exec}
+{$some_tag|filter(#every_other)}
+{$some_num|filter(#currency_usd)}
+{#}
+
+
+{!---------------------------------------------}
+{#every_other}{$x:|s/(.)./$1/g}{#}
+{#currency_usd}{$x:|sprintf($%,.2f)}{#}
+
+
+{!---------------------------------------------}
+{#json_array}{!-- template engine should not blow up when it encounters json array --}
+{.exec @inline json}
+["3","4"]
+{.body}
+Hello
+{/body}
+{/exec}
+{#}
+
+
+{!---------------------------------------------}
+{#bad_json}{!-- template engine should not blow up when it encounters bad json --}
+{.exec @inline json}
+I am not JSON.
+{.body}
+Hello
+{/body}
+{/exec}
+{#}
+
+
+{!---------------------------------------------}
+{#bug29}
+It doesn't matter what I put here, it gets overridden in the override layer.
+{#}
