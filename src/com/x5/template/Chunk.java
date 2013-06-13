@@ -1455,7 +1455,19 @@ public class Chunk implements Map<String,Object>
      */
     public void addData(DataCapsule smartObj)
     {
-    	addData(smartObj, null);
+        DataCapsuleReader reader = DataCapsuleReader.getReader(smartObj);
+        
+        String[] tags = reader.getColumnLabels(null);
+        Object[] data = reader.extractData(smartObj);
+        
+        for (int i=0; i<tags.length; i++) {
+            Object val = data[i];
+            if (val == null || val instanceof String || val instanceof DataCapsule) {
+                this.setOrDelete(tags[i], val);
+            } else {
+                this.set(tags[i], val.toString());
+            }
+        }
     }
     
     /**
@@ -1464,25 +1476,22 @@ public class Chunk implements Map<String,Object>
      * No problem. Provide a unique altPrefix for each one
      * to avoid tag namespace collisions.
      * 
+     * Note: these two calls are now equivalent:
+     *   chunk.addData(capsule,"x");
+     *   chunk.set("x",capsule);
+     * 
+     * The second form is preferred, so this method may get deprecated.
+     * 
      * @param smartObj
      * @param altPrefix
      */
     public void addData(DataCapsule smartObj, String altPrefix)
     {
     	if (smartObj == null) return;
-    	
-    	DataCapsuleReader reader = DataCapsuleReader.getReader(smartObj);
-    	
-    	String[] tags = reader.getColumnLabels(altPrefix);
-		Object[] data = reader.extractData(smartObj);
-		
-    	for (int i=0; i<tags.length; i++) {
-    		Object val = data[i];
-    		if (val == null || val instanceof String || val instanceof DataCapsule) {
-	    		this.setOrDelete(tags[i], val);
-    		} else {
-    			this.set(tags[i], val.toString());
-    		}
+    	if (altPrefix == null) {
+    	    this.addData(smartObj);
+    	} else {
+    	    this.set(altPrefix,smartObj);
     	}
     }
     

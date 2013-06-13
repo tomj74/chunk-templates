@@ -17,8 +17,9 @@ import java.util.Set;
 /**
  * ObjectDataMap
  * 
- * Box POJO/Bean inside a Map.  When accessed, pry into POJO/Bean using
- * reflection/introspection and pull out all public member fields/properties.
+ * Box POJO/Bean/DataCapsule inside a Map.  When accessed, pry into object
+ * using reflection/introspection/capsule-export and pull out all public
+ * member fields/properties.
  * Convert field names from camelCase to lower_case_with_underscores
  * Convert bean properties from getSomeProperty() to some_property
  *  or isVeryHappy() to is_very_happy
@@ -85,7 +86,9 @@ public class ObjectDataMap implements Map
     
     private Map<String,Object> mapify(Object pojo)
     {
-        if (isBean) {
+        if (pojo instanceof DataCapsule) {
+            return mapifyCapsule((DataCapsule)pojo);
+        } else if (isBean) {
             try {
                 return mapifyBean(pojo);
             } catch (java.beans.IntrospectionException e) {
@@ -162,6 +165,29 @@ public class ObjectDataMap implements Map
         return pickle;
     }
 
+    private Map<String,Object> mapifyCapsule(DataCapsule capsule)
+    {
+        DataCapsuleReader reader = DataCapsuleReader.getReader(capsule);
+        
+        String[] tags = reader.getColumnLabels(null);
+        Object[] data = reader.extractData(capsule);
+        
+        pickle = new HashMap<String,Object>();
+        for (int i=0; i<tags.length; i++) {
+            Object val = data[i];
+            if (val == null) continue;
+            if (val instanceof String) {
+                pickle.put(tags[i], val);
+            } else if (val instanceof DataCapsule) {
+                pickle.put(tags[i], new ObjectDataMap(val));
+            } else {
+                pickle.put(tags[i], val.toString());
+            }
+        }
+        
+        return pickle;
+    }
+    
     private void storeValue(Map<String,Object> pickle, Class paramClass,
                             String paramName, Object paramValue)
     {
