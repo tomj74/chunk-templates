@@ -492,6 +492,65 @@ public class ChunkTest
     }
     
     @Test
+    public void doubleCapsuleTest()
+    {
+        Theme theme = new Theme();
+        Chunk c = theme.makeChunk();
+        c.append("{$user_name} {$x.user_name}");
+        OldThing userA = new OldThing("Bob",28,true);
+        OldThing userB = new OldThing("Joe",30,true);
+        c.addData(userA);
+        c.addData(userB,"x");
+        
+        assertEquals("Bob Joe", c.toString());
+    }
+    
+    @Test
+    public void nestedCapsuleTest()
+    {
+        Theme theme = new Theme();
+        Chunk c = theme.makeChunk();
+        c.append("{$x.user_name} {$x.user_child.user_name}");
+        c.append(" {$user_name} {$user_child.user_name}");
+        OldThing userA = new OldThing("Bob",28,true);
+        OldThing userB = new OldThing("Joe",30,true);
+        userA.setChild(userB);
+        c.set("x",userA);
+        c.addData(userA);
+        
+        assertEquals("Bob Joe Bob Joe", c.toString());
+    }
+    
+    @Test
+    public void capsuleIntTest()
+    {
+        Theme theme = new Theme();
+        Chunk c = theme.makeChunk();
+        c.append("{$user_age} {$x.user_age} {$y.user_age}");
+        OldThing userA = new OldThing("Bob",27,true);
+        c.addData(userA);
+        c.addData(userA,"y");
+        c.set("x",userA);
+        userA.setAge(28);
+        
+        assertEquals("27 28 28", c.toString());
+    }
+
+    @Test
+    public void doubleCapsuleTest2()
+    {
+        Theme theme = new Theme();
+        Chunk c = theme.makeChunk();
+        c.append("{$a.user_name} {$b.user_name}");
+        OldThing userA = new OldThing("Bob",28,true);
+        OldThing userB = new OldThing("Joe",30,true);
+        c.set("a",userA);
+        c.set("b",userB);
+        
+        assertEquals("Bob Joe", c.toString());
+    }
+    
+    @Test
     public void simpleBeanTest()
     {
         Theme theme = new Theme();
@@ -553,6 +612,69 @@ public class ChunkTest
         c.set("x", new CircularThing("Bob",28,false));
         
         assertEquals("Bob 28 3.14 FALSE Bob\nBob Bob ", c.toString());
+    }
+    
+    /**
+     * for addData test
+     */
+    public static class OldThing implements com.x5.util.DataCapsule
+    {
+        private String name;
+        private int age;
+        private boolean isActive;
+        private OldThing childThing;
+        
+        public OldThing(String name, int age, boolean isActive)
+        {
+            this.name = name;
+            this.age = age;
+            this.isActive = isActive;
+        }
+        
+        public void setAge(int age)
+        {
+            this.age = age;
+        }
+        
+        public void setChild(OldThing child)
+        {
+            this.childThing = child;
+        }
+        
+        public String getExportPrefix()
+        {
+            return "user";
+        }
+        
+        public String getName()
+        {
+            return name;
+        }
+        
+        public OldThing getChild()
+        {
+            return childThing;
+        }
+        
+        public int getAge()
+        {
+            return age;
+        }
+        
+        public boolean isActive()
+        {
+            return isActive;
+        }
+        
+        public String[] getExports()
+        {
+            return new String[]{
+                "getName",
+                "getAge",
+                "isActive",
+                "getChild"
+            };
+        }
     }
     
     /**
