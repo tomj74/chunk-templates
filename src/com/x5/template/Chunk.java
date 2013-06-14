@@ -13,10 +13,8 @@ import java.util.Set;
 import java.util.Vector;
 import java.util.Map;
 import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import com.x5.template.filters.Calc;
-import com.x5.template.filters.RegexFilter;
 import com.x5.util.DataCapsule;
 import com.x5.util.DataCapsuleReader;
 import com.x5.util.ObjectDataMap;
@@ -456,7 +454,6 @@ public class Chunk implements Map<String,Object>
      * @param tagValue replacement value -- no-op unless this is of type String or Chunk.
      * @param ifNull fallback replacement value in case tagValue is null
      */
-    @SuppressWarnings("unchecked")
     public void set(String tagName, Object tagValue, String ifNull)
     {
         // all "set" methods eventually chain to here
@@ -515,6 +512,7 @@ public class Chunk implements Map<String,Object>
     /**
      * Make bean properties available to template
      */
+    @SuppressWarnings("rawtypes")
     public void setToBean(String tagName, Object bean, String ifNull)
     {
         Map boxedBean = ObjectDataMap.wrapBean(bean);
@@ -1006,6 +1004,7 @@ public class Chunk implements Map<String,Object>
         return _resolveTagValue(tag, depth, false);
     }
     
+    @SuppressWarnings("rawtypes")
     protected Object _resolveTagValue(SnippetTag tag, int depth, boolean ignoreParentContext)
     {
         String[] path = tag.getPath();
