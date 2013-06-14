@@ -520,7 +520,6 @@ public class TemplateSet implements ContentSource, ChunkFactory
             int comPos = line.indexOf(COMMENT_START);
             int subPos = line.indexOf(SUB_START);
             // first, skip over any comments
-            boolean killedComment = false;
             while (comPos > -1 && (subPos < 0 || subPos > comPos)) {
                 //line = stripComment(comPos,line,brTemp);
                 commentBuf = new StringBuilder();
@@ -538,7 +537,6 @@ public class TemplateSet implements ContentSource, ChunkFactory
                 // check for another comment on same line
                 comPos = line.indexOf(COMMENT_START);
                 subPos = line.indexOf(SUB_START);
-                killedComment = true;
             }
             // then, strip out any subtemplates
             if (subPos > -1) {

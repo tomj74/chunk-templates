@@ -10,7 +10,6 @@ import java.util.Map;
 import com.x5.util.LiteXml;
 
 import net.minidev.json.JSONArray;
-import net.minidev.json.JSONObject;
 import net.minidev.json.JSONValue;
 import net.minidev.json.parser.JSONParser;
 import static net.minidev.json.parser.ContainerFactory.FACTORY_ORDERED;
@@ -116,6 +115,7 @@ public class MacroTag extends BlockTag
         }
     }
     
+    @SuppressWarnings("unchecked")
     private void parseDefsJsonLax(Snippet body)
     {
         String json = body.toString();
@@ -131,7 +131,7 @@ public class MacroTag extends BlockTag
         
         Object parsedValue = JSONValue.parseKeepingOrder(json);
         if (parsedValue instanceof Map) {
-            Map defs = (Map)parsedValue;
+            Map<String,Object> defs = (Map<String,Object>)parsedValue;
             importJSONDefs(defs);
         } else if (parsedValue instanceof JSONArray || parsedValue instanceof List) {
             logInputError("Error processing template: exec expected JSON object, not JSON array.");
