@@ -10,26 +10,26 @@ public class FormatFilter extends BasicFilter
     public String transformText(Chunk chunk, String text, String[] args)
     {
         if (text == null) return null;
-        
+
         String fmtString = null;
         // get the entire, unparsed string from inside the parens
         if (args != null && args.length > 0) fmtString = args[0];
-        
+
         if (fmtString == null) return "";
-        
+
         ChunkLocale locale = null;
         if (chunk != null) {
             locale = chunk.getLocale();
         }
-        
+
         return applyFormatString(text, fmtString, locale);
     }
-    
+
     public String getFilterName()
     {
         return "sprintf";
     }
-    
+
     private static String applyFormatString(String text, String formatString, ChunkLocale locale)
     {
         // strip calling wrapper ie "sprintf(%.03f)" -> "%.03f"
@@ -53,13 +53,13 @@ public class FormatFilter extends BasicFilter
     {
         return formatNumberFromString(formatString, value, null);
     }
-    
+
     public static Locale getJavaLocale(ChunkLocale locale)
     {
         if (locale == null) return null;
         return locale.getJavaLocale();
     }
-    
+
     public static String formatNumberFromString(String formatString, String value, ChunkLocale chunkLocale)
     {
         // This assumes that the expr *ends* with eg %s or %d or %.3f
@@ -71,9 +71,9 @@ public class FormatFilter extends BasicFilter
         //
         char expecting = formatString.charAt(formatString.length()-1);
         try {
-            
+
             Locale locale = getJavaLocale(chunkLocale);
-            
+
             if ("sS".indexOf(expecting) > -1) {
                 return String.format(locale, formatString, value);
             } else if ("eEfgGaA".indexOf(expecting) > -1) {

@@ -7,11 +7,11 @@ public class EscapeXMLFilter extends BasicFilter implements ChunkFilter
     private static final String findMe = "&<>\"'";
     private static final String[] replaceWith =
             new String[]{"&amp;","&lt;","&gt;","&quot;","&apos;"};
-    
+
     public String transformText(Chunk chunk, String text, String[] args)
     {
         if (text == null) return null;
-        
+
         boolean escapedSomething = false;
         char c;
         StringBuilder escaped = new StringBuilder();
@@ -47,7 +47,7 @@ public class EscapeXMLFilter extends BasicFilter implements ChunkFilter
                 escapedSomething = true;
             }
         }
-        
+
         if (escapedSomething) {
             return escaped.toString();
         } else {
@@ -59,7 +59,7 @@ public class EscapeXMLFilter extends BasicFilter implements ChunkFilter
     {
         return "xml";
     }
-    
+
     public String[] getFilterAliases()
     {
         return new String[]{

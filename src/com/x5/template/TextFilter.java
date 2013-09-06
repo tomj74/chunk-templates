@@ -19,7 +19,7 @@ public class TextFilter
 {
     public static String FILTER_FIRST = "FILTER_FIRST";
     public static String FILTER_LAST  = "FILTER_LAST";
-    
+ 
     private static Map<String,ChunkFilter> filters = registerStockFilters();
 
     private static Map<String,ChunkFilter> registerStockFilters()
@@ -29,16 +29,16 @@ public class TextFilter
         }
         return filters;
     }
-    
+ 
     /* haven't thought this through just yet...
     public static Object applyFilter(Chunk context, String filter, Object data)
     {
         if (filter == null) return data;
-        
+  
         if (data instanceof String) {
             return applyTextFilter(context, filter, (String)data);
         }
-            
+
         // filters might be daisy-chained
         int pipePos = findNextFilter(filter);
         if (pipePos >= 0) {
@@ -47,7 +47,7 @@ public class TextFilter
             data = applyFilter(context, firstFilter, data);
             return applyFilter(context, nextFilters, data);
         }
-        
+  
         // try to find a matching factory-standard stock filter for this job.
         ChunkFilter stockFilter = filters.get(filterName);
         if (stockFilter == null) {
@@ -55,9 +55,9 @@ public class TextFilter
         } else {
             return stockFilter.transformText(context, text, filterArgs);
         }
-        
+  
     }*/
-    
+ 
     public static String applyTextFilter(Chunk context, String filter, String text)
     {
         if (filter == null) return text;
@@ -81,10 +81,10 @@ public class TextFilter
                 return null;
             }
         }*/
-        
+  
         String filterName = filter;
         String[] filterArgs = null;
-        
+  
         int parenPos = filter.indexOf('(');
         int slashPos = filter.indexOf('/');
         if (slashPos > -1 && (parenPos < 0 || parenPos > slashPos)) {
@@ -98,13 +98,13 @@ public class TextFilter
         } else {
             filterArgs = new String[]{filterName};
         }
-        
+  
         // if custom filter is registered with this name, it takes precedence
         Map<String,ChunkFilter> customFilters = null;
-        
+  
         ChunkFactory userTheme = context.getChunkFactory();
         if (userTheme != null) customFilters = userTheme.getFilters();
-        
+  
         if (customFilters != null) {
             ChunkFilter userFilter = customFilters.get(filterName);
             if (userFilter != null) {
@@ -120,7 +120,7 @@ public class TextFilter
         }
 
         // provide a few basic filters without making a whole class for each one.
-        
+  
         if (filter.equals("trim")) {
             // trim leading and trailing whitespace
             return text == null ? null : text.trim(); //text.replaceAll("^\\s+","").replaceAll("\\s+$","");
@@ -149,7 +149,7 @@ public class TextFilter
         } else if (filter.equals("type")) {
             return text == null ? "NULL" : "STRING";
         }
-        
+  
         // try to find a matching factory-standard stock filter for this job.
         ChunkFilter stockFilter = filters.get(filterName);
         if (stockFilter == null) {
@@ -158,12 +158,12 @@ public class TextFilter
             return stockFilter.transformText(context, text, filterArgs);
         }
     }
-    
+ 
     private static String[] parseArgs(String filter)
     {
         return parseArgs(filter, true);
     }
-        
+  
     private static String[] parseArgs(String filter, boolean splitOnComma)
     {
         int quote1 = filter.indexOf("\"");
@@ -174,13 +174,13 @@ public class TextFilter
             quote1 = -1;
             quote2 = filter.lastIndexOf(")");
             if (quote2 < 0) return null;
-                
+ 
             isQuoted = false;
         } else {
             quote2 = filter.indexOf("\"",quote1+1);
             if (quote2 < 0) quote2 = filter.length();
         }
-        
+  
         String arg0 = filter.substring(quote1+1,quote2);
 
         String arg1 = null;
@@ -193,7 +193,7 @@ public class TextFilter
                 }
             }
         }
-        
+  
         if (arg1 != null) {
             // some bizarre special case a la ("xyz","abc")
             // with a guarantee of no escaped double quotes
@@ -207,20 +207,20 @@ public class TextFilter
             return parseCommaDelimitedArgs(arg0);
         }
     }
-    
+ 
     private static String[] parseCommaDelimitedArgs(String argStr)
     {
         String[] args = new String[15];
         // always pass pre-split args string in position 0
         args[0] = argStr;
         int argX = 1;
-        
+  
         int marker = 0;
-        
+  
         while (argX < args.length) {
             int commaPos = nextArgDelim(argStr,marker);
             if (commaPos < 0) break;
-            
+
             int quotePos = nextUnescapedDelim("\"", argStr, marker);
             if (quotePos > -1 && quotePos < commaPos) {
                 // arg must start with quote to be considered quoted
@@ -263,7 +263,7 @@ public class TextFilter
                     }
                 }
             }
-            
+
             String arg = argStr.substring(marker,commaPos);
             args[argX] = arg;
             argX++;
@@ -271,7 +271,7 @@ public class TextFilter
             commaPos = nextArgDelim(argStr,marker);
         }
         if (argX == args.length) return args; // maxed out
-        
+  
         // got here? no more commas...
         int closeParenPos = nextUnescapedDelim(")",argStr,marker);
         int finalArgEnd = argStr.length();
@@ -281,7 +281,7 @@ public class TextFilter
         String finalArg = argStr.substring(marker,finalArgEnd);
         args[argX] = finalArg;
         argX++;
-        
+  
         // check for nomatch(...) args
         if (argX+1 < args.length && closeParenPos > 0 && closeParenPos + 1 < argStr.length()) {
             int nextParen = argStr.indexOf('(',closeParenPos+1);
@@ -296,7 +296,7 @@ public class TextFilter
                 argX++;
             }
         }
-        
+  
         String[] truncated = new String[argX];
         System.arraycopy(args, 0, truncated, 0, argX);
         return truncated;
@@ -310,17 +310,17 @@ public class TextFilter
     public static String magicBraces(Chunk context, String output)
     {
         if (output == null || output.length() == 0) return output;
-        
+  
         char firstChar = output.charAt(0);
         if (firstChar == '~' || firstChar == '$') {
             return context != null ? context.makeTag(output) : "{"+output+"}";
         } else if (firstChar == '^' || firstChar == '.') {
-        	if (context == null) {
-        	    /// turn .cmd into {.cmd}
-        		return TemplateSet.PROTOCOL_SHORTHAND+output.substring(1)+TemplateSet.DEFAULT_TAG_END;
-        	} else {
-        		return context.makeTag('.'+output.substring(1));
-        	}
+            if (context == null) {
+                /// turn .cmd into {.cmd}
+                return TemplateSet.PROTOCOL_SHORTHAND+output.substring(1)+TemplateSet.DEFAULT_TAG_END;
+            } else {
+                return context.makeTag('.'+output.substring(1));
+            }
         } else if (firstChar == '+') {
             return "{"+output+"}";
         } else {
@@ -503,7 +503,7 @@ public class TextFilter
         String includeTemplate = parseMatcher.group(3);
         //if (includeTemplate.equals(".")) includeTemplate = parseMatcher.group(4);
         includeTemplate = includeTemplate.replaceAll("[\\|:].*$", "");
-        
+  
         if (test.indexOf('=') < 0 && test.indexOf("!~") < 0) {
             // simplest case: no comparison, just a non-null test
             if (negater.charAt(0) == '~') {
@@ -526,11 +526,11 @@ public class TextFilter
                     // equality (or inequality) of two variables (tags)
                     // resolve right-hand tag reference to a string value
                     String tagValue = null;
-                    
+  
                     // might be a snippet...
                     Object tagValueObj = tagTable.get(tagA);
                     if (tagValueObj != null) tagValue = tagValueObj.toString();
-                    
+  
                     if (tagValue == null) tagValue = "";
                     if (isNeg) {
                         xlation = open + tagB.substring(1)
@@ -547,7 +547,7 @@ public class TextFilter
                     String match = tagB;
                     // allow tagB to be quoted?  if so, strip quotes here
                     if (tagB.charAt(0) == '"' && tagB.charAt(match.length()-1) == '"') {
-                    	match = tagB.substring(1, tagB.length()-1);
+                        match = tagB.substring(1, tagB.length()-1);
                     }
                     if (isNeg) {
                         // include the template if the value does not match
@@ -661,18 +661,18 @@ public class TextFilter
         // if it has args and it's not an onmatch, then this close-paren is the end of the last filter
         return closeParen+1;
     }
-    
+ 
     public static String accessArrayIndex(TableData table, String getFilter)
     {
         return accessArrayIndex(extractListFromTable(table), getFilter);
     }
-    
+ 
     public static String accessArrayIndex(String[] array, String getFilter)
     {
         if (array == null) return "";
         return accessArrayIndex(Arrays.asList(array), getFilter);
     }
-    
+ 
     public static String accessArrayIndex(List<String> list, String getFilter)
     {
         if (list == null) return "";
@@ -695,70 +695,70 @@ public class TextFilter
         }
         return "";
     }
-    
+ 
     private static List<String> extractListFromTable(TableData table)
     {
         if (table == null) return null;
-        
+  
         // create a string array from the first column of the table.
         List<String> list = new ArrayList<String>();
-        
+  
         while (table.hasNext()) {
             table.nextRecord();
             String[] record = table.getRow();
             list.add(record[0]);
         }
-        
+  
         return list;
     }
-    
+ 
     public static String joinInlineTable(TableData table, String joinFilter)
     {
         return joinStringList(extractListFromTable(table), joinFilter);
     }
-    
+ 
     public static String joinStringArray(String[] array, String joinFilter)
     {
         if (array == null) return "";
         if (array.length == 1) return array[0];
-        
+  
         return joinStringList(Arrays.asList(array), joinFilter);
     }
-    
+ 
     public static String joinStringList(List<String> list, String joinFilter)
     {
-    	if (list == null) return "";
-    	if (list.size() == 1) return list.get(0);
-    	
-    	String divider = null;
-    	// the only arg is the divider
-    	int parenPos = joinFilter.indexOf('(');
-    	if (parenPos > 0) {
-        	String[] args = parseArgs(joinFilter.substring(parenPos+1),false);
-        	divider = args[0];
-    	}
-    	
-    	StringBuilder x = new StringBuilder();
-    	int i = 0;
-    	for (String s : list) {
-    		if (i>0 && divider != null) x.append(divider);
-    		if (s != null) x.append(s);
-    		i++;
-    	}
-    	return x.toString();
+        if (list == null) return "";
+        if (list.size() == 1) return list.get(0);
+  
+        String divider = null;
+        // the only arg is the divider
+        int parenPos = joinFilter.indexOf('(');
+        if (parenPos > 0) {
+            String[] args = parseArgs(joinFilter.substring(parenPos+1),false);
+            divider = args[0];
+        }
+  
+        StringBuilder x = new StringBuilder();
+        int i = 0;
+        for (String s : list) {
+            if (i>0 && divider != null) x.append(divider);
+            if (s != null) x.append(s);
+            i++;
+        }
+        return x.toString();
     }
 
     public static String typeFilter(Chunk context, Object tagValue)
     {
         return _typeFilter(context, tagValue, 0);
     }
-    
+ 
     private static String _typeFilter(Chunk context, Object tagValue, int depth)
     {
         if (depth > 7) {
             return "CIRCULAR_POINTER";
         }
-        
+  
         if (tagValue == null) {
             return "NULL";
         } else if (tagValue instanceof String) {
@@ -791,7 +791,7 @@ public class TextFilter
         } else if (tagValue instanceof Map || tagValue instanceof com.x5.util.DataCapsule) {
             return "OBJECT";
         }
-        
+  
         return "UNKNOWN";
     }
 

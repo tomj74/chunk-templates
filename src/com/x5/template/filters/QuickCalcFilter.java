@@ -5,10 +5,10 @@ import com.x5.template.Chunk;
 /**
  * QuickCalcFilter provides the qcalc filter, a very cheap, lightweight
  * way to do a single arithetic operation on a numeric value.
- * 
+ *
  * Examples:
  *  {~x|qcalc(*2)} {~y|qcalc(+30)}
- * 
+ *
  * @author tmcclure
  *
  */
@@ -18,7 +18,7 @@ public class QuickCalcFilter extends BasicFilter implements ChunkFilter
     {
         String calc = null;
         if (args != null && args.length > 0) calc = args[0];
-        
+
         return applyQuickCalc(text,calc);
     }
 
@@ -26,7 +26,7 @@ public class QuickCalcFilter extends BasicFilter implements ChunkFilter
     {
         return "qcalc";
     }
-    
+
     private static String applyQuickCalc(String text, String calc)
     {
         if (text == null) return null;

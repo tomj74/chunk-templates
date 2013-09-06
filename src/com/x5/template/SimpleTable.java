@@ -11,55 +11,55 @@ import com.x5.util.TableData;
 
 public class SimpleTable implements TableData, Map<String,Object>
 {
-	private String[] labels;
+    private String[] labels;
     private List<String[]> records;
     private int cursor = -1;
     private int size = 0;
     private Map<String,Integer> columnIndex;
     ///private Map<String,Object> currentRecord;
-    
+ 
     public static final String ANON_ARRAY_LABEL = "_anonymous_";
-	
-	public SimpleTable(String[] columnLabels, Vector<String[]> tableRows)
-	{
-		this.labels = columnLabels;
-		this.records = new ArrayList<String[]>(tableRows);
-	}
-	
-	public SimpleTable(String[] columnLabels, ArrayList<String[]> tableRows)
-	{
-		this.labels = columnLabels;
-		this.records = tableRows;
-	}
-	
-	public SimpleTable(String[] columnLabels, String[][] tableRows)
-	{
-		this.labels = columnLabels;
-		this.records = new ArrayList<String[]>();
-		if (tableRows != null) {
-			for (int i=0; i<tableRows.length; i++) {
-				this.records.add(tableRows[i]);
-			}
-		}
-	}
+ 
+    public SimpleTable(String[] columnLabels, Vector<String[]> tableRows)
+    {
+        this.labels = columnLabels;
+        this.records = new ArrayList<String[]>(tableRows);
+    }
+ 
+    public SimpleTable(String[] columnLabels, ArrayList<String[]> tableRows)
+    {
+        this.labels = columnLabels;
+        this.records = tableRows;
+    }
+ 
+    public SimpleTable(String[] columnLabels, String[][] tableRows)
+    {
+        this.labels = columnLabels;
+        this.records = new ArrayList<String[]>();
+        if (tableRows != null) {
+            for (int i=0; i<tableRows.length; i++) {
+                this.records.add(tableRows[i]);
+            }
+        }
+    }
 
     public SimpleTable(String[] data)
     {
-    	if (data == null) return;
-    	labels = new String[]{ANON_ARRAY_LABEL};
-    	// make a single-column table out of a String array.
-    	records = new ArrayList<String[]>();
-    	for (int i=0; i<data.length; i++) {
-    		String[] record = new String[]{data[i]};
-    		records.add(record);
-    	}
+        if (data == null) return;
+        labels = new String[]{ANON_ARRAY_LABEL};
+        // make a single-column table out of a String array.
+        records = new ArrayList<String[]>();
+        for (int i=0; i<data.length; i++) {
+            String[] record = new String[]{data[i]};
+            records.add(record);
+        }
     }
 
     @SuppressWarnings("rawtypes")
-	public SimpleTable(List list)
+    public SimpleTable(List list)
     {
-	    if (list == null) return;
-	    labels = new String[]{ANON_ARRAY_LABEL};
+        if (list == null) return;
+        labels = new String[]{ANON_ARRAY_LABEL};
         // make a single-column table out of a String array.
         records = new ArrayList<String[]>();
         for (int i=0; i<list.size(); i++) {
@@ -67,19 +67,19 @@ public class SimpleTable implements TableData, Map<String,Object>
             records.add(record);
         }
     }
-	
+ 
     public String[] getColumnLabels()
-	{
-		return labels;
-	}
+    {
+        return labels;
+    }
 
-	public void setColumnLabels(String[] labels)
-	{
-		this.labels = labels;
-	}
+    public void setColumnLabels(String[] labels)
+    {
+        this.labels = labels;
+    }
 
-	public String[] getRow()
-	{
+    public String[] getRow()
+    {
         if (cursor < 0) {
             cursor = 0;
             size = records == null ? 0 : records.size();
@@ -90,10 +90,10 @@ public class SimpleTable implements TableData, Map<String,Object>
         } else {
             return null;
         }
-	}
+    }
 
-	public boolean hasNext()
-	{
+    public boolean hasNext()
+    {
         if (size > cursor + 1) {
             return true;
         } else if (size == 0) {
@@ -102,10 +102,10 @@ public class SimpleTable implements TableData, Map<String,Object>
         } else {
             return false;
         }
-	}
+    }
 
-	public Map<String, Object> nextRecord()
-	{
+    public Map<String, Object> nextRecord()
+    {
         cursor++;
         if (size > cursor) {
             return this;
@@ -115,16 +115,16 @@ public class SimpleTable implements TableData, Map<String,Object>
         } else {
             return null;
         }
-	}
-	
-	public void reset()
-	{
-	    this.cursor = -1;
-	}
+    }
+ 
+    public void reset()
+    {
+        this.cursor = -1;
+    }
 
-	
-	// for efficiency, this obj is returned as the record object as well.
-	
+ 
+    // for efficiency, this obj is returned as the record object as well.
+ 
     public int size()
     {
         return (labels == null) ? 0 : labels.length;
@@ -158,9 +158,9 @@ public class SimpleTable implements TableData, Map<String,Object>
     public boolean containsValue(Object value)
     {
         String[] record = getRow();
-        
+  
         if (record == null) return false;
-        
+  
         for (int i=0; i<record.length; i++) {
             if (value.equals(record[i])) return true;
         }

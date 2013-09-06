@@ -38,10 +38,10 @@ public class Calc
 
         String calcString = "\"$x * 3 + $y * 40\",\"%.2f\",~a,~b";
         System.out.println(evalCalc(calcString, map));
-        
+
         calcString = "\"$x * $x\",\"%.2f\",~a,~b";
         System.out.println(evalCalc(calcString, map));
-        
+
         calcString = "\"$x + $y\",\"%.2f\",$a,$b";
         System.out.println(evalCalc(calcString, map));
 
@@ -126,7 +126,7 @@ public class Calc
             //System.err.println("scanning map for "+key);
             Object value = vars.get(key);
             if (value instanceof String) {
-            	values[i] = (String)value;
+                values[i] = (String)value;
             //} else {
             //    values[i] = value.toString();
             }

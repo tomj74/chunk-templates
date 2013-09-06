@@ -18,7 +18,7 @@ public class TableOfMaps implements TableData
     {
         this.data = (List<Map<String,Object>>)list;
     }
-    
+ 
     public String[] getColumnLabels()
     {
         return null;
@@ -63,28 +63,28 @@ public class TableOfMaps implements TableData
         if (dataStore == null || dataStore.length < 1) {
             return null;
         }
-        
+  
         List<Map> boxedObjects = new ArrayList<Map>();
         for (int i=0; i<dataStore.length; i++) {
             boxedObjects.add(new ObjectDataMap(dataStore[i]));
         }
-        
+  
         return new TableOfMaps(boxedObjects);
     }
-    
+ 
     @SuppressWarnings("rawtypes")
     static TableData boxObjectList(List dataStore)
     {
         if (dataStore == null || dataStore.size() < 1) {
             return null;
         }
-        
+  
         List<Map> boxedObjects = new ArrayList<Map>();
         Iterator i = dataStore.iterator();
         while (i.hasNext()) {
             boxedObjects.add(new ObjectDataMap(i.next()));
         }
-        
+  
         return new TableOfMaps(boxedObjects);
     }
 

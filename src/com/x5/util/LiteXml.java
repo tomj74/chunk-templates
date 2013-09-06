@@ -46,12 +46,12 @@ public class LiteXml
         String nodeType = xml.substring(begPos+1,endPos);
         return nodeType;
     }
-    
+
     public Map<String,String> getAttributes()
     {
         if (xml == null) return null;
         if (this.attrs != null) return this.attrs;
-        
+
         // pick a candidate for close-tag-position (may disprove later if nec)
         int tagEndPos = xml.indexOf('>');
         // not found? bail.
@@ -64,7 +64,7 @@ public class LiteXml
         this.attrs = parseAttributes(attrDefs);
         return this.attrs;
     }
-    
+
     private Map<String,String> parseAttributes(String attrDef)
     {
         Map<String,String> attrs = new HashMap<String,String>();
@@ -94,10 +94,10 @@ public class LiteXml
             if (cursor < 0) break;
             cursor++;
         }
-        
+
         return attrs;
     }
-    
+
     public static int nextUnescapedDelim(String delim, String toScan, int searchFrom)
     {
         int delimPos = toScan.indexOf(delim, searchFrom);
@@ -123,15 +123,15 @@ public class LiteXml
         }
         return delimPos;
     }
-    
+
     public String getAttribute(String attr)
     {
         Map<String,String> myAttrs = getAttributes();
-        
+
         if (myAttrs == null || myAttrs.size() < 1) {
             return null;
         }
-        
+
         return myAttrs.get(attr);
     }
 
@@ -156,7 +156,7 @@ public class LiteXml
             }
         }
     }
-    
+
     private boolean isCDATA(String x)
     {
         if (x == null) return false;
@@ -167,12 +167,12 @@ public class LiteXml
             return false;
         }
     }
-    
+
     public String getNodeValue()
     {
         String contents = getRawNodeValue();
         if (contents == null) return null;
-        
+
         if (isCDATA(contents)) {
             return contents.trim().substring(9,contents.length()-3);
         } else {
@@ -427,7 +427,7 @@ public class LiteXml
 
     private static final Pattern XML_ENTITY_REGEX = Pattern.compile( "&(#?)([^;]+);" );
     private static final Map<String,String> STD_ENTITIES = getStandardEntities();
-    
+
     public static String unescapeXML( final String xml )
     {
         //Unfortunately, Matcher requires a StringBuffer instead of a StringBuilder
@@ -472,7 +472,7 @@ public class LiteXml
         entities.put( "quot", "\"" );
         return entities;
     }
-   
+
     public String toString()
     {
         return xml;

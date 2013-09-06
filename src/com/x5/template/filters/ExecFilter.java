@@ -14,7 +14,7 @@ public class ExecFilter extends BasicFilter
         } else {
             return null;
         }
-        
+
         if (chunk == null) return null;
         ContentSource theme = chunk.getTemplateSet();
         if (theme == null) return null;
@@ -22,17 +22,17 @@ public class ExecFilter extends BasicFilter
         if (filterBody == null) {
             return null;
         }
-        
+
         // exec self-contained chunk with own private context
         Chunk miniMacro = new Chunk();
         miniMacro.append(filterBody);
         miniMacro.setOrDelete("x",text);
         return miniMacro.toString();
     }
-    
+
     public String getFilterName()
     {
         return "filter";
     }
-    
+
 }

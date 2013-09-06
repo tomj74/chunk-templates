@@ -9,19 +9,19 @@ public class SnippetBlockTag extends SnippetTag
     private SnippetTag tagOpen;
     private Snippet body;
     private SnippetTag tagClose;
-    
+ 
     private BlockTag renderer;
-    
+ 
     public SnippetBlockTag(SnippetTag tagOpen, List<SnippetPart> bodyParts, SnippetTag tagClose)
     {
         super(tagOpen.snippetText, tagOpen.tag);
         this.tagOpen = tagOpen;
         this.tagClose = tagClose;
         this.body = new Snippet(bodyParts);
-        
+  
         initBlockTag();
     }
-    
+ 
     private void initBlockTag()
     {
         String tagName = tagOpen.tag;
@@ -35,7 +35,7 @@ public class SnippetBlockTag extends SnippetTag
             renderer = new MacroTag(tagName,body);
         }
     }
-    
+ 
     public void render(Writer out, Chunk context, int depth)
     throws IOException
     {
@@ -44,22 +44,22 @@ public class SnippetBlockTag extends SnippetTag
         if (renderer == null) return;
         renderer.renderBlock(out,context,depth);
     }
-    
+ 
     public String toString()
     {
         return snippetText + body.toString() + tagClose.toString();
     }
-    
+ 
     public SnippetTag getOpenTag()
     {
         return tagOpen;
     }
-    
+ 
     public Snippet getBody()
     {
         return body;
     }
-    
+ 
     public SnippetTag getCloseTag()
     {
         return tagClose;

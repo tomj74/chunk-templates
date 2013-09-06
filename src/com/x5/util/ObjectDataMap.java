@@ -16,16 +16,16 @@ import java.util.Set;
 
 /**
  * ObjectDataMap
- * 
+ *
  * Box POJO/Bean/DataCapsule inside a Map.  When accessed, pry into object
  * using reflection/introspection/capsule-export and pull out all public
  * member fields/properties.
  * Convert field names from camelCase to lower_case_with_underscores
  * Convert bean properties from getSomeProperty() to some_property
  *  or isVeryHappy() to is_very_happy
- * 
+ *
  * Values returned are copies, frozen at time of first access.
- * 
+ *
  */
 @SuppressWarnings("rawtypes")
 public class ObjectDataMap implements Map
@@ -33,9 +33,9 @@ public class ObjectDataMap implements Map
     private Map<String,Object> pickle = null;
     private Object object;
     private boolean isBean = false;
-    
+
     private static final Map<String,Object> EMPTY_MAP = new HashMap<String,Object>();
-    
+
     private static final HashSet<Class<?>> WRAPPER_TYPES = getWrapperTypes();
 
     private static HashSet<Class<?>> getWrapperTypes()
@@ -52,7 +52,7 @@ public class ObjectDataMap implements Map
         ret.add(Void.class);
         return ret;
     }
-    
+
     public static boolean isWrapperType(Class<?> clazz)
     {
         return WRAPPER_TYPES.contains(clazz);
@@ -62,7 +62,7 @@ public class ObjectDataMap implements Map
     {
         this.object = pojo;
     }
-    
+
     private void init()
     {
         if (pickle == null) {
@@ -74,16 +74,16 @@ public class ObjectDataMap implements Map
             }
         }
     }
-    
+
     public static ObjectDataMap wrapBean(Object bean)
     {
         if (bean == null) return null;
         ObjectDataMap boxedBean = new ObjectDataMap(bean);
         boxedBean.isBean = true;
-        
+
         return boxedBean;
     }
-    
+
     private Map<String,Object> mapify(Object pojo)
     {
         if (pojo instanceof DataCapsule) {
@@ -95,27 +95,27 @@ public class ObjectDataMap implements Map
                 // hmm, not a bean after all...
             }
         }
-        
+
         Field[] fields = pojo.getClass().getDeclaredFields();
         Map<String,Object> pickle = null;
-        
+
         for (int i=0; i<fields.length; i++) {
             Field field = fields[i];
             String paramName = field.getName();
             Class paramClass = field.getType();
-            
+
             // force access
             int mods = field.getModifiers();
             if (!Modifier.isPrivate(mods) && !Modifier.isProtected(mods)) {
                 field.setAccessible(true);
             }
-            
+
             Object paramValue = null;
             try {
                 paramValue = field.get(pojo);
             } catch (IllegalAccessException e) {
             }
-                
+
             if (paramValue != null) {
                 if (pickle == null) pickle = new HashMap<String,Object>();
                 // convert isActive to is_active
@@ -123,20 +123,20 @@ public class ObjectDataMap implements Map
                 storeValue(pickle, paramClass, paramName, paramValue);
             }
         }
-        
+
         return pickle;
     }
-    
+
     private Map<String,Object> mapifyBean(Object bean)
     throws java.beans.IntrospectionException
     {
         BeanInfo beanInfo = Introspector.getBeanInfo(bean.getClass());
         PropertyDescriptor[] properties = beanInfo.getPropertyDescriptors();
-        
+
         if (properties == null) return null;
-        
+
         Map<String,Object> pickle = null;
-        
+
         // copy properties into hashtable
         for (PropertyDescriptor property : properties) {
             Class paramClass = property.getPropertyType();
@@ -152,26 +152,26 @@ public class ObjectDataMap implements Map
                     if (paramValue instanceof Boolean) {
                         paramName = "is_"+paramName;
                     }
-                    
+
                     if (pickle == null) pickle = new HashMap<String,Object>();
-                    
+
                     storeValue(pickle, paramClass, paramName, paramValue);
                 }
             } catch (InvocationTargetException e) {
             } catch (IllegalAccessException e) {
             }
         }
-        
+
         return pickle;
     }
 
     private Map<String,Object> mapifyCapsule(DataCapsule capsule)
     {
         DataCapsuleReader reader = DataCapsuleReader.getReader(capsule);
-        
+
         String[] tags = reader.getColumnLabels(null);
         Object[] data = reader.extractData(capsule);
-        
+
         pickle = new HashMap<String,Object>();
         for (int i=0; i<tags.length; i++) {
             Object val = data[i];
@@ -184,10 +184,10 @@ public class ObjectDataMap implements Map
                 pickle.put(tags[i], val.toString());
             }
         }
-        
+
         return pickle;
     }
-    
+
     private void storeValue(Map<String,Object> pickle, Class paramClass,
                             String paramName, Object paramValue)
     {
@@ -211,9 +211,9 @@ public class ObjectDataMap implements Map
             ObjectDataMap boxedParam = isBean ? wrapBean(paramValue) : new ObjectDataMap(paramValue);
             pickle.put(paramName, boxedParam);
         }
-        
+
     }
-    
+
     // splitCamelCase converts SimpleXMLStuff to Simple_XML_Stuff
     public static String splitCamelCase(String s)
     {
@@ -226,7 +226,7 @@ public class ObjectDataMap implements Map
           "_"
        ).toLowerCase();
     }
-    
+
     public int size()
     {
         init();

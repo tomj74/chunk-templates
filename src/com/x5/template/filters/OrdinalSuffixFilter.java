@@ -15,7 +15,7 @@ public class OrdinalSuffixFilter extends BasicFilter implements ChunkFilter
     {
         return "th";
     }
-    
+
     public String[] getFilterAliases()
     {
         return new String[]{"ord","ordsuffix"};

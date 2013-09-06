@@ -11,12 +11,12 @@ public class RegexFilter extends BasicFilter implements ChunkFilter
     public String transformText(Chunk chunk, String text, String[] args)
     {
         if (text == null) return text;
-        
+
         String regex = null;
         if (args != null && args.length > 0) regex = args[0];
-        
+
         if (regex == null) return text;
-        
+
         return applyRegex(text, regex);
     }
 
@@ -74,16 +74,16 @@ public class RegexFilter extends BasicFilter implements ChunkFilter
             caseConversions = true;
             replaceWith = replaceWith.replaceAll("\\\\([UL])[\\$\\\\](\\d)", "!$1@\\$$2@$1!");
         }
-        
+
         try {
             String result = null;
-            
+
             if (greedy) {
                 result = text.replaceAll(pattern,replaceWith);
             } else {
                 result = text.replaceFirst(pattern,replaceWith);
             }
-            
+
             if (caseConversions) {
                 return applyCaseConversions(result);
             } else {
@@ -93,11 +93,11 @@ public class RegexFilter extends BasicFilter implements ChunkFilter
             return text + "[REGEX "+regex+" Error: "+e.getMessage()+"]";
         }
     }
-    
+
     private static String applyCaseConversions(String result)
     {
         StringBuilder x = new StringBuilder();
-        
+
         Matcher m = Pattern.compile("!U@(.*?)@U!").matcher(result);
         int last = 0;
         while (m.find()) {
@@ -111,7 +111,7 @@ public class RegexFilter extends BasicFilter implements ChunkFilter
             x = new StringBuilder();
             last = 0;
         }
-        
+
         m = Pattern.compile("!L@(.*?)@L!").matcher(result);
         while (m.find()) {
             x.append(result.substring(last, m.start()));
@@ -181,14 +181,14 @@ public class RegexFilter extends BasicFilter implements ChunkFilter
         }
         return buf.toString();
     }
-    
+
     private static final Pattern INNOCUOUS_CHARS = Pattern.compile("^[-A-Za-z0-9_ <>\"']*$");
-    
+
     public static String escapeRegex(String x)
     {
         Matcher m = INNOCUOUS_CHARS.matcher(x);
         if (m.find()) return x; // nothing to escape
-        
+
         // nothing should leave this sub with its special regex meaning preserved
         StringBuilder noSpecials = new StringBuilder();
         for (int i=0; i<x.length(); i++) {

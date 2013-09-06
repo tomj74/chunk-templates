@@ -16,14 +16,14 @@ public class DefangFilter extends BasicFilter implements ChunkFilter
     {
         return "defang";
     }
-    
+
     public String[] getFilterAliases()
     {
         return new String[]{"noxss","neuter"};
     }
 
     private static final Pattern NOT_HARMLESS_CHAR = Pattern.compile("[^A-Za-z0-9@\\!\\?\\*\\#\\$\\(\\)\\+\\=\\:\\;\\,\\~\\/\\._-]");
-    
+
     private static String defang(String text)
     {
         // keep only a very restrictive set of harmless
@@ -34,5 +34,5 @@ public class DefangFilter extends BasicFilter implements ChunkFilter
         Matcher m = NOT_HARMLESS_CHAR.matcher(text);
         return m.replaceAll("");
     }
-    
+
 }

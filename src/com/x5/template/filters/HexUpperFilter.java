@@ -9,7 +9,7 @@ public class HexUpperFilter extends HexFilter implements ChunkFilter
         String hex = super.transformText(chunk, text, args);
         return hex == null ? null : hex.toUpperCase();
     }
-    
+
     public String getFilterName()
     {
         return "HEX";

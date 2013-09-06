@@ -14,12 +14,12 @@ public class SHA1HexFilter extends BasicFilter implements ChunkFilter
     {
         return "sha1";
     }
-    
+
     public String[] getFilterAliases()
     {
         return new String[]{"sha1hex"};
     }
-    
+
     public static String sha1Hex(String text)
     {
         return sha1(text, false);

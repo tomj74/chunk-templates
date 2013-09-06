@@ -13,20 +13,20 @@ public class SnippetToken extends SnippetPart
 {
     protected String token;
     private String[] args;
-    
+ 
     public SnippetToken(String text, String token)
     {
         super(text);
         this.token = token;
     }
-    
+ 
     public void render(Writer out, Chunk context, int depth)
     throws java.io.IOException
     {
         ChunkLocale locale = context.getLocale();
 
         String translated = null;
-        
+  
         if (locale == null) {
             if (args == null) {
                 out.append(token);
@@ -37,7 +37,7 @@ public class SnippetToken extends SnippetPart
         } else {
             translated = locale.translate(token, args, context);
         }
-        
+  
         Snippet reprocess = Snippet.getSnippet(translated);
         reprocess.render(out, context, depth);
     }
@@ -52,21 +52,21 @@ public class SnippetToken extends SnippetPart
         }
         String body = wholeTag.substring(bodyA,bodyB);
         SnippetToken tokenWithArgs = new SnippetToken(wholeTag,body);
-        
+  
         int argsA = bodyB+1;
         int argsB = wholeTag.length();
         if (wholeTag.endsWith(LocaleTag.LOCALE_TAG_CLOSE)) argsB--;
-        
+  
         // skip initial comma.
         if (wholeTag.charAt(argsA) == ',') argsA++;
-        
+  
         String params = wholeTag.substring(argsA,argsB);
         if (params != null && params.trim().length() > 0) {
             String[] args = params.split(" *, *");
             tokenWithArgs.args = args;
         }
-        
+  
         return tokenWithArgs;
     }
-    
+ 
 }

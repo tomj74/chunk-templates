@@ -13,7 +13,7 @@ public class TranslateFilter extends BasicFilter implements ChunkFilter
         if (context == null) return text;
         ChunkLocale translator = context.getLocale();
         if (translator == null) return text;
-        
+
         // should check for args and pass args[1:] to translator
         // in case of "asdf %s asdf" format string?
         // otherwise, not really necessary to pass context.
@@ -25,7 +25,7 @@ public class TranslateFilter extends BasicFilter implements ChunkFilter
     {
         return "_";
     }
-    
+
     public String[] getFilterAliases()
     {
         return new String[]{"__","translate","xlate"};

@@ -14,7 +14,7 @@ public class Base64EncodeFilter extends BasicFilter implements ChunkFilter
     {
         return "base64";
     }
-    
+
     public String[] getFilterAliases()
     {
         return new String[]{"base64encode"};

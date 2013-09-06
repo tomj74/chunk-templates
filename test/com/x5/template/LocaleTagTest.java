@@ -23,7 +23,7 @@ public class LocaleTagTest
         c.append("Bla bla bla {_[A new %s car!],blue} bla bla");
         assertEquals("Bla bla bla A new blue car! bla bla", c.toString());
     }
-    
+
     @Test
     public void testArg()
     {
@@ -33,7 +33,7 @@ public class LocaleTagTest
         c.append("Bla bla bla {_[A new %s car!],~color} bla bla");
         assertEquals("Bla bla bla A new blue car! bla bla", c.toString());
     }
-    
+
     @Test
     public void testManyArgs()
     {
@@ -44,7 +44,7 @@ public class LocaleTagTest
         c.append("Bla bla bla {_[A new %s %s!],~color,~make} bla bla");
         assertEquals("Bla bla bla A new blue lexus! bla bla", c.toString());
     }
-    
+
     @Test
     public void testManyTokens()
     {
@@ -56,7 +56,7 @@ public class LocaleTagTest
         c.append("Bla bla bla _[car] - {_[A new %s %s made of %s!],$color,$make,plastic} bla bla");
         assertEquals("Bla bla bla car - A new blue lexus made of plastic! bla bla", c.toString());
     }
-    
+
     @Test
     public void testRemoveClutterBraced()
     {
@@ -109,7 +109,7 @@ public class LocaleTagTest
         c.append("Bla bla bla {_[A new %s %s!],~color} bla bla");
         assertEquals("Bla bla bla A new %s %s! bla bla", c.toString());
     }
-    
+
     @Test
     public void testDeepTranslationAndFormat()
     {
@@ -133,7 +133,7 @@ public class LocaleTagTest
         c.append("Bla bla bla _[A new car!] bla bla");
         assertEquals("Bla bla bla Eine neue Auto! bla bla", c.toString());
     }
-    
+
     @Test
     public void testTranslation()
     {
@@ -143,7 +143,7 @@ public class LocaleTagTest
         c.append("Bla bla bla _[A new car!] bla bla");
         assertEquals("Bla bla bla Un nouveau auto! bla bla", c.toString());
     }
-    
+
     @Test
     public void testFormatDefaultLocale()
     {
