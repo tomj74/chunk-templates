@@ -8,9 +8,9 @@ public class FilteredPrinter extends Writer
     private Writer finalOutput;
     private Chunk context;
     private String filter;
-    
+
     private StringBuilder copout = new StringBuilder();
-    
+
     public FilteredPrinter(Writer out, Chunk context, String filter)
     {
         super(out);
@@ -18,12 +18,12 @@ public class FilteredPrinter extends Writer
         this.context = context;
         this.filter = filter;
     }
-    
+
     public void write(char[] cbuf, int off, int len)
     {
         copout.append(cbuf, off, len);
     }
-    
+
     public void flush()
     throws IOException
     {
@@ -41,6 +41,5 @@ public class FilteredPrinter extends Writer
     public void close() throws IOException
     {
         // TODO Auto-generated method stub
-        
     }
 }

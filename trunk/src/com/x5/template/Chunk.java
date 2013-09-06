@@ -251,9 +251,9 @@ public class Chunk implements Map<String,Object>
 {
     public static final int HASH_THRESH = 8;
     public static final int DEPTH_LIMIT = 17;
-    
+
     public static final String VERSION = "2.1.1";
-    
+
     private static final String TRUE = "TRUE";
 
     protected Snippet templateRoot = null;
@@ -266,7 +266,7 @@ public class Chunk implements Map<String,Object>
     protected String tagEnd = TemplateSet.DEFAULT_TAG_END;
 
     private Vector<Vector<Chunk>> contextStack = null;
-    
+
     private String delayedFilter = null;
 
     private ContentSource macroLibrary = null;
@@ -274,11 +274,11 @@ public class Chunk implements Map<String,Object>
 
     private String localeCode = null;
     private ChunkLocale locale = null;
-    
+
     // print errors to output?
     private boolean renderErrs = true;
     private PrintStream errLog = null;
-    
+
     // package visibility
     void setMacroLibrary(ContentSource repository, ChunkFactory factory)
     {
@@ -291,19 +291,19 @@ public class Chunk implements Map<String,Object>
 
     public ContentSource getTemplateSet()
     {
-    	return this.macroLibrary;
+        return this.macroLibrary;
     }
-    
+
     public void setChunkFactory(ChunkFactory factory)
     {
-    	this.chunkFactory = factory;
+        this.chunkFactory = factory;
     }
-    
+
     public ChunkFactory getChunkFactory()
     {
-    	return chunkFactory;
+        return chunkFactory;
     }
-    
+
     public void append(Snippet toAdd)
     {
         // don't bother with overhead of vector until necessary
@@ -325,11 +325,11 @@ public class Chunk implements Map<String,Object>
      */
     public void append(String toAdd)
     {
-    	if (toAdd == null) return;
-    	
-    	// parse string into snippets-to-process and literals etc.
-    	Snippet snippet = Snippet.getSnippet(toAdd);
-    	append(snippet);
+        if (toAdd == null) return;
+
+        // parse string into snippets-to-process and literals etc.
+        Snippet snippet = Snippet.getSnippet(toAdd);
+        append(snippet);
     }
 
     /**
@@ -391,7 +391,7 @@ public class Chunk implements Map<String,Object>
         String ifNull = null;
         set(tagName, tagValue, ifNull);
     }
-    
+
     /**
      * Careful, setOrDelete will DELETE a previous value
      * for the tag at this level if passed a null value.
@@ -417,7 +417,7 @@ public class Chunk implements Map<String,Object>
             set(tagName, tagValue, null);
         }
     }
-    
+
     /**
      * setLiteral() tag values will render verbatim, so even if the value
      * contains tags/specials they will not be expanded.  However, if
@@ -466,12 +466,12 @@ public class Chunk implements Map<String,Object>
             } else if (tagValue instanceof Map) {
                 // great, a map!
             } else if (!(tagValue instanceof String
-        			|| tagValue instanceof Snippet
-        			|| tagValue instanceof List
-        			|| tagValue instanceof Object[])) {
-        		// force to map
-        		tagValue = new ObjectDataMap(tagValue);
-        	}
+                    || tagValue instanceof Snippet
+                    || tagValue instanceof List
+                    || tagValue instanceof Object[])) {
+                // force to map
+                tagValue = new ObjectDataMap(tagValue);
+            }
         }
         if (tagValue == null) {
             tagValue = (ifNull == null) ? "NULL" : ifNull;
@@ -480,7 +480,7 @@ public class Chunk implements Map<String,Object>
             tags.put(tagName,tagValue);
         } else {
             // sequential scan is kinda inefficient but
-        	// completely acceptable for small datasets
+            // completely acceptable for small datasets
             for (int i=0; i<tagCount; i++) {
                 if (firstTags[i].equals(tagName)) {
                     // supplying new value for existing tag
@@ -500,7 +500,7 @@ public class Chunk implements Map<String,Object>
             }
         }
     }
-    
+
     /**
      * Make bean properties available to template
      */
@@ -508,7 +508,7 @@ public class Chunk implements Map<String,Object>
     {
         setToBean(tagName, bean, null);
     }
-    
+
     /**
      * Make bean properties available to template
      */
@@ -518,7 +518,7 @@ public class Chunk implements Map<String,Object>
         Map boxedBean = ObjectDataMap.wrapBean(bean);
         set(tagName, boxedBean, ifNull);
     }
-    
+
     /**
      * For convenience, sets a flag to "TRUE" - to reverse, call unset("flag")
      */
@@ -553,7 +553,7 @@ public class Chunk implements Map<String,Object>
     {
         set(tagName, Long.toString(tagValue));
     }
-    
+
     /**
      * For convenience, auto-converts StringBuilder to String and creates
      * tag replacement rule.  Overwrites any existing rule with this tagName.
@@ -571,14 +571,14 @@ public class Chunk implements Map<String,Object>
     {
         if (tagValue != null) set(tagName, tagValue.toString());
     }
-    
+
     /**
      * unset("tag") deletes the named tag expansion rule from the ruleset.
      * @param tagName
      */
     public void unset(String tagName)
     {
-    	if (tagName != null) { setOrDelete(tagName, null); }
+        if (tagName != null) { setOrDelete(tagName, null); }
     }
 
     /**
@@ -628,7 +628,7 @@ public class Chunk implements Map<String,Object>
             return e.getLocalizedMessage();
         }
     }
-    
+
     public String toString(Chunk context)
     {
         StringWriter out = new StringWriter();
@@ -640,13 +640,13 @@ public class Chunk implements Map<String,Object>
             return e.getLocalizedMessage();
         }
     }
-    
+
     public void render(Writer out)
     throws IOException
     {
         explodeForParentToPrinter(out, null);
     }
-    
+
     public void render(Writer out, Chunk context)
     throws IOException
     {
@@ -654,7 +654,7 @@ public class Chunk implements Map<String,Object>
         Vector<Chunk> parentContext = context.prepareParentContext();
         explodeForParentToPrinter(out, parentContext);
     }
-    
+
     private void pushContextStack(Vector<Chunk> parentContext)
     {
         if (contextStack == null) {
@@ -662,18 +662,18 @@ public class Chunk implements Map<String,Object>
         }
         contextStack.insertElementAt(parentContext, 0);
     }
-    
+
     private void popContextStack()
     {
         if (contextStack == null || contextStack.size() == 0) return;
         contextStack.removeElementAt(0);
     }
-    
+
     private void explodeForParentToPrinter(Writer out, Vector<Chunk> ancestors)
     throws IOException
     {
         if (template == null && templateRoot == null) return;
-        
+
         if (ancestors != null) {
             // PUSH ANCESTORS ONTO STACK AND LOCK DOWN
             synchronized(this) {
@@ -685,7 +685,7 @@ public class Chunk implements Map<String,Object>
                 } else {
                     renderForParentToPrinter(out);
                 }
-                
+
                 popContextStack();
             }
         } else {
@@ -696,9 +696,9 @@ public class Chunk implements Map<String,Object>
             } else {
                 renderForParentToPrinter(out);
             }
-        }        
+        }
     }
-    
+
     private void renderForParentToPrinter(Writer out)
     throws IOException
     {
@@ -714,7 +714,7 @@ public class Chunk implements Map<String,Object>
             }
         }
     }
-    
+
     private Vector<Snippet> mergeTemplateParts()
     {
         Snippet merged = Snippet.consolidateSnippets(template);
@@ -722,51 +722,51 @@ public class Chunk implements Map<String,Object>
         newTemplate.add(merged);
         return newTemplate;
     }
-    
+
     void explodeToPrinter(Writer out, Object obj, int depth)
     throws IOException
     {
         if (depth >= DEPTH_LIMIT) {
-            
+
             String err = handleError("[**ERR** max template recursions: "+DEPTH_LIMIT+"]");
             if (err != null) out.append(err);
-            
+
         } else if (obj instanceof Snippet) {
-            
+
             Snippet snippet = (Snippet)obj;
             snippet.render(out,this,depth);
-            
+
         } else if (obj instanceof String) {
-            
+
             // snippet-ify to catch/skip literal blocks
             Snippet snippet = Snippet.getSnippet((String)obj);
             explodeToPrinter(out, snippet, depth);
-            
+
         } else if (obj instanceof Chunk) {
-            
+
             Vector<Chunk> parentContext = prepareParentContext();
             Chunk c = (Chunk) obj;
             c.explodeForParentToPrinter(out, parentContext);
-            
+
         } else if (obj instanceof DataCapsule[]) {
-            
+
             // auto-expand?
             DataCapsuleReader reader = DataCapsuleReader.getReader((DataCapsule[])obj);
             String err = handleError("[LIST("+reader.getDataClassName()+") - Use a loop construct such as .loop to display list data.]");
             if (err != null) out.append(err);
-            
+
         } else if (obj instanceof String[]) {
-            
+
             String err = handleError("[LIST(java.lang.String) - Use a loop construct such as .loop to display list data, or pipe to join().]");
             if (err != null) out.append(err);
-            
+
         } else if (obj instanceof List) {
 
             String err = handleError("[LIST - Use a loop construct such as .loop to display list data, or pipe to join().]");
             if (err != null) out.append(err);
         }
     }
-    
+
     @SuppressWarnings("unchecked")
     private Vector<Chunk> prepareParentContext()
     {
@@ -782,7 +782,7 @@ public class Chunk implements Map<String,Object>
             return parentContext;
         }
     }
-    
+
     private Vector<Chunk> getCurrentParentContext()
     {
         if (contextStack == null || contextStack.size() == 0) {
@@ -840,7 +840,7 @@ public class Chunk implements Map<String,Object>
     }
 
     private Hashtable<String,ContentSource> altSources = null;
-    
+
     public void addProtocol(ContentSource src)
     {
         if (altSources == null) {
@@ -859,14 +859,14 @@ public class Chunk implements Map<String,Object>
     {
         return altFetch(tagName, depth, false);
     }
-    
+
     private static final java.util.regex.Pattern INCLUDEIF_PATTERN =
         java.util.regex.Pattern.compile("^\\.include(If|\\.\\()");
 
     private Object altFetch(String tagName, int depth, boolean ignoreParentContext)
     {
         String tagValue = null;
-        
+
         // the .calc(...) fn
         if (tagName.startsWith(".calc(")) {
             String eval = null;
@@ -879,23 +879,23 @@ public class Chunk implements Map<String,Object>
 
             return eval;
         }
-        
+
         if (tagName.startsWith(".version")) {
             return VERSION;
         }
-        
+
         // the .loop(...) fn
         if (tagName.startsWith(".loop")) {
             return LoopTag.expandLoop(tagName,this,depth);
         }
-        
+
         // the .tagStack fn
         if (tagName.startsWith(".tagStack")) {
-    		String format = "text";
-    		if (tagName.contains("html")) {
-    			format = "html";
-    		}
-        	return this.formatTagStack(format);
+            String format = "text";
+            if (tagName.contains("html")) {
+                format = "html";
+            }
+            return this.formatTagStack(format);
         }
 
         if (altSources == null && macroLibrary == null && getCurrentParentContext() == null) {
@@ -912,7 +912,7 @@ public class Chunk implements Map<String,Object>
 
             return translation;
         }
-        
+
         // parse content source "protocol"
         int delimPos = tagName.indexOf(".",1);
         int spacePos = tagName.indexOf(" ",1); // {.include abc#xyz} is ok too
@@ -938,25 +938,25 @@ public class Chunk implements Map<String,Object>
         // strip away filters, defaults
         String cleanItemName = itemName;
         cleanItemName = cleanItemName.replaceAll("[\\|:].*$", "");
-        
+
         ContentSource fetcher = null;
         if (altSources != null) {
             fetcher = altSources.get(srcName);
         } else if (macroLibrary != null && srcName.equals(macroLibrary.getProtocol())) {
             // if the only alt source is the macro library for includes,
             // no hashtable is made (for memory efficiency)
-        	fetcher = macroLibrary;
+            fetcher = macroLibrary;
         }
         // when altSources exists, it handles includes too
         if (fetcher != null) {
             if (fetcher instanceof Theme) {
                 // include's are special, handle via macroLibrary TemplateSet
-            	// slight optimization, return Snippet instead of String
-            	Theme theme = (Theme)fetcher;
-            	Snippet s = theme.getSnippet(cleanItemName);
-            	if (s != null) return s;
+                // slight optimization, return Snippet instead of String
+                Theme theme = (Theme)fetcher;
+                Snippet s = theme.getSnippet(cleanItemName);
+                if (s != null) return s;
             } else {
-            	tagValue = fetcher.fetch(cleanItemName);
+                tagValue = fetcher.fetch(cleanItemName);
             }
         }
 
@@ -977,46 +977,46 @@ public class Chunk implements Map<String,Object>
 
     private String resolveBackticks(String lookupName, int depth)
     {
-    	int backtickA = lookupName.indexOf('`');
-    	if (backtickA < 0) return lookupName;
-    	int backtickB = lookupName.indexOf('`',backtickA+1);
-    	if (backtickB < 0) return lookupName;
-    	
-    	String embeddedTag = lookupName.substring(backtickA+2,backtickB);
-    	char typeChar = lookupName.charAt(backtickA+1);
-    	if (typeChar == '^' || typeChar == '.') {
-    		embeddedTag = '.'+embeddedTag;
-    	} else if (typeChar != '~' && typeChar != '$') {
-    		// only ^ and ~ (and $) are legal for now
-    		return lookupName;
-    	}
-    	
-    	String dynLookupName = lookupName.substring(0,backtickA)
-    	  + resolveTagValue(embeddedTag, depth)
-    	  + lookupName.substring(backtickB+1);
-    	
-    	// there may be more...
-    	return resolveBackticks(dynLookupName, depth);
+        int backtickA = lookupName.indexOf('`');
+        if (backtickA < 0) return lookupName;
+        int backtickB = lookupName.indexOf('`',backtickA+1);
+        if (backtickB < 0) return lookupName;
+
+        String embeddedTag = lookupName.substring(backtickA+2,backtickB);
+        char typeChar = lookupName.charAt(backtickA+1);
+        if (typeChar == '^' || typeChar == '.') {
+            embeddedTag = '.'+embeddedTag;
+        } else if (typeChar != '~' && typeChar != '$') {
+            // only ^ and ~ (and $) are legal for now
+            return lookupName;
+        }
+
+        String dynLookupName = lookupName.substring(0,backtickA)
+          + resolveTagValue(embeddedTag, depth)
+          + lookupName.substring(backtickB+1);
+
+        // there may be more...
+        return resolveBackticks(dynLookupName, depth);
     }
-    
+
     protected Object resolveTagValue(SnippetTag tag, int depth)
     {
         return _resolveTagValue(tag, depth, false);
     }
-    
+
     @SuppressWarnings("rawtypes")
     protected Object _resolveTagValue(SnippetTag tag, int depth, boolean ignoreParentContext)
     {
         String[] path = tag.getPath();
         int segment = 0;
         String segmentName = path[segment];
-        
+
         if (segmentName.indexOf('`') > -1) {
             segmentName = resolveBackticks(segmentName, depth);
         }
-        
+
         Object tagValue = null;
-        
+
         if (segmentName.charAt(0) == '.') {
             tagValue = altFetch(segmentName, depth);
         } else if (hasValue(segmentName)) {
@@ -1031,11 +1031,11 @@ public class Chunk implements Map<String,Object>
                 }
             }
         }
-        
+
         if (ignoreParentContext) {
             return tagValue;
         }
-        
+
         segment++;
         // If path has more segments, drill deeper until reference is resolved
         // or path-map hits dead end
@@ -1060,11 +1060,11 @@ public class Chunk implements Map<String,Object>
         if (!(tagValue instanceof String)) {
             tagValue = coercePrimitivesToString(tagValue);
         }
-        
+
         String filters = tag.getFilters();
-        
+
         if (tagValue == null) {
-            
+
             String tagDefault = tag.getDefaultValue();
             if (filters != null && (tag.applyFiltersFirst() || tagDefault == null)) {
                 // filtering may result in null being transformed to not null
@@ -1076,21 +1076,21 @@ public class Chunk implements Map<String,Object>
             if (tag.applyFiltersFirst()) {
                 return tagDefault;
             } else if (filters != null) {
-            	return TextFilter.applyTextFilter(this, filters, tagDefault);
+                return TextFilter.applyTextFilter(this, filters, tagDefault);
             } else {
                 return tagDefault;
             }
-            
+
         } else {
-        
+
             if (filters == null) {
                 return tagValue;
             }
-            
+
             // tagValue could be some complex entity --
             // delay filter application until it has been expanded into a string
             Chunk filterMeLater = makeChildChunk();
-            
+
             String[] filterSequence = TextFilter.splitFilters(filters);
             // innermost first...
             // 3rd arg to set is ignored if 2nd arg is non-null,
@@ -1098,12 +1098,12 @@ public class Chunk implements Map<String,Object>
             filterMeLater.set("oneTag",tagValue,"");
             filterMeLater.append("{~oneTag}");
             filterMeLater.delayedFilter = filterSequence[0];
-            
+
             return makeFilterOnion(tagValue, filterMeLater, filterSequence);
-            
+
         }
     }
-    
+
     // unbox and stringify primitive wrapper objects
     private Object coercePrimitivesToString(Object o)
     {
@@ -1120,7 +1120,7 @@ public class Chunk implements Map<String,Object>
     {
         return _resolveTagValue(SnippetTag.parseTag(tagName), depth, false);
     }
-    
+
     @SuppressWarnings("rawtypes")
     private Object makeFilterOnion(Object tagValue, Chunk filterMeLater, String[] filters)
     {
@@ -1130,7 +1130,7 @@ public class Chunk implements Map<String,Object>
             filterMeLater.delayedFilter = null;
             return wrapRemainingFilters(filterMeLater, filters);
         }
-        
+
         if (tagValue instanceof String[]) {
             return makeFilterOnion((String[])tagValue, filterMeLater, filters);
         } else if (tagValue instanceof List) {
@@ -1151,7 +1151,7 @@ public class Chunk implements Map<String,Object>
             return tagValue;
         }
     }
-    
+
     private Object makeFilterOnion(String[] tagValue, Chunk filterMeLater, String[] filters)
     {
         // String[] is only really legal here if the very first
@@ -1169,10 +1169,10 @@ public class Chunk implements Map<String,Object>
             // so it will pass the ondefined test.
             filterMeLater.set("oneTag", "DEFINED");
         }
-        
+
         return wrapRemainingFilters(filterMeLater,filters);
     }
-    
+
     private Chunk wrapRemainingFilters(Chunk filterMeLater, String[] filters)
     {
         // then subsequent filters each wrap a new layer
@@ -1183,17 +1183,17 @@ public class Chunk implements Map<String,Object>
             wrapper.delayedFilter = filters[i];
             filterMeLater = wrapper;
         }
-    
+
         return filterMeLater;
     }
-    
+
     private Chunk makeChildChunk()
     {
         Chunk child = chunkFactory == null ? new Chunk() : chunkFactory.makeChunk();
         child.setLocale(this.localeCode);
         return child;
     }
-    
+
     @SuppressWarnings("rawtypes")
     private String[] stringifyList(List list)
     {
@@ -1203,7 +1203,7 @@ public class Chunk implements Map<String,Object>
         }
         return array;
     }
-    
+
     /**
      * Clears all tag replacement rules.
      */
@@ -1302,7 +1302,7 @@ public class Chunk implements Map<String,Object>
     }
 
     @SuppressWarnings({ "unchecked", "rawtypes" })
-	public void putAll(Map t)
+    public void putAll(Map t)
     {
         if (t == null || t.size() < 0) return;
         java.util.Set<String> set = t.keySet();
@@ -1380,7 +1380,7 @@ public class Chunk implements Map<String,Object>
             tags.put(firstTags[i],firstValues[i]);
         }
     }
-    
+
     /**
      * formatTagStack and outputTags help implement the
      * {.tagStack} debug feature, for template writers
@@ -1392,54 +1392,54 @@ public class Chunk implements Map<String,Object>
      */
     private String formatTagStack(String format)
     {
-		StringBuilder stack = new StringBuilder();
-		
-		String lineFeed = "\n";
-		String indent = "  ";
-		if (format.equals("html")) {
-			lineFeed = "<br/>\n";
-			indent = "&nbsp;&nbsp;";
-		}
-		
-		stack.append("Available tags:");
-		stack.append(lineFeed);
-		
-		int indentLevel = 0;
-		
-		this.outputTags(stack,lineFeed,indent,indentLevel);
-		indentLevel++;
-		
-		Vector<Chunk> parentContext = getCurrentParentContext();
-		if (parentContext != null) {
-			for (Chunk ancestor : parentContext) {
-				ancestor.outputTags(stack,lineFeed,indent,indentLevel);
-				indentLevel++;
-			}
-		}
-		
-		return stack.toString();
+        StringBuilder stack = new StringBuilder();
+
+        String lineFeed = "\n";
+        String indent = "  ";
+        if (format.equals("html")) {
+            lineFeed = "<br/>\n";
+            indent = "&nbsp;&nbsp;";
+        }
+
+        stack.append("Available tags:");
+        stack.append(lineFeed);
+
+        int indentLevel = 0;
+
+        this.outputTags(stack,lineFeed,indent,indentLevel);
+        indentLevel++;
+
+        Vector<Chunk> parentContext = getCurrentParentContext();
+        if (parentContext != null) {
+            for (Chunk ancestor : parentContext) {
+                ancestor.outputTags(stack,lineFeed,indent,indentLevel);
+                indentLevel++;
+            }
+        }
+
+        return stack.toString();
     }
-    
+
     private void outputTags(StringBuilder output, String lf, String ind, int indent)
     {
-		ArrayList<String> list = new ArrayList<String>();
-    	if (tags == null) {
-    		for (int i=0; i<tagCount; i++) {
-    			list.add(firstTags[i]);
-    		}
-    	} else {
-    		list.addAll(tags.keySet());
-    	}
+        ArrayList<String> list = new ArrayList<String>();
+        if (tags == null) {
+            for (int i=0; i<tagCount; i++) {
+                list.add(firstTags[i]);
+            }
+        } else {
+            list.addAll(tags.keySet());
+        }
 
-    	Collections.sort(list);
-		for (String tag:list) {
-			for (int x=0; x<indent; x++) output.append(ind);
-			output.append('$');
-			output.append(tag);
-			output.append(lf);
-		}
+        Collections.sort(list);
+        for (String tag:list) {
+            for (int x=0; x<indent; x++) output.append(ind);
+            output.append('$');
+            output.append(tag);
+            output.append(lf);
+        }
     }
-    
+
     /**
      * Smart objects implementing DataCapsule can provide their own
      * legend of available tags and which methods to call for exporting
@@ -1455,10 +1455,10 @@ public class Chunk implements Map<String,Object>
     public void addData(DataCapsule smartObj)
     {
         DataCapsuleReader reader = DataCapsuleReader.getReader(smartObj);
-        
+
         String[] tags = reader.getColumnLabels(null);
         Object[] data = reader.extractData(smartObj);
-        
+
         for (int i=0; i<tags.length; i++) {
             Object val = data[i];
             if (val == null || val instanceof String || val instanceof DataCapsule) {
@@ -1468,7 +1468,7 @@ public class Chunk implements Map<String,Object>
             }
         }
     }
-    
+
     /**
      * Two smart objects of the same type in a single template?
      * 
@@ -1486,43 +1486,43 @@ public class Chunk implements Map<String,Object>
      */
     public void addData(DataCapsule smartObj, String altPrefix)
     {
-    	if (smartObj == null) return;
-    	if (altPrefix == null) {
-    	    this.addData(smartObj);
-    	} else {
-    	    this.set(altPrefix,smartObj);
-    	}
+        if (smartObj == null) return;
+        if (altPrefix == null) {
+            this.addData(smartObj);
+        } else {
+            this.set(altPrefix,smartObj);
+        }
     }
-    
+
     public String makeTag(String tagName)
     {
         return tagStart + tagName + tagEnd;
     }
-    
+
     public void setErrorHandling(boolean renderErrs, PrintStream err)
     {
         this.renderErrs = renderErrs;
         this.errLog = err;
     }
-    
+
     boolean renderErrorsToOutput()
     {
         return renderErrs;
     }
-    
+
     private String handleError(String errMsg)
     {
         logError(errMsg);
         return renderErrs ? errMsg : null;
     }
-    
+
     void logError(String errMsg)
     {
         logChunkError(errLog, errMsg);
     }
-    
+
     private static final SimpleDateFormat LOG_DATE = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss zZ ");
-    
+
     static void logChunkError(PrintStream log, String errMsg)
     {
         if (log != null) {
@@ -1531,12 +1531,12 @@ public class Chunk implements Map<String,Object>
             log.println(errMsg);
         }
     }
-    
+
     public void setLocale(String localeCode)
     {
         this.localeCode = localeCode;
     }
-    
+
     public ChunkLocale getLocale()
     {
         if (localeCode == null) return null;
@@ -1545,7 +1545,7 @@ public class Chunk implements Map<String,Object>
         }
         return locale;
     }
-    
+
     /**
      * Useful utility function.  An efficient find-and-replace-all algorithm
      * for simple cases when regexp would be overkill.  IMO they should have

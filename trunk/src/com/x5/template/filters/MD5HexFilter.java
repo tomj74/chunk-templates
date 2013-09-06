@@ -14,7 +14,7 @@ public class MD5HexFilter extends BasicFilter implements ChunkFilter
     {
         return "md5";
     }
-    
+
     public String[] getFilterAliases()
     {
         return new String[]{"md5hex"};

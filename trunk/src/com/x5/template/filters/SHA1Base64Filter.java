@@ -14,7 +14,7 @@ public class SHA1Base64Filter extends BasicFilter implements ChunkFilter
     {
         return "sha1base64";
     }
-    
+
     public String[] getFilterAliases()
     {
         return new String[]{"sha1b64"};

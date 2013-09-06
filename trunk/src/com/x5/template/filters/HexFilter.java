@@ -16,7 +16,7 @@ public class HexFilter extends BasicFilter implements ChunkFilter
             hex = new java.math.BigInteger(1,text.getBytes()).toString(16);
         }
         if (hex == null) return text;
-        
+
         return hex;
     }
 

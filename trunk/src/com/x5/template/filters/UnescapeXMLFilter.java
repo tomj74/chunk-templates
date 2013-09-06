@@ -9,7 +9,7 @@ public class UnescapeXMLFilter extends BasicFilter implements ChunkFilter
     public String transformText(Chunk chunk, String text, String[] args)
     {
         if (text == null) return null;
-        
+
         return LiteXml.unescapeXML(text);
     }
 
@@ -17,7 +17,7 @@ public class UnescapeXMLFilter extends BasicFilter implements ChunkFilter
     {
         return "unescape";
     }
-    
+
     public String[] getFilterAliases()
     {
         return new String[]{

@@ -9,7 +9,7 @@ public class CalcFilter extends BasicFilter implements ChunkFilter
     {
         if (text == null) return null;
         if (args == null) return text;
-        
+
         return easyCalc(text, args);
     }
 

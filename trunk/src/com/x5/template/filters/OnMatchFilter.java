@@ -14,7 +14,7 @@ public class OnMatchFilter extends BasicFilter implements ChunkFilter
         String result = applyMatchTransform(chunk, text, args);
         // onmatch output is never null?
         ///return result == null ? "" : result;
-        
+
         return result;
     }
 
@@ -22,33 +22,33 @@ public class OnMatchFilter extends BasicFilter implements ChunkFilter
     {
         return "onmatch";
     }
-    
+
     private static String applyMatchTransform(Chunk context, String text, String[] args)
     {
         if (args == null) return text;
         if (args.length == 1 && args[0] != null && args[0].length() == 0) {
             return text;
         }
-        
+
         for (int i=1; i<args.length; i+=2) {
             if (i+1 >= args.length) return text;
             String test = args[i];
             String value = args[i+1];
-            
+
             if (test.equals("|nomatch|")) {
                 return TextFilter.magicBraces(context, value);
             }
-            
+
             if (text == null) continue; // won't ever match
-            
+
             int patternStart = test.indexOf('/') + 1;
             int patternEnd = test.lastIndexOf('/');
             if (patternStart < 0 || patternStart == patternEnd) return text;
-            
+
             boolean ignoreCase = false;
             boolean multiLine = false;
             boolean dotAll = false;
-            
+
             String pattern = test.substring(patternStart,patternEnd);
             for (int c=test.length()-1; c>patternEnd; c--) {
                 char option = test.charAt(c);
@@ -56,7 +56,7 @@ public class OnMatchFilter extends BasicFilter implements ChunkFilter
                 if (option == 'm') multiLine = true;
                 if (option == 's') dotAll = true; // dot matches newlines too
             }
-            
+
             if (multiLine) pattern = "(?m)" + pattern;
             if (ignoreCase) pattern = "(?i)" + pattern;
             if (dotAll) pattern = "(?s)" + pattern;
@@ -67,7 +67,7 @@ public class OnMatchFilter extends BasicFilter implements ChunkFilter
                 return TextFilter.magicBraces(context, value);
             }
         }
-        
+
         // no match?
         // even a tag that's null, when passed into onmatch(), resolves to empty string
         return "";
@@ -78,7 +78,7 @@ public class OnMatchFilter extends BasicFilter implements ChunkFilter
     {
         // TODO reimplement, args already parsed!
         // if nomatch clause, penultimate arg will == "|nomatch|"
-        
+
         // scan for next regex, check for match, kick out on first match
         int cursor = 0;
         while (text != null && cursor < formatString.length() && formatString.charAt(cursor) != ')') {

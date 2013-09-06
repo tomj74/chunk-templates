@@ -13,7 +13,7 @@ public class CheckedFilter extends BasicFilter implements ChunkFilter
     {
         return "checked";
     }
-    
+
     public String[] getFilterAliases()
     {
         return new String[]{"check"};

@@ -15,12 +15,12 @@ public class IfTag extends BlockTag
     // chosenPath simplest case: 0 is "then", -1 is "else"
     // else-if case: 0 is "then", 1 is first else-if, 2 is 2nd else-if, -1 is "else"
     private String primaryCond;
-    
+
     private Snippet body;
     private boolean doTrim = true;
-    
+
     private Map<String,String> options;
-    
+
     public IfTag(String params, Snippet body)
     {
         parseParams(params);
@@ -35,18 +35,18 @@ public class IfTag extends BlockTag
     {
         return "if";
     }
-    
+
     public String getBlockEndMarker()
     {
         return "/if";
     }
-    
+
     private void initBody(Snippet body)
     {
         // FIXME pre-scan body to identify all ^else and ^elseIf blocks
         this.body = body;
     }
-    
+
     private void parseParams(String params)
     {
         String cond = parseCond(params);
@@ -61,7 +61,7 @@ public class IfTag extends BlockTag
         }*/
         options = parseAttributes(params);
         if (options == null) return;
-        
+
         //thenTemplate = options.get("then");
         //elseTemplate = options.get("else");
         String trimOpt = options.get("trim");
@@ -71,15 +71,15 @@ public class IfTag extends BlockTag
             }
         }
     }
-    
+
     private String parseCond(String params)
     {
         if (params == null) return null;
-        
+
         // look for conditional test. first, try parens (...)
         int openParenPos = params.indexOf("(");
         int quotedCondPos = params.indexOf(" cond=\"");
-        
+
         if (openParenPos > -1) {
             //int closeParenPos = params.indexOf(")",openParenPos+1);
             int closeParenPos = params.lastIndexOf(")");
@@ -88,7 +88,7 @@ public class IfTag extends BlockTag
                 return test;
             }
         }
-        
+
         if (quotedCondPos > -1) {
             quotedCondPos += " cond='".length();
             int closeQuotePos = params.indexOf("\"",quotedCondPos);
@@ -98,10 +98,10 @@ public class IfTag extends BlockTag
                 return params.substring(quotedCondPos,closeQuotePos);
             }
         }
-        
+
         return null;
     }
-    
+
     private Map<String,String> parseAttributes(String params)
     {
         // find and save all xyz="abc" style attributes
@@ -117,13 +117,13 @@ public class IfTag extends BlockTag
         }
         return opts;
     }
-    
+
     private boolean isTrueExpr(String test, Chunk context)
     {
         if (test == null) return false;
         test = test.trim();
         if (test.length() == 0) return false;
-        
+
         char firstChar = test.charAt(0);
         if (firstChar == '!' || firstChar == '~' || firstChar == '$') {
             test = test.substring(1);
@@ -132,7 +132,7 @@ public class IfTag extends BlockTag
         if (firstChar == '!' && (test.charAt(0) == '~' || test.charAt(0) == '$')) {
             test = test.substring(1);
         }
-        
+
         if (test.indexOf('=') < 0 && test.indexOf("!~") < 0) {
             // simplest case: no comparison, just a non-null (or null) test
             Object tagValue = context.get(test);
@@ -158,15 +158,15 @@ public class IfTag extends BlockTag
                 // get A
                 Object tagValue = context.get(tagA);
                 String tagValueA = tagValue == null ? "" : tagValue.toString();
-                
+
                 if (tagB.charAt(0) == '~' || tagB.charAt(0) == '$') {
                     // equality (or inequality) of two variables (tags)
                     // resolve both tags and compare
-                    
+
                     // get B
                     tagValue = context.get(tagB.substring(1));
                     String tagValueB = tagValue == null ? "" : tagValue.toString();
-                    
+
                     if (isNeg) {
                         return (tagValueA.equals(tagValueB)) ? false : true;
                     } else {
@@ -208,32 +208,32 @@ public class IfTag extends BlockTag
                 return false; // or error?
             }
         }
-        
+
         String var = parts[0].trim();
         String regex = parts[1].trim();
-        
+
         Object tagValue = context.get(var);
 
         boolean isMatch = isMatch(tagValue == null ? null : tagValue.toString(), regex);
-        
+
         if (neg) {
             return isMatch ? false : true;
         } else {
             return isMatch ? true : false;
         }
     }
-    
+
     private String unescape(String x)
     {
         // this method does more or less what we want
         return RegexFilter.parseRegexEscapes(x);
     }
-    
+
     private boolean isMatch(String text, String regex)
     {
         if (text == null || regex == null) return false;
         regex = regex.trim();
-        
+
         int cursor = 0;
         if (regex.charAt(cursor) == 'm') cursor++;
         if (regex.charAt(cursor) == '/') cursor++;
@@ -262,12 +262,12 @@ public class IfTag extends BlockTag
         Matcher m = p.matcher(text);
         return m.find();
     }
-    
+
     public boolean doSmartTrimAroundBlock()
     {
         return true;
     }
-    
+
     private String trimLeft(String x)
     {
         if (x == null) return null;
@@ -281,7 +281,7 @@ public class IfTag extends BlockTag
         if (i == 0) return x;
         return x.substring(i);
     }
-    
+
     private String trimRight(String x)
     {
         if (x == null) return null;
@@ -296,7 +296,7 @@ public class IfTag extends BlockTag
         if (i >= x.length()) return x;
         return x.substring(0,i);
     }
-    
+
     private boolean isTrimAll()
     {
         String trimOpt = (options != null) ? (String)options.get("trim") : null;
@@ -306,32 +306,32 @@ public class IfTag extends BlockTag
             return false;
         }
     }
-    
+
     private String smartTrim(String x)
     {
         return smartTrim(x, false);
     }
-    
+
     private static final Pattern UNIVERSAL_LF = Pattern.compile("\n|\r\n|\r\r");
-    
+
     private String smartTrim(String x, boolean ignoreAll)
     {
         if (!ignoreAll && isTrimAll()) {
             // trim="all" disables smartTrim.
             return x.trim();
         }
-        
+
         // if the block begins with (whitespace+) LF, trim initial line
         // otherwise, apply standard/complete trim.
         Matcher m = UNIVERSAL_LF.matcher(x);
-        
+
         if (m.find()) {
             int firstLF = m.start();
             if (x.substring(0,firstLF).trim().length() == 0) {
                 return x.substring(m.end());
             }
         }
-        
+
         return x;
     }
 
@@ -348,16 +348,16 @@ public class IfTag extends BlockTag
         }
         return -1;
     }
-    
+
     public void renderBlock(Writer out, Chunk context, int depth)
     throws IOException
     {
-        
+
         List<SnippetPart> bodyParts = body.getParts();
         int nextElseTag = nextElseTag(bodyParts,0);
-        
+
         //int path = 0;
-        
+
         if (isTrueExpr(primaryCond, context)) {
             //chosenPath = 0;
             if (nextElseTag < 0) nextElseTag = bodyParts.size();
@@ -385,7 +385,7 @@ public class IfTag extends BlockTag
             }
         }
     }
-    
+
     public void renderChosenParts(Writer out, Chunk context, int depth,
             List<SnippetPart> parts, int a, int b)
     throws IOException

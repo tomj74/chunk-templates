@@ -20,14 +20,14 @@ public class LoopTag extends BlockTag
     private String rowTemplate;
     private String emptyTemplate;
     private Map<String,Object> options;
-    
+
     private Snippet emptySnippet = null;
     private Snippet dividerSnippet = null;
     private Snippet rowSnippet = null;
-    
+
     // for speed
     private Chunk rowX;
-    
+
     //private static final String ON_EMPTY_MARKER = "{~.onEmpty}";
     //private static final String DIVIDER_MARKER = "{~.divider}";
     private static final String FIRST_MARKER = "is_first";
@@ -59,25 +59,25 @@ public class LoopTag extends BlockTag
     public LoopTag()
     {
     }
-    
+
     public LoopTag(String params, Chunk ch)
     {
         this.chunk = ch;
         parseParams(params);
-        
+
         // this constructor is only called when the loop tag has no body
         // eg {^loop data="~mydata" template="#test_row" no_data="#test_empty" divider="<hr/>"}
         initWithoutBlock();
     }
-    
+
     private void initWithoutBlock()
     {
         // set up snippets
         if (this.chunk == null) return;
-        
+
         ContentSource snippetRepo = chunk.getTemplateSet();
         if (snippetRepo == null) return;
-            
+
         if (this.rowTemplate != null) {
             this.rowSnippet = snippetRepo.getSnippet(rowTemplate);
         }
@@ -104,19 +104,19 @@ public class LoopTag extends BlockTag
             parseAttributes(params);
         }
     }
-    
+
     // {^loop in ~data}...{^/loop} (or {^loop in ~data as x}...)
     private void parseEZParams(String paramString)
     {
         String[] params = paramString.split(" +");
-        
+
         String dataVar = params[2];
         fetchData(dataVar);
-        
+
         this.options = _parseAttributes(paramString);
         if (options == null) options = new HashMap<String,Object>();
         options.put("data",dataVar);
-        
+
         if (params.length > 3) {
             if (params[3].equals("as")) {
                 String loopVarPrefix = params[4];
@@ -158,9 +158,9 @@ public class LoopTag extends BlockTag
             }
         }
     }
-    
+
     private static final Pattern PARAM_AND_VALUE = Pattern.compile(" ([a-zA-Z0-9_-]+)=(\"([^\"]*)\"|'([^\']*)')");
-    
+
     private Map<String,Object> _parseAttributes(String params)
     {
         // find and save all xyz="abc" style attributes
@@ -175,21 +175,21 @@ public class LoopTag extends BlockTag
         }
         return opts;
     }
-    
+
     // ^loop data="~data" template="#..." no_data="#..." range="..." per_page="x" page="x"
     private void parseAttributes(String params)
     {
         Map<String,Object> opts = _parseAttributes(params);
-        
+
         if (opts == null) return;
         this.options = opts;
-        
+
         String dataVar = (String)opts.get("data");
         fetchData(dataVar);
-        
+
         this.rowTemplate = (String)opts.get("template");
         this.emptyTemplate = (String)opts.get("no_data");
-        
+
         /*
         String dataVar = getAttribute("data", params);
         fetchData(dataVar);
@@ -221,7 +221,7 @@ public class LoopTag extends BlockTag
     {
         //this.data = null;
         TableData data = null;
-        
+
         if (dataVar != null) {
             int rangeMarker = dataVar.indexOf("[");
             if (rangeMarker > 0) {
@@ -244,7 +244,7 @@ public class LoopTag extends BlockTag
 
                 if (chunk != null) {
                     Object dataStore = chunk.get(dataVar);
-                    
+
                     // if nec, follow pointers until data is reached
                     int depth = 0;
                     while (dataStore != null && depth < 10) {
@@ -264,7 +264,7 @@ public class LoopTag extends BlockTag
                                 data = InlineTable.parseTable(snippetData.toString());
                             }
                         } else if (dataStore instanceof String[]) {
-                        	data = new SimpleTable((String[])dataStore);
+                            data = new SimpleTable((String[])dataStore);
                         } else if (dataStore instanceof List) {
                             // is it a list of strings? or a list of kindred objects?
                             List list = (List)dataStore;
@@ -280,18 +280,18 @@ public class LoopTag extends BlockTag
                                 }
                             }
                         } else if (dataStore instanceof Object[]) {
-                        	// assume array of objects that implement DataCapsule
-                        	data = DataCapsuleTable.extractData((Object[])dataStore);
-                        	if (data == null) {
-                        	    // last-ditch effort to extract data, treat as POJOs
-                        	    data = TableOfMaps.boxObjectArray((Object[])dataStore);
-                        	}
+                            // assume array of objects that implement DataCapsule
+                            data = DataCapsuleTable.extractData((Object[])dataStore);
+                            if (data == null) {
+                                // last-ditch effort to extract data, treat as POJOs
+                                data = TableOfMaps.boxObjectArray((Object[])dataStore);
+                            }
                             ////registerOption("array_index_tags","FALSE");
                         } else if (dataStore instanceof Map) {
                             Map object = (Map)dataStore;
                             data = new ObjectTable(object);
                         }
-                        
+
                         // only loop if following pointer
                         break;
                     }
@@ -299,14 +299,14 @@ public class LoopTag extends BlockTag
             } else {
                 // template reference
                 if (chunk != null) {
-                	String tableAsString = chunk.getTemplateSet().fetch(dataVar);
-                	if (tableAsString != null) {
-                	    data = InlineTable.parseTable(tableAsString);
-                	}
+                    String tableAsString = chunk.getTemplateSet().fetch(dataVar);
+                    if (tableAsString != null) {
+                        data = InlineTable.parseTable(tableAsString);
+                    }
                 }
             }
         }
-        
+
         return data;
     }
 
@@ -325,7 +325,7 @@ public class LoopTag extends BlockTag
                 String errMsg = "[Loop error: Empty Table - please "
                     + (isBlock ? "supply .onEmpty section in .loop block]"
                                : "specify no_data template parameter in .loop tag]");
-                
+
                 if (context == null || context.renderErrorsToOutput()) {
                     out.append(errMsg);
                 }
@@ -335,7 +335,7 @@ public class LoopTag extends BlockTag
             }
             return;
         }
-        
+
         Snippet dividerSnippet = null;
         boolean createArrayTags = false;
         boolean counterTags = false;
@@ -344,52 +344,52 @@ public class LoopTag extends BlockTag
         String lastRunTag = null;
         String objectKeyLabel = null;
         String objectValueLabel = null;
-        
+
         if (options != null) {
             if (options.containsKey("dividerSnippet")) {
                 dividerSnippet = (Snippet)options.get("dividerSnippet");
             } else if (options.containsKey("divider")) {
-	        	String dividerTemplate = (String)options.get("divider");
-	        	ContentSource templates = context.getTemplateSet();
-	        	if (templates != null && templates.provides(dividerTemplate)) {
-	        		dividerSnippet = templates.getSnippet(dividerTemplate);
-	        	} else {
-	        	    dividerSnippet = Snippet.getSnippet(dividerTemplate);
-	        	}
-	        	options.put("dividerSnippet", dividerSnippet);
-        	}
-        	if (options.containsKey("array_tags")) {
-        		createArrayTags = true;
-        	}
-        	if (options.containsKey("counter_tags")) {
-        	    counterTags = true;
-        	}
-        	if (options.containsKey("counter_tag")) {
-        	    counterTag = (String)options.get("counter_tag");
-        	    counterTag = eatTagSymbol(counterTag);
-        	}
-        	if (options.containsKey("first_last")) {
-        	    String tagNames = (String)options.get("first_last");
-        	    if (tagNames.indexOf(",") > 0) {
-        	        String[] userFirstLast = tagNames.split(",");
-        	        firstRunTag = eatTagSymbol(userFirstLast[0]);
-        	        lastRunTag  = eatTagSymbol(userFirstLast[1]);
-        	    }
-        	    if (firstRunTag == null || firstRunTag.length() == 0) {
-        	        firstRunTag = FIRST_MARKER;
-        	    }
+                String dividerTemplate = (String)options.get("divider");
+                ContentSource templates = context.getTemplateSet();
+                if (templates != null && templates.provides(dividerTemplate)) {
+                    dividerSnippet = templates.getSnippet(dividerTemplate);
+                } else {
+                    dividerSnippet = Snippet.getSnippet(dividerTemplate);
+                }
+                options.put("dividerSnippet", dividerSnippet);
+            }
+            if (options.containsKey("array_tags")) {
+                createArrayTags = true;
+            }
+            if (options.containsKey("counter_tags")) {
+                counterTags = true;
+            }
+            if (options.containsKey("counter_tag")) {
+                counterTag = (String)options.get("counter_tag");
+                counterTag = eatTagSymbol(counterTag);
+            }
+            if (options.containsKey("first_last")) {
+                String tagNames = (String)options.get("first_last");
+                if (tagNames.indexOf(",") > 0) {
+                    String[] userFirstLast = tagNames.split(",");
+                    firstRunTag = eatTagSymbol(userFirstLast[0]);
+                    lastRunTag  = eatTagSymbol(userFirstLast[1]);
+                }
+                if (firstRunTag == null || firstRunTag.length() == 0) {
+                    firstRunTag = FIRST_MARKER;
+                }
                 if (lastRunTag == null || lastRunTag.length() == 0) {
                     lastRunTag = LAST_MARKER;
                 }
-        	}
-        	if (options.containsKey("valname")) {
-        	    objectValueLabel = (String)options.get("valname");
+            }
+            if (options.containsKey("valname")) {
+                objectValueLabel = (String)options.get("valname");
                 if (options.containsKey("keyname")) {
                     objectKeyLabel = (String)options.get("keyname");
                 }
-        	}
+            }
         }
-        
+
         ChunkFactory factory = context.getChunkFactory();
 
         if (this.rowX == null) {
@@ -417,9 +417,9 @@ public class LoopTag extends BlockTag
             objectKeyLabel = "attr";
             objectValueLabel = prefix == null ? prefix : "value";
         }
-        
+
         String[] columnLabels = data.getColumnLabels();
-        
+
         if (createArrayTags && columnLabels == null) {
             createArrayTags = false;
         }
@@ -434,19 +434,19 @@ public class LoopTag extends BlockTag
                 prefixedLabels[i] = prefix + "." + columnLabels[i];
             }
             if (createArrayTags) {
-                prefixedIndices = new String[columnLabels.length];   
+                prefixedIndices = new String[columnLabels.length];
                 for (int i=0; i<prefixedIndices.length; i++) {
                     prefixedIndices[i] = prefix + "["+i+"]";
                 }
             }
         }
         if (createArrayTags) {
-            anonIndices = new String[columnLabels.length];   
+            anonIndices = new String[columnLabels.length];
             for (int i=0; i<anonIndices.length; i++) {
                 anonIndices[i] = "DATA["+i+"]";
             }
         }
-        
+
         int counter = 0;
         while (data.hasNext()) {
             if (counterTags) {
@@ -456,7 +456,7 @@ public class LoopTag extends BlockTag
             if (counterTag != null) {
                 rowX.set(counterTag, counter);
             }
-            
+
             if (dividerSnippet != null && counter > 0) {
                 dividerSnippet.render(out, context, depth);
             }
@@ -482,7 +482,7 @@ public class LoopTag extends BlockTag
                     if (columnLabels == null) {
                         for (String key : record.keySet()) {
                             Object value = record.get(key);
-                            
+
                             String fieldName = key;
                             rowX.setOrDelete(fieldName, value);
                         }
@@ -502,7 +502,7 @@ public class LoopTag extends BlockTag
                     }
                 }
             }
-            
+
             // for anonymous one-column tables (aka a string array)
             // allow loop in $array as x to use {$x} for the value --
             // otherwise template has to have {$x[0]} or {$x.anonymous}
@@ -512,7 +512,7 @@ public class LoopTag extends BlockTag
                     rowX.setOrDelete(prefix, record.get(SimpleTable.ANON_ARRAY_LABEL));
                 }
             }
-            
+
             // if directed, set $is_first and $is_last tags at appropriate times
             if (firstRunTag != null) {
                 if (counter == 0) {
@@ -541,19 +541,19 @@ public class LoopTag extends BlockTag
 
         //return rows.toString();
     }
-    
+
     private String eatTagSymbol(String tag)
     {
         if (tag == null) return null;
-        
+
         char c0 = (tag.length() > 0) ? tag.charAt(0) : 0;
         if (c0 == '$' || c0 == '~') {
             return tag.substring(1);
         }
-        
+
         return tag;
     }
-    
+
     public boolean hasBody(String openingTag)
     {
         // loop has a body if there is no template="xxx" param
@@ -563,7 +563,7 @@ public class LoopTag extends BlockTag
             return false;
         }
     }
-    
+
     public static String getAttribute(String attr, String toScan)
     {
         if (toScan == null) return null;
@@ -607,27 +607,27 @@ public class LoopTag extends BlockTag
             return null;
         }
     }
-    
+
     public String getBlockStartMarker()
     {
         return "loop";
     }
-    
+
     public String getBlockEndMarker()
     {
         return "/loop";
     }
-    
+
     public boolean doSmartTrimAroundBlock()
     {
         return true;
     }
-    
+
     private void smartTrim(List<SnippetPart> subParts)
     {
         smartTrimSnippetParts(subParts, isTrimAll());
     }
-    
+
     public static void smartTrimSnippetParts(List<SnippetPart> subParts, boolean isTrimAll)
     {
         if (subParts != null && subParts.size() > 0) {
@@ -646,7 +646,7 @@ public class LoopTag extends BlockTag
             }
         }
     }
-    
+
     private static String trimLeft(String x)
     {
         if (x == null) return null;
@@ -660,7 +660,7 @@ public class LoopTag extends BlockTag
         if (i == 0) return x;
         return x.substring(i);
     }
-    
+
     private static String trimRight(String x)
     {
         if (x == null) return null;
@@ -675,7 +675,7 @@ public class LoopTag extends BlockTag
         if (i >= x.length()) return x;
         return x.substring(0,i);
     }
-    
+
     private boolean isTrimAll()
     {
         String trimOpt = (options != null) ? (String)options.get("trim") : null;
@@ -685,29 +685,29 @@ public class LoopTag extends BlockTag
             return false;
         }
     }
-    
+
     private static final Pattern UNIVERSAL_LF = Pattern.compile("\n|\r\n|\r\r");
-    
+
     private static String smartTrimString(String x, boolean ignoreAll, boolean isTrimAll)
     {
         if (!ignoreAll && isTrimAll) {
             // trim="all" disables smartTrim.
             return x.trim();
         }
-        
+
         // if the block begins with (whitespace+) LF, trim initial line
         // otherwise, apply standard/complete trim.
         Matcher m = UNIVERSAL_LF.matcher(x);
-        
+
         if (m.find()) {
             int firstLF = m.start();
             if (x.substring(0,firstLF).trim().length() == 0) {
                 return x.substring(m.end());
             }
         }
-        
+
         return ignoreAll ? x : x.trim();
-        
+
         // if there were any line break chars at the end, add just one back.
         /*
         Pattern p = Pattern.compile(".*[ \\t]*(\\r\\n|\\n|\\r\\r)[ \\t]*$");
@@ -726,11 +726,11 @@ public class LoopTag extends BlockTag
         // the snippet parts should already be properly nested,
         // so any ^onEmpty and ^divider tags at this level should
         // be for this loop.  locate and separate.
-        
+
         List<SnippetPart> bodyParts = body.getParts();
 
         int eMarker = -1, dMarker = -1, dMarkerEnd = bodyParts.size();
-        
+
         for (int i=bodyParts.size()-1; i>=0; i--) {
             SnippetPart part = bodyParts.get(i);
             if (part.isTag()) {
@@ -745,17 +745,17 @@ public class LoopTag extends BlockTag
                 }
             }
         }
-        
+
         boolean doTrim = true;
         String trimOpt = (options == null) ? null : (String)options.get("trim");
         if (trimOpt != null && trimOpt.equalsIgnoreCase("false")) {
             doTrim = false;
         }
-        
+
         int eMarkerEnd;
-        
+
         int bodyEnd = -1;
-        
+
         if (eMarker > -1 && dMarker > -1) {
             if (eMarker > dMarker) {
                 bodyEnd = dMarker;
@@ -782,30 +782,30 @@ public class LoopTag extends BlockTag
             emptySnippet = null;
             dividerSnippet = null;
         }
-        
+
         if (bodyEnd > -1) {
             for (int i=bodyParts.size()-1; i>=bodyEnd; i--) {
                 bodyParts.remove(i);
             }
         }
-        
+
         if (doTrim) smartTrim(bodyParts);
-        
+
         this.rowSnippet = body;
     }
-    
+
     private Snippet extractParts(List<SnippetPart> parts, int a, int b, boolean doTrim)
     {
         List<SnippetPart> subParts = new ArrayList<SnippetPart>();
         for (int i=a; i<b; i++) {
             subParts.add(parts.get(i));
         }
-        
+
         if (doTrim) smartTrim(subParts);
-        
+
         return new Snippet(subParts);
     }
-    
+
     @Override
     public void renderBlock(Writer out, Chunk context, int depth)
         throws IOException
@@ -813,14 +813,14 @@ public class LoopTag extends BlockTag
         if (dividerSnippet != null && !options.containsKey("dividerSnippet")) {
             options.put("dividerSnippet", dividerSnippet);
         }
-        
+
         this.chunk = context;
         TableData data = null;
-        
+
         if (options != null) {
             data = fetchData((String)options.get("data"));
         }
-        
+
         cookLoopToPrinter(out, context, true, depth, data);
     }
 

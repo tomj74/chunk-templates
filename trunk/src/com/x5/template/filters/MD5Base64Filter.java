@@ -14,7 +14,7 @@ public class MD5Base64Filter extends BasicFilter implements ChunkFilter
     {
         return "md5base64";
     }
-    
+
     public String[] getFilterAliases()
     {
         return new String[]{"md5b64"};

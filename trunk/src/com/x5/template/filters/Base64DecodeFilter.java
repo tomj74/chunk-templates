@@ -8,7 +8,7 @@ public class Base64DecodeFilter extends BasicFilter implements ChunkFilter
     public String transformText(Chunk chunk, String text, String[] args)
     {
         if (text == null) return null;
-        
+
         return base64Decode(text);
     }
 

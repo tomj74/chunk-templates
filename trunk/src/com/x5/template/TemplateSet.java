@@ -102,7 +102,7 @@ public class TemplateSet implements ContentSource, ChunkFactory
     public static final String MACRO_LET_END = "}";
     public static final String INCLUDE_SHORTHAND = "{+";
     public static final String PROTOCOL_SHORTHAND = "{.";
-    
+
     // allow {^if}...{/if} and {^loop}...{/loop} by auto-expanding these
     public static final String BLOCKEND_SHORTHAND = "{/";
     public static final String BLOCKEND_LONGHAND = "{~./"; // ie "{^/"
@@ -118,14 +118,14 @@ public class TemplateSet implements ContentSource, ChunkFactory
     private static final String COMMENT_START = "{!--";
     private static final String COMMENT_END = "--}";
     private static final String SKIP_BLANK_LINE = "";
-    
+
     public static final String LITERAL_START = "{^literal}";
     public static final String LITERAL_START2 = "{.literal}";
     public static final String LITERAL_SHORTHAND = "{^^}"; // this was a dumb idea
     public static final String LITERAL_END = "{^}";
     public static final String LITERAL_END_EXPANDED = "{~.}";
     public static final String LITERAL_END_LONGHAND = "{/literal}";
-    
+
     private static final int DEFAULT_REFRESH = 15; // minutes
     private static final String DEFAULT_EXTENSION = "chtml";
 
@@ -137,10 +137,10 @@ public class TemplateSet implements ContentSource, ChunkFactory
     private String tagEnd = DEFAULT_TAG_END;
     private String templatePath = System.getProperty("templateset.folder","");
     private String layerName = null;
-    
+
     private Class<?> classInJar = null;
     private Object resourceContext = null;
-    
+
     private boolean prettyFail = true;
     private String expectedEncoding = getDefaultEncoding();
 
@@ -199,12 +199,12 @@ public class TemplateSet implements ContentSource, ChunkFactory
     {
         return getSnippet(name, defaultExtension);
     }
-    
+
     public String fetch(String name)
     {
-    	Snippet s = getCleanTemplate(name);
-    	if (s == null) return null;
-    	// otherwise...
+        Snippet s = getCleanTemplate(name);
+        if (s == null) return null;
+        // otherwise...
         return s.toString();
     }
 
@@ -212,12 +212,12 @@ public class TemplateSet implements ContentSource, ChunkFactory
     {
         return "include";
     }
-    
+
     private Snippet getCleanTemplate(String name)
     {
         return getSnippet(name, "_CLEAN_:"+defaultExtension);
     }
-    
+
     /**
      * Retrieve as String the template specified by name and extension.
      * If name contains one or more dots it is assumed that the template
@@ -231,9 +231,9 @@ public class TemplateSet implements ContentSource, ChunkFactory
      */
     public Snippet getSnippet(String name, String extension)
     {
-    	return _get(name, extension, this.prettyFail);
+        return _get(name, extension, this.prettyFail);
     }
-    
+
     private Snippet _get(String name, String extension, boolean prettyFail)
     {
         //long now = System.currentTimeMillis();
@@ -259,35 +259,35 @@ public class TemplateSet implements ContentSource, ChunkFactory
                     in.close();
                     template = getFromCache(name, extension);
                 } else {
-                	// file does not exist, check around in classpath/jars
-                	String resourcePath = getResourcePath(name,extension);
-                	InputStream inJar = null;
+                    // file does not exist, check around in classpath/jars
+                    String resourcePath = getResourcePath(name,extension);
+                    InputStream inJar = null;
 
-                	if (classInJar == null) {
-                	    // theme resource is probably in same
-                	    // vicinity as calling class.
-                	    classInJar = grokCallerClass();
-                	}
-                	
-                	// ideally, somebody called Theme.setJarContext(this.getClass())
-                	// and we have a pointer to the jar where the templates live.
-                	if (classInJar != null) {
-                	    inJar = classInJar.getResourceAsStream(resourcePath);
-                	}
+                    if (classInJar == null) {
+                        // theme resource is probably in same
+                        // vicinity as calling class.
+                        classInJar = grokCallerClass();
+                    }
 
-                	// last ditch effort, check in surrounding jars in classpath...
-                	if (inJar == null) inJar = fishForTemplate(resourcePath);
-                	
-                	if (inJar != null) {
-	                	BufferedReader brTemp = new BufferedReader(new InputStreamReader(inJar,expectedEncoding));
-	                	readAndCacheTemplate(stub,extension,brTemp);
-	                	inJar.close();
-	                	template = getFromCache(name, extension);
-                	}
+                    // ideally, somebody called Theme.setJarContext(this.getClass())
+                    // and we have a pointer to the jar where the templates live.
+                    if (classInJar != null) {
+                        inJar = classInJar.getResourceAsStream(resourcePath);
+                    }
+
+                    // last ditch effort, check in surrounding jars in classpath...
+                    if (inJar == null) inJar = fishForTemplate(resourcePath);
+
+                    if (inJar != null) {
+                        BufferedReader brTemp = new BufferedReader(new InputStreamReader(inJar,expectedEncoding));
+                        readAndCacheTemplate(stub,extension,brTemp);
+                        inJar.close();
+                        template = getFromCache(name, extension);
+                    }
                 }
             } catch (java.io.IOException e) {
-            	if (!prettyFail) return null;
-            	
+                if (!prettyFail) return null;
+
                 StringBuilder errmsg = new StringBuilder("[error fetching ");
                 errmsg.append(extension);
                 errmsg.append(" template '");
@@ -297,39 +297,39 @@ public class TemplateSet implements ContentSource, ChunkFactory
                 e.printStackTrace(new PrintWriter(w));
                 errmsg.append(w.toString());
                 errmsg.append(" -->");
-                
+
                 template = Snippet.getSnippet(errmsg.toString());
             }
         }
 
         if (template == null) {
-        	if (prettyFail) {
-        		
-        		StringBuilder errmsg = new StringBuilder();
-        		errmsg.append("[");
-        		errmsg.append(extension);
-        		errmsg.append(" template '");
-        		errmsg.append(name);
-        		errmsg.append("' not found]<!-- looked in [");
-        		errmsg.append(filename);
-        		errmsg.append("] -->");
-	            
-	            template = Snippet.getSnippet(errmsg.toString());
-        	} else {
-        		return null;
-        	}
+            if (prettyFail) {
+
+                StringBuilder errmsg = new StringBuilder();
+                errmsg.append("[");
+                errmsg.append(extension);
+                errmsg.append(" template '");
+                errmsg.append(name);
+                errmsg.append("' not found]<!-- looked in [");
+                errmsg.append(filename);
+                errmsg.append("] -->");
+
+                template = Snippet.getSnippet(errmsg.toString());
+            } else {
+                return null;
+            }
         }
 
         return template;
     }
-    
+
     // default (package) visibility intentional
     static Class<?> grokCallerClass()
     {
         Throwable t = new Throwable();
         StackTraceElement[] stackTrace = t.getStackTrace();
         if (stackTrace == null) return null;
-        
+
         // calling class is at least four call levels back up the stack trace.
         // makes an excellent candidate for where to look for theme resources.
         for (int i=4; i<stackTrace.length; i++) {
@@ -343,43 +343,43 @@ public class TemplateSet implements ContentSource, ChunkFactory
         }
         return null;
     }
-    
+
     // should run a benchmark and see how expensive this is...
     private InputStream fishForTemplate(String resourcePath)
     {
-    	if (resourceContext != null) {
-    		InputStream in = fishForTemplateInContext(resourcePath);
-    		if (in != null) return in;
-    	}
-    	
-		// fish around for this resource in other jars in the classpath
-		String cp = System.getProperty("java.class.path");
-		if (cp == null) return null;
-		
-		String[] jars = cp.split(":");
-		if (jars == null) return null;
-		
-		for (String jar : jars) {
-			if (jar.endsWith(".jar")) {
-				InputStream in = peekInsideJar("jar:file:"+jar, resourcePath);
-				if (in != null) return in;
-			}
-		}
-		
-		return null;
+        if (resourceContext != null) {
+            InputStream in = fishForTemplateInContext(resourcePath);
+            if (in != null) return in;
+        }
+
+        // fish around for this resource in other jars in the classpath
+        String cp = System.getProperty("java.class.path");
+        if (cp == null) return null;
+
+        String[] jars = cp.split(":");
+        if (jars == null) return null;
+
+        for (String jar : jars) {
+            if (jar.endsWith(".jar")) {
+                InputStream in = peekInsideJar("jar:file:"+jar, resourcePath);
+                if (in != null) return in;
+            }
+        }
+
+        return null;
     }
-    
+
     private InputStream peekInsideJar(String jar, String resourcePath)
     {
-		String resourceURL = jar + "!" + resourcePath;
-		try {
-			URL url = new URL(resourceURL);
-			InputStream in = url.openStream();
-			if (in != null) return in;
-		} catch (MalformedURLException e) {
-		} catch (IOException e) {
-		}
-		
+        String resourceURL = jar + "!" + resourcePath;
+        try {
+            URL url = new URL(resourceURL);
+            InputStream in = url.openStream();
+            if (in != null) return in;
+        } catch (MalformedURLException e) {
+        } catch (IOException e) {
+        }
+
         try {
             // strip URL nonsense to get valid local path
             String zipPath = jar.replaceFirst("^jar:file:", "");
@@ -392,8 +392,8 @@ public class TemplateSet implements ContentSource, ChunkFactory
             }
         } catch (java.io.IOException e) {
         }
-		
-		return null;
+
+        return null;
     }
 
     /**
@@ -402,52 +402,52 @@ public class TemplateSet implements ContentSource, ChunkFactory
      * to be present/loaded during compile.
      */
     @SuppressWarnings("rawtypes")
-	private InputStream fishForTemplateInContext(String resourcePath)
+    private InputStream fishForTemplateInContext(String resourcePath)
     {
-		// call getResourceAsStream via reflection
-		Class<?> ctxClass = resourceContext.getClass();
-		Method m = null;
-		try {
-			final Class[] oneString = new Class[]{String.class};
-			m = ctxClass.getMethod("getResourceAsStream", oneString);
-    		if (m != null) {
-				InputStream in = (InputStream)m.invoke(resourceContext, new Object[]{resourcePath});
-				if (in != null) return in;
-    		}
-    		
-    		// no dice, start peeking inside jars in WEB-INF/lib/
-    		m = ctxClass.getMethod("getResourcePaths", oneString);
-    		if (m != null) {
-    			Set paths = (Set)m.invoke(resourceContext, new Object[]{"/WEB-INF/lib"});
-    			if (paths != null) {
-    				for (Object urlString : paths) {
-    					String jar = (String)urlString;
-    					if (jar.endsWith(".jar")) {
-    						m = ctxClass.getMethod("getResource", oneString);
-    						URL jarURL = (URL)m.invoke(resourceContext, new Object[]{jar});
-    						InputStream in = peekInsideJar("jar:"+jarURL.toString(), resourcePath);
-    						if (in != null) return in;
-    					}
-    				}
-    			}
-    		}
+        // call getResourceAsStream via reflection
+        Class<?> ctxClass = resourceContext.getClass();
+        Method m = null;
+        try {
+            final Class[] oneString = new Class[]{String.class};
+            m = ctxClass.getMethod("getResourceAsStream", oneString);
+            if (m != null) {
+                InputStream in = (InputStream)m.invoke(resourceContext, new Object[]{resourcePath});
+                if (in != null) return in;
+            }
 
-			//Set<java.net.URL> urls = new java.util.HashSet<java.net.URL>();
-	        //for (Object urlString : ctx.getResourcePaths("/WEB-INF/lib")) {
-	        //    try { urls.add(ctx.getResource((String) urlString)); }
-	        //    catch (MalformedURLException e) { /* silent-fail */ }
-	        //}
-		
-		} catch (SecurityException e) {
-		} catch (NoSuchMethodException e) {
-		} catch (IllegalArgumentException e) {
-		} catch (IllegalAccessException e) {
-		} catch (InvocationTargetException e) {
-		}
-		
-		return null;
-	}
-    	
+            // no dice, start peeking inside jars in WEB-INF/lib/
+            m = ctxClass.getMethod("getResourcePaths", oneString);
+            if (m != null) {
+                Set paths = (Set)m.invoke(resourceContext, new Object[]{"/WEB-INF/lib"});
+                if (paths != null) {
+                    for (Object urlString : paths) {
+                        String jar = (String)urlString;
+                        if (jar.endsWith(".jar")) {
+                            m = ctxClass.getMethod("getResource", oneString);
+                            URL jarURL = (URL)m.invoke(resourceContext, new Object[]{jar});
+                            InputStream in = peekInsideJar("jar:"+jarURL.toString(), resourcePath);
+                            if (in != null) return in;
+                        }
+                    }
+                }
+            }
+
+            //Set<java.net.URL> urls = new java.util.HashSet<java.net.URL>();
+            //for (Object urlString : ctx.getResourcePaths("/WEB-INF/lib")) {
+            //    try { urls.add(ctx.getResource((String) urlString)); }
+            //    catch (MalformedURLException e) { /* silent-fail */ }
+            //}
+
+        } catch (SecurityException e) {
+        } catch (NoSuchMethodException e) {
+        } catch (IllegalArgumentException e) {
+        } catch (IllegalAccessException e) {
+        } catch (InvocationTargetException e) {
+        }
+
+        return null;
+    }
+
     /**
      * Creates a Chunk with no starter template and sets its tag boundary
      * markers to match the other templates in this set.  The Chunk will need
@@ -513,7 +513,7 @@ public class TemplateSet implements ContentSource, ChunkFactory
         StringBuilder sbTemp = new StringBuilder();
         StringBuilder commentBuf;
         String line = null;
-        
+
         while (brTemp.ready()) {
             line = brTemp.readLine();
             if (line == null) break;
@@ -533,7 +533,7 @@ public class TemplateSet implements ContentSource, ChunkFactory
                 sbTemp.append(beforeComment);
                 sbTemp.append(commentBuf);
                 line = afterComment;
-                
+
                 // check for another comment on same line
                 comPos = line.indexOf(COMMENT_START);
                 subPos = line.indexOf(SUB_START);
@@ -566,13 +566,13 @@ public class TemplateSet implements ContentSource, ChunkFactory
         addToCache(name,extension,sbTemp);
         return sbTemp;
     }
-    
+
     private String getCommentLines(int comBegin, String firstLine, BufferedReader brTemp, StringBuilder sbTemp)
         throws IOException
     {
         int comEnd = firstLine.indexOf(COMMENT_END,comBegin+2);
         int endMarkerLen = COMMENT_END.length();
-        
+
         if (comEnd > -1) {
             // easy case -- comment does not span lines
             comEnd += endMarkerLen;
@@ -586,7 +586,7 @@ public class TemplateSet implements ContentSource, ChunkFactory
             while (brTemp.ready()) {
                 line = brTemp.readLine();
                 if (line == null) break;
-                
+
                 comEnd = line.indexOf(COMMENT_END);
                 if (comEnd > -1) {
                     comEnd += endMarkerLen;
@@ -600,61 +600,61 @@ public class TemplateSet implements ContentSource, ChunkFactory
             return "";
         }
     }
-    
+
     private String getLiteralLines(int litBegin, String firstLine, BufferedReader brTemp, StringBuilder sbTemp)
-    	throws IOException
+        throws IOException
     {
-    	int litEnd = firstLine.indexOf(LITERAL_END,litBegin+2);
-    	int endMarkerLen = LITERAL_END.length();
-    	
+        int litEnd = firstLine.indexOf(LITERAL_END,litBegin+2);
+        int endMarkerLen = LITERAL_END.length();
+
         // {^} ends a literal block, OR {/literal} -- whichever comes first.
         int litEndLong = firstLine.indexOf(LITERAL_END_LONGHAND,litBegin+2);
         if (litEndLong > -1 && (litEnd < 0 || litEndLong < litEnd)) {
             litEnd = litEndLong;
             endMarkerLen = TemplateSet.LITERAL_END_LONGHAND.length();
         }
-    	
-    	if (litEnd > -1) {
-    		// easy case -- literal does not span lines
-    		litEnd += endMarkerLen;
-    		sbTemp.append(firstLine.substring(0,litEnd));
-    		return firstLine.substring(litEnd);
-    	} else {
-    		sbTemp.append(firstLine);
-    		sbTemp.append("\n");
-    		// multi-line literal, keep appending until we encounter literal-end marker
-    		String line = null;
-    		while (brTemp.ready()) {
-    			line = brTemp.readLine();
-    			if (line == null) break;
-    			
-    			litEnd = line.indexOf(LITERAL_END);
-    	        // {^} ends a literal block, OR {/literal} -- whichever comes first.
-    			litEndLong = line.indexOf(LITERAL_END_LONGHAND);
-    			if (litEndLong > -1 && (litEnd < 0 || litEndLong < litEnd)) {
-    			    litEnd = litEndLong;
-    			    endMarkerLen = TemplateSet.LITERAL_END_LONGHAND.length();
-    			}
-    			
-    			if (litEnd > -1) {
-    				litEnd += endMarkerLen;
-    				sbTemp.append(line.substring(0,litEnd));
-    				return line.substring(litEnd);
-    			}
-    			sbTemp.append(line);
-        		sbTemp.append("\n");
-    		}
-    		// never found! appended rest of file as unterminated literal. burp.
-    		return "";
-    	}
+
+        if (litEnd > -1) {
+            // easy case -- literal does not span lines
+            litEnd += endMarkerLen;
+            sbTemp.append(firstLine.substring(0,litEnd));
+            return firstLine.substring(litEnd);
+        } else {
+            sbTemp.append(firstLine);
+            sbTemp.append("\n");
+            // multi-line literal, keep appending until we encounter literal-end marker
+            String line = null;
+            while (brTemp.ready()) {
+                line = brTemp.readLine();
+                if (line == null) break;
+
+                litEnd = line.indexOf(LITERAL_END);
+                // {^} ends a literal block, OR {/literal} -- whichever comes first.
+                litEndLong = line.indexOf(LITERAL_END_LONGHAND);
+                if (litEndLong > -1 && (litEnd < 0 || litEndLong < litEnd)) {
+                    litEnd = litEndLong;
+                    endMarkerLen = TemplateSet.LITERAL_END_LONGHAND.length();
+                }
+
+                if (litEnd > -1) {
+                    litEnd += endMarkerLen;
+                    sbTemp.append(line.substring(0,litEnd));
+                    return line.substring(litEnd);
+                }
+                sbTemp.append(line);
+                sbTemp.append("\n");
+            }
+            // never found! appended rest of file as unterminated literal. burp.
+            return "";
+        }
     }
-    
+
     // locate end of comment, and strip it but save it!
     private String skipComment(int comPos, String firstLine, BufferedReader brTemp, StringBuilder commentBuf)
         throws IOException
     {
         String beforeComment = firstLine.substring(0,comPos);
-        
+
         int comEndPos = firstLine.indexOf(COMMENT_END);
         if (comEndPos > -1) {
             // easy case -- comment does not span lines
@@ -666,7 +666,7 @@ public class TemplateSet implements ContentSource, ChunkFactory
             // keep eating lines until the end marker is found
             commentBuf.append(firstLine.substring(comPos));
             commentBuf.append("\n");
-            
+
             String line = null;
             while (brTemp.ready()) {
                 line = brTemp.readLine();
@@ -684,7 +684,7 @@ public class TemplateSet implements ContentSource, ChunkFactory
             }
             // never found!  ate rest of file.  burp.
             return beforeComment;
-        }        
+        }
     }
 
     // locate end of comment and remove it from input
@@ -715,22 +715,22 @@ public class TemplateSet implements ContentSource, ChunkFactory
             return beforeComment;
         }
     }
-    
+
     public static int findLiteralMarker(String text)
     {
-    	return findLiteralMarker(text, 0);
+        return findLiteralMarker(text, 0);
     }
-    
+
     public static int findLiteralMarker(String text, int startAt)
     {
-	    int literalPos = text.indexOf(LITERAL_START, startAt);
-	    int litPos     = text.indexOf(LITERAL_SHORTHAND, startAt);
-	    if (litPos > -1 && literalPos > -1) {
-	    	literalPos = Math.min(literalPos, litPos);
-	    } else if (litPos > -1 || literalPos > -1) {
-	        literalPos = Math.max(literalPos, litPos);
-	    }
-	    return literalPos;
+        int literalPos = text.indexOf(LITERAL_START, startAt);
+        int litPos     = text.indexOf(LITERAL_SHORTHAND, startAt);
+        if (litPos > -1 && literalPos > -1) {
+            literalPos = Math.min(literalPos, litPos);
+        } else if (litPos > -1 || literalPos > -1) {
+            literalPos = Math.max(literalPos, litPos);
+        }
+        return literalPos;
     }
 
     // scan until matching end-of-subtemplate marker found {#}
@@ -746,89 +746,89 @@ public class TemplateSet implements ContentSource, ChunkFactory
         int subEndPos  = firstLine.indexOf(SUB_END);
         int comPos     = firstLine.indexOf(COMMENT_START);
         int literalPos = findLiteralMarker(firstLine);
-        
+
         boolean skipFirstLine = false;
-        
+
         // special handling for literal blocks & comments
         while (literalPos > -1 || comPos > -1) {
-	        // if end-marker present, kick out if it's not inside a comment or a literal block
-	        if (subEndPos > -1) {
-	        	if ((literalPos < 0 || subEndPos < literalPos) && (comPos < 0 || subEndPos < comPos)) {
-	        		break;
-	        	}
-	        }
-	        	
-	        // first, preserve any literal blocks
-	        while (literalPos > -1 && (comPos < 0 || comPos > literalPos)) {
-	        	if (subEndPos < 0 || subEndPos > literalPos) {
-	        		firstLine = getLiteralLines(literalPos, firstLine, brTemp, sbTemp);
-	        		// skipped literal block.  re-scan for markers.
-	        		comPos = firstLine.indexOf(COMMENT_START);
-	        		subEndPos = firstLine.indexOf(SUB_END);
-	        		literalPos = findLiteralMarker(firstLine);
-	        	} else {
-	        		break;
-	        	}
-	        }
-	        
-	        // next, strip out any comments
-	        while (comPos > -1 && (subEndPos < 0 || subEndPos > comPos) && (literalPos < 0 || literalPos > comPos)) {
+            // if end-marker present, kick out if it's not inside a comment or a literal block
+            if (subEndPos > -1) {
+                if ((literalPos < 0 || subEndPos < literalPos) && (comPos < 0 || subEndPos < comPos)) {
+                    break;
+                }
+            }
+
+            // first, preserve any literal blocks
+            while (literalPos > -1 && (comPos < 0 || comPos > literalPos)) {
+                if (subEndPos < 0 || subEndPos > literalPos) {
+                    firstLine = getLiteralLines(literalPos, firstLine, brTemp, sbTemp);
+                    // skipped literal block.  re-scan for markers.
+                    comPos = firstLine.indexOf(COMMENT_START);
+                    subEndPos = firstLine.indexOf(SUB_END);
+                    literalPos = findLiteralMarker(firstLine);
+                } else {
+                    break;
+                }
+            }
+
+            // next, strip out any comments
+            while (comPos > -1 && (subEndPos < 0 || subEndPos > comPos) && (literalPos < 0 || literalPos > comPos)) {
                 int lenBefore = firstLine.length();
-	            firstLine = stripComment(comPos,firstLine,brTemp);
-	            int lenAfter = firstLine.length();
-	            if (lenBefore != lenAfter && firstLine.trim().length() == 0) {
-	                skipFirstLine = true;
-	            }
-	            // stripped comment lines.  re-scan for markers.
-	            comPos = firstLine.indexOf(COMMENT_START);
-	            subEndPos = firstLine.indexOf(SUB_END);
-	            literalPos = findLiteralMarker(firstLine);
-	        }
+                firstLine = stripComment(comPos,firstLine,brTemp);
+                int lenAfter = firstLine.length();
+                if (lenBefore != lenAfter && firstLine.trim().length() == 0) {
+                    skipFirstLine = true;
+                }
+                // stripped comment lines.  re-scan for markers.
+                comPos = firstLine.indexOf(COMMENT_START);
+                subEndPos = firstLine.indexOf(SUB_END);
+                literalPos = findLiteralMarker(firstLine);
+            }
         }
-        
+
         // keep reading lines until we encounter end marker
         if (subEndPos > -1) {
-        	// aha, the subtemplate ends on this line.
+            // aha, the subtemplate ends on this line.
             sbTemp.append(firstLine.substring(0,subEndPos));
             addToCache(name,extension,sbTemp);
             return firstLine.substring(subEndPos+SUB_END.length());
         } else {
-        	// subtemplate not finished, keep going
+            // subtemplate not finished, keep going
             if (!skipFirstLine) {
                 sbTemp.append(firstLine);
                 if (brTemp.ready() && firstLine.length() > 0) sbTemp.append("\n");
             }
             while (brTemp.ready()) {
-            	try {
-            		String line = getNextTemplateLine(name, extension, brTemp, sbTemp);
-	            	if (line == null) break;
-	            	if (line == SKIP_BLANK_LINE) continue;
-            	
-	            	sbTemp.append(line);
-	            	if (brTemp.ready()) sbTemp.append("\n");
-            	} catch (EndOfSnippetException e) {
+                try {
+                    String line = getNextTemplateLine(name, extension, brTemp, sbTemp);
+                    if (line == null) break;
+                    if (line == SKIP_BLANK_LINE) continue;
+
+                    sbTemp.append(line);
+                    if (brTemp.ready()) sbTemp.append("\n");
+                } catch (EndOfSnippetException e) {
                     addToCache(name,extension,sbTemp);
-            		return e.getRestOfLine();
-            	}
+                    return e.getRestOfLine();
+                }
             }
             // end of file but with no matching SUB_END? -- wrap it up...
             addToCache(name,extension,sbTemp);
             return "";
         }
     }
-    
+
     private String getNextTemplateLine(String name, String extension,
                                        BufferedReader brTemp, StringBuilder sbTemp)
         throws IOException, EndOfSnippetException
     {
         String line = brTemp.readLine();
         if (line == null) return null;
-        
+
         int comPos = line.indexOf(COMMENT_START);
         int subPos = line.indexOf(SUB_START);
         int subEndPos = line.indexOf(SUB_END);
         int litPos = findLiteralMarker(line);
-        
+
         // special handling for literal blocks & comments
         while (litPos > -1 || comPos > -1) {
             // if end-marker present, kick out if it's not inside a comment or a literal block
@@ -856,7 +856,7 @@ public class TemplateSet implements ContentSource, ChunkFactory
                     break;
                 }
             }
-            
+
             // next, skip over any comments
             while (comPos > -1 && (subPos < 0 || subPos > comPos) && (subEndPos < 0 || subEndPos > comPos) && (litPos < 0 || litPos > comPos)) {
                 /*
@@ -867,10 +867,10 @@ public class TemplateSet implements ContentSource, ChunkFactory
                     // if after removing comment, line is blank, don't output a blank line
                     return SKIP_BLANK_LINE;
                 }*/
-                
+
                 // new plan -- preserve comments, let Snippet strip them out
                 line = getCommentLines(comPos, line, brTemp, sbTemp);
-                
+
                 // re-scan for markers
                 comPos = line.indexOf(COMMENT_START);
                 subPos = line.indexOf(SUB_START);
@@ -878,7 +878,7 @@ public class TemplateSet implements ContentSource, ChunkFactory
                 litPos = findLiteralMarker(line);
             }
         }
-        
+
         // keep reading lines until end marker
         if (subPos > -1 || subEndPos > -1) {
             if (subEndPos > -1 && (subPos == -1 || subEndPos <= subPos)) {
@@ -898,8 +898,8 @@ public class TemplateSet implements ContentSource, ChunkFactory
             }
         }
         return line;
-    }    
-    
+    }
+
     private void addToCache(String name, String extension, StringBuilder template)
     {
         String ref = extension + "." + name;
@@ -907,16 +907,16 @@ public class TemplateSet implements ContentSource, ChunkFactory
         String cleanRef = "_CLEAN_:"+ref;
         cache.put(cleanRef, Snippet.makeLiteralSnippet(template.toString()) );
         cacheFetch.put(cleanRef, new Long(System.currentTimeMillis()) );
-        
+
         // then, pre-process a bit for speed gain
         template = expandShorthand(name,template);
         if (template == null) return;
         String tpl = removeBlockTagIndents(template.toString());
-        
+
         cache.put(ref, Snippet.getSnippet(tpl));
         cacheFetch.put(ref, new Long(System.currentTimeMillis()) );
     }
-    
+
     public static String removeBlockTagIndents(String template)
     {
         // this regex: s/^\s*({^\/?(...)[^}]*})\s*/$1/g removes leading and trailing whitespace
@@ -924,13 +924,13 @@ public class TemplateSet implements ContentSource, ChunkFactory
         // NB: this regex will not catch {^if (~cond =~ /\/x{1,3}/)} but it's already nigh-unreadable...
         return RegexFilter.applyRegex(template, "s/^[ \\t]*(\\{(\\^|\\~\\.)\\/?(loop|if|else|elseIf|divider|onEmpty|body)([^\\}]*|[^\\}]*\\/[^\\/]*\\/[^\\}]*)\\})[ \\t]*$/$1/gm");
     }
-    
+
     public static StringBuilder expandShorthand(String name, StringBuilder template)
     {
-    	// do NOT place in cache if ^super directive is found
-    	// that way, the parent layer will be used instead.
-    	if (template.indexOf("{^super}") > -1 || template.indexOf("{.super}") > -1) return null;
-    	
+        // do NOT place in cache if ^super directive is found
+        // that way, the parent layer will be used instead.
+        if (template.indexOf("{^super}") > -1 || template.indexOf("{.super}") > -1) return null;
+
         // to allow shorthand intra-template references, must pre-process the template
         // at this point and expand any intra-template references, eg:
         //  {~.includeIf(...).#xxx} => {~.includeIf(...).template_name#xxx}
@@ -955,10 +955,10 @@ public class TemplateSet implements ContentSource, ChunkFactory
         // (template filename is everything up to the first dot)
         String fullRef = name;
         if (fullRef != null) {
-	        int dotPos = fullRef.indexOf('.');
-	        if (dotPos > 0) fullRef = name.substring(0,dotPos);
+            int dotPos = fullRef.indexOf('.');
+            if (dotPos > 0) fullRef = name.substring(0,dotPos);
         }
-        
+
         // restrict search to inside tags
         int cursor = template.indexOf("{");
 
@@ -970,16 +970,16 @@ public class TemplateSet implements ContentSource, ChunkFactory
             } else if (afterBrace == '~' || afterBrace == '$') {
                 cursor = expandShorthandTag(template,fullRef,cursor);
             } else if (afterBrace == '^' || afterBrace == '.') {
-            	// check for literal block, and do not perform expansions
-            	// inside any literal blocks.
-            	int afterLiteralBlock = skipLiterals(template,cursor);
-            	if (afterLiteralBlock == cursor) {
-	                // ^ is shorthand for ~. eg {^include.#xyz} or {^wiki.External_Content}
-	                template.replace(cursor+1,cursor+2,"~.");
-	                // re-process, do not advance cursor.
-            	} else {
-            		cursor = afterLiteralBlock;
-            	}
+                // check for literal block, and do not perform expansions
+                // inside any literal blocks.
+                int afterLiteralBlock = skipLiterals(template,cursor);
+                if (afterLiteralBlock == cursor) {
+                    // ^ is shorthand for ~. eg {^include.#xyz} or {^wiki.External_Content}
+                    template.replace(cursor+1,cursor+2,"~.");
+                    // re-process, do not advance cursor.
+                } else {
+                    cursor = afterLiteralBlock;
+                }
             } else if (afterBrace == '/') {
                 // {/ is short for {^/ which is short for {~./
                 template.replace(cursor+1,cursor+2,"~./");
@@ -992,42 +992,42 @@ public class TemplateSet implements ContentSource, ChunkFactory
             // on to the next tag...
             if (cursor > -1) cursor = template.indexOf("{",cursor);
         }
-        
+
         return template;
     }
-    
+
     private static int skipLiterals(StringBuilder template, int cursor)
     {
-    	int wall = template.length();
-    	int shortLen = LITERAL_SHORTHAND.length();
-    	int scanStart = cursor;
-    	if (cursor + shortLen <= wall && template.substring(cursor,cursor+shortLen).equals(LITERAL_SHORTHAND)) {
-    		scanStart = cursor + shortLen;
-    	} else {
-    		int longLen = LITERAL_START2.length();
-    		if (cursor + longLen <= wall && template.substring(cursor,cursor+longLen).equals(LITERAL_START2)) {
-    			scanStart = cursor + longLen;
-    		} else {
-    		    longLen = LITERAL_START.length();
-    		    if (cursor + longLen <= wall && template.substring(cursor,cursor+longLen).equals(LITERAL_START)) {
-    		        scanStart = cursor + longLen;
-    		    }
-    		}
-    	}
-    	
-    	if (scanStart > cursor) {
-    	    // found a literal-block start marker.  scan for the matching end-marker.
-    		int tail = template.indexOf(LITERAL_END, scanStart);
-    		int longTail = template.indexOf(LITERAL_END_LONGHAND, scanStart);
-    		tail = (tail < 0) ? longTail : (longTail < 0) ? tail : Math.min(tail, longTail);
-    		if (tail < 0) {
-    			return wall;
-    		} else {
-    			return tail + (tail == longTail ? LITERAL_END_LONGHAND.length() : LITERAL_END.length());
-    		}
-    	} else {
-    		return cursor;
-    	}
+        int wall = template.length();
+        int shortLen = LITERAL_SHORTHAND.length();
+        int scanStart = cursor;
+        if (cursor + shortLen <= wall && template.substring(cursor,cursor+shortLen).equals(LITERAL_SHORTHAND)) {
+            scanStart = cursor + shortLen;
+        } else {
+            int longLen = LITERAL_START2.length();
+            if (cursor + longLen <= wall && template.substring(cursor,cursor+longLen).equals(LITERAL_START2)) {
+                scanStart = cursor + longLen;
+            } else {
+                longLen = LITERAL_START.length();
+                if (cursor + longLen <= wall && template.substring(cursor,cursor+longLen).equals(LITERAL_START)) {
+                    scanStart = cursor + longLen;
+                }
+            }
+        }
+
+        if (scanStart > cursor) {
+            // found a literal-block start marker.  scan for the matching end-marker.
+            int tail = template.indexOf(LITERAL_END, scanStart);
+            int longTail = template.indexOf(LITERAL_END_LONGHAND, scanStart);
+            tail = (tail < 0) ? longTail : (longTail < 0) ? tail : Math.min(tail, longTail);
+            if (tail < 0) {
+                return wall;
+            } else {
+                return tail + (tail == longTail ? LITERAL_END_LONGHAND.length() : LITERAL_END.length());
+            }
+        } else {
+            return cursor;
+        }
     }
 
     private static int expandFnArgs(StringBuilder template, String fullRef, int cursor, String fnCall, int tagEnd)
@@ -1070,9 +1070,9 @@ public class TemplateSet implements ContentSource, ChunkFactory
 
     private static int expandShorthandMacro(StringBuilder template, String fullRef, int cursor)
     {
-    	int offset = 2;
-    	while (template.charAt(cursor+offset) == ' ') offset++;
-    	
+        int offset = 2;
+        while (template.charAt(cursor+offset) == ' ') offset++;
+
         if (template.charAt(cursor+offset) == '#') {
             template.insert(cursor+offset,fullRef);
             int macroMarkerEnd = template.indexOf(MACRO_NAME_END,cursor+offset+fullRef.length()+1);
@@ -1159,7 +1159,7 @@ public class TemplateSet implements ContentSource, ChunkFactory
     private static int expandShorthandInclude(StringBuilder template, String fullRef, int cursor)
     {
         if (template.length() == cursor+2) return -1;
-        
+
         char afterPlus = template.charAt(cursor+2);
         if (afterPlus == '#') {
             // got one, replace + with long include syntax and fully qualified reference
@@ -1336,95 +1336,95 @@ public class TemplateSet implements ContentSource, ChunkFactory
             c.addProtocol(src);
         }
     }
-    
+
     public void signalFailureWithNull()
     {
-    	this.prettyFail = false;	
+        this.prettyFail = false;
     }
-    
+
     private String truncateNameToStub(String name)
     {
-    	int slashPos = name.lastIndexOf('/');
-    	if (slashPos < -1) slashPos = name.lastIndexOf('\\');
-    	
-    	String folder = null;
-    	String stub;
-    	if (slashPos > -1) {
-    		folder = name.substring(0,slashPos+1);
-    		stub = name.substring(slashPos+1).replace('#','.');
-    	} else {
-    		stub = name.replace('#','.');
-    	}
-    	
+        int slashPos = name.lastIndexOf('/');
+        if (slashPos < -1) slashPos = name.lastIndexOf('\\');
+
+        String folder = null;
+        String stub;
+        if (slashPos > -1) {
+            folder = name.substring(0,slashPos+1);
+            stub = name.substring(slashPos+1).replace('#','.');
+        } else {
+            stub = name.replace('#','.');
+        }
+
         int dotPos = stub.indexOf(".");
         if (dotPos > -1) stub = stub.substring(0,dotPos);
-        
+
         if (slashPos > -1) {
             char fs = System.getProperty("file.separator").charAt(0);
             folder.replace('\\',fs);
             folder.replace('/',fs);
-	        return folder + stub;
+            return folder + stub;
         } else {
-        	return stub;
+            return stub;
         }
     }
-    
-	public String getTemplatePath(String templateName, String ext)
-	{
-		String stub = truncateNameToStub(templateName);
-		return templatePath + stub + '.' + ext;
-	}
-	
-	public String getResourcePath(String templateName, String ext)
-	{
-		String stub = truncateNameToStub(templateName);
-		if (layerName == null) {
-			return "/themes/" + stub + '.' + ext;
-		} else {
-			return "/themes/" + layerName + stub + '.' + ext;
-		}
-	}
 
-	
+    public String getTemplatePath(String templateName, String ext)
+    {
+        String stub = truncateNameToStub(templateName);
+        return templatePath + stub + '.' + ext;
+    }
+
+    public String getResourcePath(String templateName, String ext)
+    {
+        String stub = truncateNameToStub(templateName);
+        if (layerName == null) {
+            return "/themes/" + stub + '.' + ext;
+        } else {
+            return "/themes/" + layerName + stub + '.' + ext;
+        }
+    }
+
+
     public String getDefaultExtension()
     {
-    	return this.defaultExtension;
+        return this.defaultExtension;
     }
 
     public boolean provides(String itemName)
     {
-    	Snippet found = _get(itemName, defaultExtension, false);
-    	if (found == null) {
-    		return false;
-    	} else {
-    		return true;
-    	}
+        Snippet found = _get(itemName, defaultExtension, false);
+        if (found == null) {
+            return false;
+        } else {
+            return true;
+        }
     }
-    
+
     public void setJarContext(Class<?> classInSameJar)
     {
-    	this.classInJar = classInSameJar;
+        this.classInJar = classInSameJar;
     }
-    
+
     public void setJarContext(Object ctx)
     {
-    	// an object with an InputStream getResourceAsStream(String) method
-    	this.resourceContext = ctx;
+        // an object with an InputStream getResourceAsStream(String) method
+        this.resourceContext = ctx;
     }
-    
+
     public void setLayerName(String layerName)
     {
-    	this.layerName = layerName;
-    	if (layerName != null && !layerName.endsWith("/")) {
-    		this.layerName = this.layerName + "/";
-    	}
+        this.layerName = layerName;
+        if (layerName != null && !layerName.endsWith("/")) {
+            this.layerName = this.layerName + "/";
+        }
     }
-    
+
     public void setEncoding(String encoding)
     {
         this.expectedEncoding = encoding;
     }
-    
+
     private String getDefaultEncoding()
     {
         // can use system env var to specify default encoding

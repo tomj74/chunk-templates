@@ -10,11 +10,11 @@ public class AlternateFilter extends BasicFilter implements ChunkFilter
     {
         if (text == null) return null;
         if (args == null) return text;
-        
+
         try {
             int x = Integer.parseInt(text);
             String output = null;
-            
+
             if (x % 2 == 0) {
                 if (args.length == 1) {
                     output = args[0];
@@ -23,13 +23,13 @@ public class AlternateFilter extends BasicFilter implements ChunkFilter
                 }
             } else {
                 if (args.length >= 3) {
-                    output = args[2]; 
+                    output = args[2];
                 }
             }
-            
+
             // tag-ify if necessary
             return TextFilter.magicBraces(chunk, output);
-            
+
         } catch (NumberFormatException e) {
             return text;
         }
@@ -39,7 +39,7 @@ public class AlternateFilter extends BasicFilter implements ChunkFilter
     {
         return "alternate";
     }
-    
+
     public String[] getFilterAliases()
     {
         return new String[]{"evenodd"};

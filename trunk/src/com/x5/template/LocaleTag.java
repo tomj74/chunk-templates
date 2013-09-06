@@ -13,22 +13,22 @@ public class LocaleTag extends BlockTag
     private Chunk context;
     private String[] args;
     private String body = null;
-    
+
     public static String LOCALE_TAG_OPEN = "{_[";
     public static String LOCALE_TAG_CLOSE = "}";
     public static String LOCALE_SIMPLE_OPEN = "_[";
     public static String LOCALE_SIMPLE_CLOSE = "]";
-    
+
     public LocaleTag(String params, Chunk context)
     {
         this.context = context;
         parseParams(params);
     }
-    
+
     public LocaleTag()
     {
     }
-    
+
     public LocaleTag(String params, Snippet body)
     {
         this.body = body.toString();
@@ -39,17 +39,17 @@ public class LocaleTag extends BlockTag
         if (params == null) return;
         int spacePos = params.indexOf(" ");
         if (spacePos < 0) return;
-        
+
         String cleanParams = params.substring(spacePos+1).trim();
         if (cleanParams.startsWith(",")) {
             cleanParams = cleanParams.substring(1).trim();
         }
         if (cleanParams.length() == 0) return;
-        
+
         // look for comma delimeters not preceded by a backslash
         this.args = cleanParams.split(" *(?<!\\\\), *");
     }
-    
+
     private String _translate()
     {
         ChunkLocale locale = context.getLocale();
@@ -80,13 +80,13 @@ public class LocaleTag extends BlockTag
             int bodyB = ezSyntax.length();
             if (ezSyntax.endsWith(LOCALE_SIMPLE_CLOSE)) bodyB--;
             String body = ezSyntax.substring(bodyA,bodyB);
-            
+
             String blockStart = ctx.makeTag(".loc");
             String blockEnd = ctx.makeTag("./loc");
-            
+
             return blockStart + body + blockEnd;
         }
-        
+
         if (ezSyntax.startsWith(LOCALE_TAG_OPEN)) {
             int bodyA = 3;
             int bodyB = ezSyntax.lastIndexOf(LOCALE_SIMPLE_CLOSE);
@@ -94,28 +94,28 @@ public class LocaleTag extends BlockTag
                 return convertToChunkTag(ezSyntax.substring(1),ctx);
             }
             String body = ezSyntax.substring(bodyA,bodyB);
-            
+
             int argsA = bodyB+1;
             int argsB = ezSyntax.length();
             if (ezSyntax.endsWith(LOCALE_TAG_CLOSE)) argsB--;
-            
+
             String params = ezSyntax.substring(argsA,argsB);
-            
+
             String blockStart = ctx.makeTag(".loc " + params);
             String blockEnd = ctx.makeTag("./loc");
-            
+
             return blockStart + body + blockEnd;
         }
-        
+
         // not properly formatted, pass through.
         return ezSyntax;
     }
-    
+
     public static String expandLocaleTags(String template, Chunk ctx)
     {
         int[] markers = scanForMarkers(template);
         if (markers == null) return template;
-        
+
         StringBuilder buf = new StringBuilder();
         int cursor = 0;
         for (int i=0; i<markers.length; i+=3) {
@@ -132,25 +132,25 @@ public class LocaleTag extends BlockTag
         }
         return buf.toString();
     }
-    
+
     private static final Pattern OPEN_TAG_PATTERN
         = Pattern.compile(RegexFilter.escapeRegex(LOCALE_TAG_OPEN) + "|" + RegexFilter.escapeRegex(LOCALE_SIMPLE_OPEN));
-    
+
     private static int[] scanForMarkers(String template)
     {
         if (template.indexOf(LOCALE_SIMPLE_OPEN) < 0) {
             return null;
         }
-        
+
         boolean isSimple = true;
 
         String markers = "";
         int len = template.length();
-        
+
         Matcher m = OPEN_TAG_PATTERN.matcher(template);
-        
+
         int tagPos = m.find() ? m.start() : -1;
-        
+
         while (tagPos > -1) {
             // is simple _[...] or not simple {_[...%s...],~x}
             String whatMatched = m.group();
@@ -159,15 +159,15 @@ public class LocaleTag extends BlockTag
             int tagEndInside = nextUnescapedDelim(isSimple,template,tagPos);
             int tagEndOutside = tagEndInside + (isSimple ? LOCALE_SIMPLE_CLOSE.length() : LOCALE_TAG_CLOSE.length());
             markers += tagPos + "," + tagEndInside + "," + tagEndOutside + ",";
-            
+
             if (tagEndOutside >= len) break;
-            
+
             tagPos = m.find(tagEndOutside) ? m.start() : -1;
         }
-        
+
         return makeIntArray(markers);
     }
-    
+
     private static int nextUnescapedDelim(boolean isSimple, String template, int tagPos)
     {
         if (isSimple) {
@@ -178,7 +178,7 @@ public class LocaleTag extends BlockTag
             return TextFilter.nextUnescapedDelim(LOCALE_TAG_CLOSE, template, tagPos + LOCALE_TAG_OPEN.length());
         }
     }
-    
+
     private static int[] makeIntArray(String markersStr)
     {
         StringTokenizer tokens = new StringTokenizer(markersStr,",");
@@ -194,9 +194,9 @@ public class LocaleTag extends BlockTag
         throws IOException
     {
         if (body == null) return;
-        
+
         this.context = context;
-        
+
         String translated = _translate();
         out.append( translated );
     }

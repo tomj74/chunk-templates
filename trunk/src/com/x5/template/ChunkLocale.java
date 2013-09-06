@@ -22,9 +22,9 @@ public class ChunkLocale
 {
     private String localeCode;
     private HashMap<String,String> translations;
-    
+
     private static HashMap<String,ChunkLocale> locales = new HashMap<String,ChunkLocale>();
-    
+
     public static ChunkLocale getInstance(String localeCode, Chunk context)
     {
         ChunkLocale instance = locales.get(localeCode);
@@ -36,20 +36,20 @@ public class ChunkLocale
             return instance;
         }
     }
-    
+
     public static void registerLocale(String localeCode, String[] translations)
     {
         // this is mainly here just for testing.
         ChunkLocale instance = new ChunkLocale(localeCode, translations);
         locales.put(localeCode, instance);
     }
-    
+
     private ChunkLocale(String localeCode, Chunk context)
     {
         this.localeCode = localeCode;
         loadTranslations(context);
     }
-    
+
     private ChunkLocale(String localeCode, String[] strings)
     {
         // this is mainly here just for testing.
@@ -63,22 +63,22 @@ public class ChunkLocale
             }
         }
     }
-    
+
     private void loadTranslations(Chunk context)
     {
         // locate matching csv file and load translations
         try {
             InputStream in = locateLocaleDB(context);
             if (in == null) return;
-            
+
             Charset charset = grokLocaleDBCharset();
             CsvReader reader = new CsvReader(in,charset);
             reader.setUseComments(true); // ignore lines beginning with #
-            
+
             String[] entry = null;
-            
+
             translations = new HashMap<String,String>();
-            
+
             while (reader.readRecord()) {
                 entry = reader.getValues();
 
@@ -88,13 +88,13 @@ public class ChunkLocale
                     translations.put(key,localString);
                 }
             }
-            
+
         } catch (IOException e) {
             System.err.println("ERROR loading locale DB: "+localeCode);
             e.printStackTrace(System.err);
         }
     }
-    
+
     private Charset grokLocaleDBCharset()
     {
         String override = System.getProperty("chunk.localedb.charset");
@@ -107,16 +107,16 @@ public class ChunkLocale
             }
             if (charset != null) return charset;
         }
-        
+
         try {
             return Charset.forName("UTF-8"); // sensible default
         } catch (Exception e) {
         }
-        
+
         // ok fine, whatever you got.
         return Charset.defaultCharset();
     }
-    
+
     @SuppressWarnings("rawtypes")
     private InputStream locateLocaleDB(Chunk context)
     throws java.io.IOException
@@ -133,12 +133,12 @@ public class ChunkLocale
                 }
             }
         }
-        
+
         // (2) check the classpath for a resource named /locale/xx_XX/translate.csv
         String path = "/locale/" + localeCode + "/translate.csv";
         InputStream in = this.getClass().getResourceAsStream(path);
         if (in != null) return in;
-        
+
         // (2a) check the caller's class resources
         Class classInApp = TemplateSet.grokCallerClass();
         if (classInApp != null) {
@@ -147,28 +147,28 @@ public class ChunkLocale
                 return in;
             }
         }
-        
+
         // (3a) TODO - use context to grok app's resource context
         // and check there (eg, should work inside servlet context)
-        
+
         // (3) check inside jars on the classpath...
         String cp = System.getProperty("java.class.path");
         if (cp == null) return null;
-        
+
         String[] jars = cp.split(":");
         if (jars == null) return null;
-        
+
         for (String jar : jars) {
             if (jar.endsWith(".jar")) {
                 in = peekInsideJar("jar:file:"+jar, path);
                 if (in != null) return in;
             }
         }
-        
+
         // (4) give up!
         return null;
     }
-    
+
     private InputStream peekInsideJar(String jar, String resourcePath)
     {
         String resourceURL = jar + "!" + resourcePath;
@@ -179,7 +179,7 @@ public class ChunkLocale
         } catch (MalformedURLException e) {
         } catch (IOException e) {
         }
-        
+
         try {
             // strip URL nonsense to get valid local path
             String zipPath = jar.replaceFirst("^jar:file:", "");
@@ -192,38 +192,38 @@ public class ChunkLocale
             }
         } catch (java.io.IOException e) {
         }
-        
+
         return null;
     }
-    
+
     public String translate(String string, String[] args, Chunk context)
     {
         return processFormatString(string,args,context,translations);
     }
-    
+
     public static String processFormatString(String string, String[] args, Chunk context)
     {
         return processFormatString(string,args,context,null);
     }
-    
+
     public static String processFormatString(String string, String[] args,
             Chunk context, HashMap<String,String> translations)
     {
         if (string == null) return null;
-        
+
         String xlated = string;
         if (translations != null && translations.containsKey(string)) {
             xlated = translations.get(string);
         }
-        
+
         if (args == null || context == null || !xlated.contains("%s")) {
             return xlated;
         }
-        
+
         // prepare format-substitution values from args
         // eg for strings like "Hello %s, welcome to the site!"
         Object[] values = new String[args.length];
-        
+
         for (int i=0; i<args.length; i++) {
             String tagName = args[i];
             if (tagName.startsWith("~") || tagName.startsWith("$")) {
@@ -235,7 +235,7 @@ public class ChunkLocale
                 values[i] = tagName;
             }
         }
-        
+
         try {
             return String.format(xlated,values);
         } catch (IllegalFormatException e) {
@@ -267,10 +267,10 @@ public class ChunkLocale
                 }
             }
         }
-        
+
         return null;
     }
-    
+
     public String toString()
     {
         return this.localeCode;
