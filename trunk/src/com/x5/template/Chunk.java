@@ -91,7 +91,7 @@ import com.x5.util.TableData;
  * A: No*.  To keep things simple and reduce potential for confusion, Chunk<BR>
  * does not auto-magically fill any tags based on naming conventions or<BR>
  * in-template directives.  You must explicitly invoke the "include command:<BR>
- * 
+ *
  *   bla bla bla {.include #myTemplate} foo foo foo
  *
  * <P>* Actually, this documentation is outdated, and several extensions to the<BR>
@@ -244,7 +244,7 @@ import com.x5.util.TableData;
  * Updates: <A href="http://www.x5software.com/chunk/">Chunk Documentation</A><BR>
  *
  * @author Tom McClure
- * @version 2.1.1
+ * @version 2.2
  */
 
 public class Chunk implements Map<String,Object>
@@ -252,7 +252,7 @@ public class Chunk implements Map<String,Object>
     public static final int HASH_THRESH = 8;
     public static final int DEPTH_LIMIT = 17;
 
-    public static final String VERSION = "2.1.1";
+    public static final String VERSION = "2.2";
 
     private static final String TRUE = "TRUE";
 
@@ -395,10 +395,10 @@ public class Chunk implements Map<String,Object>
     /**
      * Careful, setOrDelete will DELETE a previous value
      * for the tag at this level if passed a null value.
-     * 
+     *
      * This is a way around the standard behavior which interprets
      * null values as the empty string.
-     * 
+     *
      * The default is to use the empty string for null object/strings.
      * setOrDelete provides an alternate option, leaving the tag "unset"
      * in case the value is null, which allows the template to provide
@@ -425,17 +425,17 @@ public class Chunk implements Map<String,Object>
      * as a static string (for example, using chunk to pre-generate table
      * rows that are destined for placement in another chunk), it will not
      * be protected from the engine in that second pass.
-     * 
+     *
      * To prevent re-processing higher up the chain, encase your string
      * in {.literal}{/literal} tags, with the tradeoff that they will
      * appear in your final output.  This is by design, so the literal
      * will be preserved even after multiple passes through the engine.
-     * 
+     *
      * Typical workaround: <!-- {.literal} --> ... <!-- {/literal} -->
-     * 
+     *
      * Or, just be super-careful to use setLiteral() again when placing
      * pre-processed output into higher-level chunks.
-     * 
+     *
      * @param tagName
      * @param literalValue
      */
@@ -797,7 +797,7 @@ public class Chunk implements Map<String,Object>
      * Retrieves a tag replacement rule.  getTagValue() responds outside the context
      * of recursive tag replacement, so the return value may include unresolved
      * tags.  To iterate up the ancestor chain, use get() instead.
-     * 
+     *
      * @return The Chunk or Snippet etc. that this tag will resolve to, or null
      * if no rule yet exists.
      */
@@ -1386,7 +1386,7 @@ public class Chunk implements Map<String,Object>
      * {.tagStack} debug feature, for template writers
      * to see what tags are available during development.
      * use {.tagStack(html)} to make output more readable in a web page.
-     * 
+     *
      * @param format
      * @return
      */
@@ -1444,12 +1444,12 @@ public class Chunk implements Map<String,Object>
      * Smart objects implementing DataCapsule can provide their own
      * legend of available tags and which methods to call for exporting
      * the tag data.
-     * 
+     *
      * NB: set() won't unwrap its data until "runtime" ie when
      * toString() is called.  addData() is not like that --
      * the exported values are copied and frozen when the addData()
-     * call is made.  No pointer to the DataCapsule is kept. 
-     * 
+     * call is made.  No pointer to the DataCapsule is kept.
+     *
      * @param smartObj
      */
     public void addData(DataCapsule smartObj)
@@ -1471,16 +1471,16 @@ public class Chunk implements Map<String,Object>
 
     /**
      * Two smart objects of the same type in a single template?
-     * 
+     *
      * No problem. Provide a unique altPrefix for each one
      * to avoid tag namespace collisions.
-     * 
+     *
      * Note: these two calls are now equivalent:
      *   chunk.addData(capsule,"x");
      *   chunk.set("x",capsule);
-     * 
+     *
      * The second form is preferred, so this method may get deprecated.
-     * 
+     *
      * @param smartObj
      * @param altPrefix
      */

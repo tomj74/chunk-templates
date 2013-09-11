@@ -74,8 +74,9 @@ public class Theme implements ContentSource, ChunkFactory
      */
     public void setEncoding(String encoding)
     {
-        if (getThemeLayers() != null) {
-            for (TemplateSet layer : getThemeLayers()) {
+        ArrayList<TemplateSet> templateSets = getTemplateSets();
+        if (templateSets != null) {
+            for (TemplateSet layer : templateSets) {
                 layer.setEncoding(encoding);
             }
         }
@@ -108,7 +109,7 @@ public class Theme implements ContentSource, ChunkFactory
         }
     }
 
-    private ArrayList<TemplateSet> getThemeLayers()
+    private ArrayList<ContentSource> getThemeLayers()
     {
         // funneling all access through here to enable lazy init.
         if (themeLayers.size() < 1) { init(); }
@@ -125,18 +126,21 @@ public class Theme implements ContentSource, ChunkFactory
     public void setDirtyInterval(int minutes)
     {
         // propagate setting down to each layer
-        for (TemplateSet layer: getThemeLayers()) {
-            layer.setDirtyInterval(minutes);
+        ArrayList<TemplateSet> templateSets = getTemplateSets();
+        if (templateSets != null) {
+            for (TemplateSet layer : templateSets) {
+                layer.setDirtyInterval(minutes);
+            }
         }
     }
 
     public Snippet getSnippet(String templateName, String ext)
     {
-        ArrayList<TemplateSet> layers = getThemeLayers();
+        ArrayList<ContentSource> layers = getThemeLayers();
         // later layers have precedence if they provide the item
         for (int i=layers.size()-1; i>=0; i--) {
-            TemplateSet x = layers.get(i);
-            Snippet template = x.getSnippet(templateName, ext);
+            ContentSource x = layers.get(i);
+            Snippet template = x.getSnippet(";" + ext + ";" + templateName);
             if (template != null) {
                 return template;
             }
@@ -146,10 +150,10 @@ public class Theme implements ContentSource, ChunkFactory
 
     public Snippet getSnippet(String itemName)
     {
-        ArrayList<TemplateSet> layers = getThemeLayers();
+        ArrayList<ContentSource> layers = getThemeLayers();
         // later layers have precedence if they provide the item
         for (int i=layers.size()-1; i>=0; i--) {
-            TemplateSet x = layers.get(i);
+            ContentSource x = layers.get(i);
             if (x.provides(itemName)) {
                 return x.getSnippet(itemName);
             }
@@ -165,7 +169,7 @@ public class Theme implements ContentSource, ChunkFactory
     public boolean provides(String itemName)
     {
         for (int i=themeLayers.size()-1; i>=0; i--) {
-            TemplateSet x = themeLayers.get(i);
+            ContentSource x = themeLayers.get(i);
             if (x.provides(itemName)) return true;
         }
         return false;
@@ -177,23 +181,38 @@ public class Theme implements ContentSource, ChunkFactory
 
         String prettyExt = ext;
         if (prettyExt == null) {
-            TemplateSet baseLayer = themeLayers.get(0);
-            prettyExt = baseLayer.getDefaultExtension();
+            ContentSource baseLayer = themeLayers.get(0);
+            if (baseLayer instanceof TemplateSet) {
+                prettyExt = ((TemplateSet)baseLayer).getDefaultExtension();
+            }
         }
 
         StringBuilder err = new StringBuilder();
         err.append("[");
-        err.append(prettyExt);
-        err.append(" template '");
-        err.append(templateName);
-        err.append("' not found]<!-- looked in [");
-        for (int i=themeLayers.size()-1; i>=0; i--) {
-            if (i < themeLayers.size()-1) { err.append(","); }
-            TemplateSet x = themeLayers.get(i);
-            err.append(x.getTemplatePath(templateName,prettyExt));
+        if (prettyExt != null) {
+            err.append(prettyExt);
+            err.append(" ");
         }
+        err.append("template '");
+        err.append(templateName);
+        err.append("' not found]");
 
-        err.append("] -->");
+        if (prettyExt != null) {
+            String places = "";
+            ArrayList<TemplateSet> templateSets = getTemplateSets();
+            if (templateSets != null) {
+                for (int i=templateSets.size()-1; i>=0; i--) {
+                    TemplateSet ts = templateSets.get(i);
+                    if (places.length() > 0) { places += ","; }
+                    places += ts.getTemplatePath(templateName,prettyExt);
+                }
+            }
+            if (places.length() > 0) {
+                err.append("<!-- looked in [");
+                err.append(places);
+                err.append("] -->");
+            }
+        }
 
         if (errLog != null) {
             Chunk.logChunkError(errLog, err.toString());
@@ -204,10 +223,10 @@ public class Theme implements ContentSource, ChunkFactory
 
     public String fetch(String itemName)
     {
-        ArrayList<TemplateSet> layers = getThemeLayers();
+        ArrayList<ContentSource> layers = getThemeLayers();
         // later layers have precedence if they provide the item
         for (int i=layers.size()-1; i>=0; i--) {
-            TemplateSet x = layers.get(i);
+            ContentSource x = layers.get(i);
             if (x.provides(itemName)) {
                 return x.fetch(itemName);
             }
@@ -316,13 +335,14 @@ public class Theme implements ContentSource, ChunkFactory
      * Chunk might still be able to find your templates but it will work a
      * lot harder.  Without this info, it has to peek into every jar in the
      * classpath every time it loads a new template.
-     * 
+     *
      * @param classInSameJar
      */
     public void setJarContext(Class<?> classInSameJar)
     {
-        if (getThemeLayers() != null) {
-            for (TemplateSet layer : getThemeLayers()) {
+        ArrayList<TemplateSet> templateSets = getTemplateSets();
+        if (templateSets != null) {
+            for (TemplateSet layer : templateSets) {
                 layer.setJarContext(classInSameJar);
             }
         }
@@ -330,11 +350,24 @@ public class Theme implements ContentSource, ChunkFactory
 
     public void setJarContext(Object ctx)
     {
-        if (getThemeLayers() != null) {
-            for (TemplateSet layer : getThemeLayers()) {
+        ArrayList<TemplateSet> templateSets = getTemplateSets();
+        if (templateSets != null) {
+            for (TemplateSet layer : templateSets) {
                 layer.setJarContext(ctx);
             }
         }
+    }
+
+    private ArrayList<TemplateSet> getTemplateSets()
+    {
+        ArrayList<TemplateSet> sets = null;
+        for (ContentSource x : themeLayers) {
+            if (x instanceof TemplateSet) {
+                if (sets == null) sets = new ArrayList<TemplateSet>();
+                sets.add((TemplateSet)x);
+            }
+        }
+        return sets;
     }
 
     // now supporting user-contributed filters
