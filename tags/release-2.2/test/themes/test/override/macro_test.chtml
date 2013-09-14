@@ -1,0 +1,17 @@
+{.super}{^super}
+
+{#bug29}
+{.exec BUG29_MACRO}
+{$col1=}{.include #bug29_column_a}{=}
+{$col2=}{.include #bug29_column_b}{=}
+{/exec}
+
+{#}
+
+{#bug29_column_a}Forks{#}
+{#bug29_column_b}Knives{#}
+
+{#bug29_target_output}
+<div>Forks</div>
+<div>Knives</div>
+{#}
