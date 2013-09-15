@@ -175,9 +175,8 @@ His boss is {~obj.boss.name}.
 {~i.item} {~i.price|sprintf($%,.2f)}
 {/loop}
 {^loop in ~array as x}
-{~x}{^divider}-{/divider}{^onEmpty}
+{~x}{^divider}-{/divider}{^onEmpty}{/onEmpty}
 {/loop}
-
 {#}
 
 
@@ -198,8 +197,7 @@ multiple lines!<br/>
 spoon $0.20
 fork $0.30
 knife $1.03
-1-2-3
-{#}
+1-2-3{#}
 
 
 {!---------------------------------------------}
@@ -262,7 +260,6 @@ multiple lines!<br/>
 spoon $0.20
 fork $0.30
 knife $1.03
-
 {#}
 
 
