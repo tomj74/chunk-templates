@@ -184,11 +184,10 @@ public class TemplateDoc implements Iterator<TemplateDoc.Doclet>, Iterable<Templ
             }
             if (lineFeed) {
                 rootTemplate.append(line);
-                // This will not add newline at EOF even if present in template file
-                // Is this the Right Thing to do?
-                // And if not, how would we even detect a trailing newline in the file?
-                // ie since readLine() returns the same string either way.
-                if (brTemp.ready()) rootTemplate.append("\n");
+                // There might not be a newline at EOF but it's safer to just add one anyway.
+                // If someone has a burning need for a snippet that doesn't end in a newline,
+                // they can achieve this via a {#subtemplate}with no trailing linefeed{#}
+                rootTemplate.append("\n");
             }
             if (subtpl != null) {
                 return subtpl;

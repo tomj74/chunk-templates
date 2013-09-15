@@ -5,7 +5,6 @@
 {$col1=}{.include #bug29_column_a}{=}
 {$col2=}{.include #bug29_column_b}{=}
 {/exec}
-
 {#}
 
 {#bug29_column_a}Forks{#}

@@ -117,16 +117,29 @@
 
 {!---------------------------------------------}
 {#looptest_nested_loops}
- {^loop data="~widgets"}
-{~widget_name|_}
-  {^loop data="~wodgets"}
- {~wodget_name|_}{~wodget_name|sel(~widget_name, *)}
-  {^divider}
+ {.loop data="$widgets"}
+{$widget_name|_}{.if ($new == new)} new!{/if}
+  {.loop data="$wodgets"}
+ {$wodget_name|_}{$wodget_name|sel($widget_name, *)}
+  {.divider}
  --
   {/loop}
- {^divider}
+ {.divider}
 ==
  {/loop}
+{#}
+
+
+{!---------------------------------------------}
+{#inline_if_nocollapse}
+Content{.if ($new)} NEW!{/if}
+{.loop in $abc as $x}
+{$x}
+{/loop}
+Content
+{.loop in $abc as $x}
+{$x}
+{/loop}
 {#}
 
 

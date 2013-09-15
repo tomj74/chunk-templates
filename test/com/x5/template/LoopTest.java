@@ -127,7 +127,33 @@ public class LoopTest
         c.set("wodgets",wodgets);
 
         assertEquals("thingamabob\n thingamabob *\n --\n doodad\n==\ndoodad\n thingamabob\n --\n doodad *\n",
-                c.toString());
+            c.toString());
+    }
+
+    @Test
+    public void testUnbalancedInlineTables()
+    {
+        Theme theme = new Theme("themes","test/base,test/override");
+
+        Chunk c = theme.makeChunk("chunk_test#looptest_nested_loops");
+        String widgets = "[[widget_id,widget_name,new],[1,thingamabob],[2,doodad,new]]";
+        String wodgets = "[[wodget_id,wodget_name,new],[1,thingamabob,new],[2,doodad]]";
+        c.set("widgets",widgets);
+        c.set("wodgets",wodgets);
+
+        assertEquals("thingamabob\n thingamabob *\n --\n doodad\n==\ndoodad new!\n thingamabob\n --\n doodad *\n",
+            c.toString());
+    }
+    
+    @Test
+    public void testInlineIfPreserveLinefeed()
+    {
+        Theme theme = new Theme("themes","test/base");
+        
+        Chunk c = theme.makeChunk("chunk_test#inline_if_nocollapse");
+        c.set("abc",new String[]{"a","b","c"});
+        
+        assertEquals("Content\na\nb\nc\nContent\na\nb\nc\n",c.toString());
     }
 
     @Test

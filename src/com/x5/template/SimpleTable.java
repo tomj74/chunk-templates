@@ -17,21 +17,21 @@ public class SimpleTable implements TableData, Map<String,Object>
     private int size = 0;
     private Map<String,Integer> columnIndex;
     ///private Map<String,Object> currentRecord;
- 
+
     public static final String ANON_ARRAY_LABEL = "_anonymous_";
- 
+
     public SimpleTable(String[] columnLabels, Vector<String[]> tableRows)
     {
         this.labels = columnLabels;
         this.records = new ArrayList<String[]>(tableRows);
     }
- 
+
     public SimpleTable(String[] columnLabels, ArrayList<String[]> tableRows)
     {
         this.labels = columnLabels;
         this.records = tableRows;
     }
- 
+
     public SimpleTable(String[] columnLabels, String[][] tableRows)
     {
         this.labels = columnLabels;
@@ -67,7 +67,7 @@ public class SimpleTable implements TableData, Map<String,Object>
             records.add(record);
         }
     }
- 
+
     public String[] getColumnLabels()
     {
         return labels;
@@ -116,15 +116,15 @@ public class SimpleTable implements TableData, Map<String,Object>
             return null;
         }
     }
- 
+
     public void reset()
     {
         this.cursor = -1;
     }
 
- 
+
     // for efficiency, this obj is returned as the record object as well.
- 
+
     public int size()
     {
         return (labels == null) ? 0 : labels.length;
@@ -158,9 +158,9 @@ public class SimpleTable implements TableData, Map<String,Object>
     public boolean containsValue(Object value)
     {
         String[] record = getRow();
-  
+
         if (record == null) return false;
-  
+
         for (int i=0; i<record.length; i++) {
             if (value.equals(record[i])) return true;
         }
@@ -173,7 +173,11 @@ public class SimpleTable implements TableData, Map<String,Object>
         if (columnIndex == null) indexColumns();
         if (columnIndex != null && columnIndex.containsKey(key)) {
             String[] record = getRow();
-            return record[columnIndex.get(key)];
+            try {
+                return record[columnIndex.get(key)];
+            } catch (ArrayIndexOutOfBoundsException e) {
+                return null;
+            }
         } else {
             return null;
         }

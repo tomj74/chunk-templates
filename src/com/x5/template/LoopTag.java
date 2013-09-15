@@ -729,7 +729,8 @@ public class LoopTag extends BlockTag
 
         List<SnippetPart> bodyParts = body.getParts();
 
-        int eMarker = -1, dMarker = -1, dMarkerEnd = bodyParts.size();
+        int eMarker = -1, dMarker = -1;
+        int eMarkerEnd = bodyParts.size(), dMarkerEnd = bodyParts.size();
 
         for (int i=bodyParts.size()-1; i>=0; i--) {
             SnippetPart part = bodyParts.get(i);
@@ -742,6 +743,8 @@ public class LoopTag extends BlockTag
                     dMarker = i;
                 } else if (tagText.equals("./divider")) {
                     dMarkerEnd = i;
+                } else if (tagText.equals("./onEmpty")) {
+                    eMarkerEnd = i;
                 }
             }
         }
@@ -752,30 +755,24 @@ public class LoopTag extends BlockTag
             doTrim = false;
         }
 
-        int eMarkerEnd;
-
         int bodyEnd = -1;
 
         if (eMarker > -1 && dMarker > -1) {
             if (eMarker > dMarker) {
                 bodyEnd = dMarker;
-                eMarkerEnd = bodyParts.size();
                 dMarkerEnd = Math.min(eMarker, dMarkerEnd);
             } else {
                 bodyEnd = eMarker;
-                eMarkerEnd = dMarker;
-                ///dMarkerEnd = bodyParts.size();
+                eMarkerEnd = Math.min(dMarker, eMarkerEnd);
             }
             emptySnippet = extractParts(bodyParts,eMarker+1,eMarkerEnd,doTrim);
             dividerSnippet = extractParts(bodyParts,dMarker+1,dMarkerEnd,doTrim);
         } else if (eMarker > -1) {
             bodyEnd = eMarker;
-            eMarkerEnd = bodyParts.size();
             emptySnippet = extractParts(bodyParts,eMarker+1,eMarkerEnd,doTrim);
             dividerSnippet = null;
         } else if (dMarker > -1) {
             bodyEnd = dMarker;
-            ///dMarkerEnd = bodyParts.size();
             emptySnippet = null;
             dividerSnippet = extractParts(bodyParts,dMarker+1,dMarkerEnd,doTrim);
         } else {

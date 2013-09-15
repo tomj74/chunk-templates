@@ -21,12 +21,12 @@ public class Snippet
     private static long gcCounter = 0;
     private static final int gcInterval = 500;
     private static final long CAN_GC_AFTER = 1000 * 60;
- 
+
     private Snippet(String template)
     {
         parseParts(template);
     }
- 
+
     public static Snippet getSnippet(String template)
     {
         if (Snippet.useCache) {
@@ -35,16 +35,16 @@ public class Snippet
             return new Snippet(template);
         }
     }
- 
+
     /* premature optimization? */
     private static Snippet getSnippetFromCache(String template)
     {
         long timestamp = System.currentTimeMillis();
-  
+
         if (++gcCounter % gcInterval == 0) {
             pruneCache(timestamp);
         }
-  
+
         Snippet s = snippetCache.get(template);
         if (s != null) {
             cacheAge.put(template, timestamp);
@@ -56,7 +56,7 @@ public class Snippet
             return s;
         }
     }
- 
+
     private static boolean isCacheEnabled()
     {
         String useCacheProperty = System.getProperty("chunk.snippetcache");
@@ -66,12 +66,12 @@ public class Snippet
             return false;
         }
     }
- 
+
     private static void pruneCache(long timestamp)
     {
         long threshhold = timestamp - CAN_GC_AFTER;
         if (lastGC > threshhold) return;
-  
+
         Iterator<String> i = snippetCache.keySet().iterator();
         while (i.hasNext()) {
             String key = i.next();
@@ -83,7 +83,7 @@ public class Snippet
         }
         lastGC = timestamp;
     }
- 
+
     public Snippet(List<SnippetPart> bodyParts)
     {
         if (bodyParts == null || bodyParts.size() == 0) {
@@ -92,7 +92,7 @@ public class Snippet
             this.parts = bodyParts;
         }
     }
- 
+
     public Snippet(List<SnippetPart> bodyParts, int from, int to)
     {
         if (bodyParts == null || bodyParts.size() == 0) {
@@ -110,16 +110,16 @@ public class Snippet
     {
         return parts;
     }
- 
+
     private static final String MAGIC_CHARS = "~$^./!*=+_";
- 
+
     /**
      * One pass over the string.  Identify all dynamic tags and slice into
      * parts - literals will pass directly into output, dynamic SnippetTag parts
      * will get interpreted.
-     * 
+     *
      * Second step is to nest block tags properly.
-     * 
+     *
      * @param template
      */
     private void parseParts(String template)
@@ -131,34 +131,34 @@ public class Snippet
         simpleText = null;
 
         char c, c2;
-  
+
         // how many regex delims left before tag parser has to wake up again
         int regexDelimCount = 0;
-  
+
         int marker = 0; // beginning of latest static span
         int tagStart = -1; // beginning of latest tag span
         int trailingBackslashes = 0; // track escape chars so we can ignore escapes
-  
+
         // the parser has to ignore certain chars when in various states
         boolean insideRegex = false;
         boolean insideTrToken = false;
         boolean insideComment = false;
         boolean insideLiteral = false;
-  
+
         // magicChar determines what sort of tag are we forming
         char magicChar = 0;
-  
+
         int len = template.length();
-  
+
         for (int i=0; i<len; i++) {
             //c = chars[i];
             c = template.charAt(i);
 
             if (tagStart < 0) {
- 
+
                 // edge case - can't start a tag on final char of sequence
                 if (i+1 >= len) break;
- 
+
                 //c2 = chars[i+1];
                 c2 = template.charAt(i+1);
                 // collecting static until tag comes along
@@ -181,11 +181,11 @@ public class Snippet
                     insideTrToken = true;
                     i++;
                 }
- 
+
             } else {
- 
+
                 // tagStart is positive value -- scan for tag-end
- 
+
                 if (insideTrToken && c == ']') {
                     if (trailingBackslashes % 2 == 0) {
                         // FOUND TOKEN END
@@ -289,7 +289,7 @@ public class Snippet
                 }
             }
         }
-  
+
         if (parts == null) {
             // no parts? avoid overhead of ArrayList
             simpleText = template;
@@ -306,12 +306,12 @@ public class Snippet
             }
             groupBlocks(parts);
         }
-  
+
     }
 
     /**
      * Sniff out invalid tags that match specific common profile.
-     * 
+     *
      * @return
      */
     private static boolean isJavascriptHeadFake(int i, String template)
@@ -319,7 +319,7 @@ public class Snippet
         int len = template.length();
         // verify that this is tag and not function(){$.someJQueryFn()}
         if (i+2 >= len) return true;
-  
+
         char c3 = template.charAt(i+2);
         // {$.XXX} {$(XXX)} and {$ XXX} and {$$xxx} are never valid chunk tags
         if (c3 == '.' || c3 == '(' || c3 == ' ' || c3 == '$') {
@@ -334,16 +334,16 @@ public class Snippet
                 return true;
             }
         }
-  
+
         // did not detect javascript.  probably a legit tag.
         return false;
     }
- 
+
     public boolean isSimple()
     {
         return simpleText != null;
     }
- 
+
     private boolean isLiteralClose(String template, char magicChar, int tagStart, int i)
     {
         if (magicChar == '^') {
@@ -367,24 +367,24 @@ public class Snippet
         }
         return false;
     }
- 
+
     private SnippetPart extractTag(char magicChar, String template,
             int marker, int tagStart, int i)
     {
         // FOUND TAG END
         // extract and add to part sequence
         if (parts == null) parts = new ArrayList<SnippetPart>();
-  
+
         // any static content leading up to tag?  capture static part.
         if (marker < tagStart) {
             SnippetPart literal = new SnippetPart(template.substring(marker,tagStart));
             literal.setLiteral(true);
             parts.add(literal);
         }
-  
+
         // and now focus on the tag...
         String wholeTag = template.substring(tagStart,i+1);
-  
+
         if (magicChar == '~' || magicChar == '$') {
             String gooeyCenter = template.substring(tagStart+2,i);
             SnippetTag tag = new SnippetTag(wholeTag,gooeyCenter);
@@ -439,7 +439,7 @@ public class Snippet
                 return include;
             }
         }
-  
+
         // huh? in other words, we should never reach here.
         // but just in case, let's make sure the wheels don't completely come off.
         SnippetPart wackyTag = new SnippetPart(wholeTag);
@@ -451,7 +451,7 @@ public class Snippet
         // strip comment into non-rendering part
         if (parts == null) parts = new ArrayList<SnippetPart>();
         String precedingComment = null;
-  
+
         int startOfThisLine = marker;
         if (marker < tagStart) {
             precedingComment = template.substring(marker,tagStart);
@@ -464,7 +464,7 @@ public class Snippet
             }
 
         }
-  
+
         // If eating comment leaves empty line, eat empty line too.
         //
         // ie, IF the span between final linebreak and tag is all whitespace
@@ -490,23 +490,23 @@ public class Snippet
                 i = (endOfLine == len) ? endOfLine-1 : endOfLine;
             }
         }
-  
+
         // preserve static leading up to comment
         if (precedingComment != null) {
             SnippetPart literal = new SnippetPart(precedingComment);
             literal.setLiteral(true);
             parts.add(literal);
         }
-  
+
         // this grabs the comment tag as well as any surrounding
         // whitespace that's being eaten (see above)
         String wholeComment = template.substring(tagStart,i+1);
         SnippetComment comment = new SnippetComment(wholeComment);
         parts.add(comment);
-  
+
         return i;
     }
- 
+
     private void groupBlocks(List<SnippetPart> bodyParts)
     {
         for (int i=0; i<bodyParts.size(); i++) {
@@ -532,8 +532,10 @@ public class Snippet
                         bodyParts.add(i,blockTag);
 
                         if (blockTag.doSmartTrimAroundBlock()) {
-                            smartTrimBeforeBlockStart(bodyParts,blockTag,i-1);
-                            smartTrimAfterBlockEnd(bodyParts,blockTag,i+1);
+                            int trimType = smartTrimBeforeBlockStart(bodyParts,blockTag,i-1);
+                            if (trimType != BLOCKSTART_MIDLINE) {
+                                smartTrimAfterBlockEnd(bodyParts,blockTag,i+1);
+                            }
                         }
                     } else {
                         // unmatched block tag!!  output error notice.
@@ -546,42 +548,48 @@ public class Snippet
             }
         }
     }
- 
-    private boolean smartTrimBeforeBlockStart(List<SnippetPart> parts, SnippetBlockTag blockTag, int prevPartIdx)
+
+    private static final int BLOCKSTART_TRIMMED_ALONE = -1;
+    private static final int BLOCKSTART_ALONE = 0;
+    private static final int BLOCKSTART_WITHBODY = 1;
+    private static final int BLOCKSTART_MIDLINE = 2;
+    private int smartTrimBeforeBlockStart(List<SnippetPart> parts, SnippetBlockTag blockTag, int prevPartIdx)
     {
-        if (prevPartIdx < 0) return false;
-  
         // first, ensure that block body begins with (whitespace+)LF
         // if not, abort -- smart-trim is not warranted.
         if (blockBodyStartsOnSameLine(blockTag)) {
             // abort
-            return false;
+            return BLOCKSTART_WITHBODY;
         }
- 
+
+        // there was nothing to trim before block, but
+        // might still need to trim after.
+        if (prevPartIdx < 0) return BLOCKSTART_ALONE;
+
         SnippetPart prevPart = parts.get(prevPartIdx);
-  
+
         // skip non-rendering comments
         while (prevPart instanceof SnippetComment) {
             prevPartIdx--;
-            if (prevPartIdx < 0) return false;
+            if (prevPartIdx < 0) return BLOCKSTART_ALONE;
             prevPart = parts.get(prevPartIdx);
         }
-  
+
         if (!prevPart.isLiteral()) {
             if (prevPart instanceof SnippetBlockTag) {
                 prevPart = ((SnippetBlockTag)prevPart).getCloseTag();
             } else {
                 // abort
-                return false;
+                return BLOCKSTART_MIDLINE;
             }
         }
-  
+
         String text = prevPart.getText();
         if (text.length() == 0) {
             return smartTrimBeforeBlockStart(parts, blockTag, prevPartIdx-1);
         }
-  
-        // if the block ends with LF + whitespace, trim whitespace
+
+        // if the previous block ends with LF + whitespace, trim whitespace
         int i = text.length() - 1;
         char c = text.charAt(i);
         boolean eatWhitespace = false;
@@ -601,25 +609,28 @@ public class Snippet
                     // Still just whitespace so far,
                     // no newlines -- should keep scanning
                     // backwards through parts.  recurse.
-                    if (smartTrimBeforeBlockStart(parts, blockTag, prevPartIdx-1)) {
-                        eatWhitespace = true;
+                    int trimState = smartTrimBeforeBlockStart(parts, blockTag, prevPartIdx-1);
+                    if (trimState > 0) {
+                        // non-whitespace found between blockstart and start of line
+                        // or, block body starts on same line
+                        return trimState;
                     } else {
-                        return false;
+                        eatWhitespace = true;
                     }
                 }
                 break;
             }
             c = text.charAt(i);
         }
-  
+
         if (eatWhitespace) {
             prevPart.setText( text.substring(0,i) );
             // TODO preserve eaten space as non-rendering part?
         }
-  
-        return eatWhitespace;
+
+        return eatWhitespace ? BLOCKSTART_TRIMMED_ALONE : BLOCKSTART_MIDLINE;
     }
- 
+
     private static final Pattern UNIVERSAL_LF = Pattern.compile("\n|\r\n|\r\r");
 
     private boolean blockBodyStartsOnSameLine(SnippetBlockTag blockTag)
@@ -640,7 +651,7 @@ public class Snippet
                     i++;
                     continue;
                 }
- 
+
                 // must start with (whitespace)+LF or no smart-trim
                 if (firstPart.isLiteral()) {
                     String text = firstPart.getText();
@@ -658,15 +669,15 @@ public class Snippet
                 return false;
             }
         }
-  
+
         return false;
     }
- 
+
     private void smartTrimAfterBlockEnd(List<SnippetPart> parts, SnippetBlockTag blockTag, int nextPartIdx)
     {
         if (parts.size() <= nextPartIdx) return;
         SnippetPart nextPart = parts.get(nextPartIdx);
-  
+
         // make sure to skip over non-rendering comments
         while (nextPart instanceof SnippetComment) {
             String commentText = nextPart.toString();
@@ -678,7 +689,7 @@ public class Snippet
             if (parts.size() <= nextPartIdx) return;
             nextPart = parts.get(nextPartIdx);
         }
-  
+
         if (nextPart.isLiteral()) {
             String text = nextPart.getText();
             // if the block begins with (whitespace+) LF, trim initial line
@@ -695,12 +706,12 @@ public class Snippet
             }
         }
     }
- 
+
     public String toString()
     {
         if (simpleText != null) return simpleText;
         if (parts == null) return null;
-  
+
         // reassemble parts back into original template
         StringBuilder sb = new StringBuilder();
         for (SnippetPart part : parts) {
@@ -708,7 +719,7 @@ public class Snippet
         }
         return sb.toString();
     }
- 
+
     public void render(Writer out, Chunk rules, int depth)
     throws java.io.IOException
     {
@@ -734,15 +745,15 @@ public class Snippet
             return copy;
         }
     }
- 
+
     public static Snippet makeLiteralSnippet(String literal)
     {
         SnippetPart x = new SnippetPart(literal);
         x.setLiteral(true);
-  
+
         List<SnippetPart> listOfOne = new ArrayList<SnippetPart>();
         listOfOne.add(x);
-  
+
         return new Snippet(listOfOne);
     }
 
@@ -771,7 +782,7 @@ public class Snippet
         }
         return null;
     }
- 
+
     static Snippet consolidateSnippets(Vector<Snippet> template)
     {
         if (template == null) return null;
@@ -784,13 +795,13 @@ public class Snippet
             Snippet s = template.get(i);
             merged.addAll(s.ungroupBlocks());
         }
-  
+
         Snippet voltron = new Snippet(merged);
         voltron.groupBlocks(voltron.parts);
-  
+
         return voltron;
     }
- 
+
     private List<SnippetPart> ungroupBlocks()
     {
         if (parts == null) {
@@ -836,5 +847,5 @@ public class Snippet
             return flat;
         }
     }
- 
+
 }
