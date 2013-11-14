@@ -1,0 +1,9 @@
+{!-- don't override the root template, defer to base version --}
+
+This text will be ignored.  {^super}
+
+
+{!---------------------------------------------}
+{#layer_test}
+Override Layer
+{#}

@@ -1,0 +1,316 @@
+{!-- chunk_test.html contains snippets for use in the test suite --}
+
+{^include #layer_test}
+
+{!---------------------------------------------}
+{#looptest_simple_block_loop}
+{^loop data="~widgets"}
+ {~widget_id} {~widget_name}<br/>
+{/loop}
+{#}
+
+{!---------------------------------------------}
+{#looptest_less_simple_block_loop}
+{^loop data="~widgets"}
+ {~widget_id} {~widget_name}<br/>
+{^divider}
+ <hr/>
+{^onEmpty}
+ <i>No widgets!</i>
+{/loop}
+{#}
+
+{!---------------------------------------------}
+{#looptest_ez_syntax}
+{^loop in ~widgets}
+ {~widget_id} {~widget_name}<br/>
+{^divider}
+ <hr/>
+{^onEmpty}
+ <i>No widgets!</i>
+{/loop}
+{#}
+
+{!---------------------------------------------}
+{#looptest_first_last}
+{.loop in $widgets first_last="true"}
+<div class="{$is_first|ondefined(first):}{$is_last|ondefined(last):}">{$widget_id}</div>
+{/loop}
+{#}
+
+{!---------------------------------------------}
+{#looptest_first_last_named}
+{.loop in $widgets first_last="first,last"}
+<div class="{$first|ondefined(first):}{$last|ondefined(last):}">{$widget_id}</div>
+{/loop}
+{#}
+
+{!---------------------------------------------}
+{#looptest_first_last_prefixed}
+{.loop in $widgets as $w first_last="true"}
+<div class="{$w.is_first|ondefined(first):}{$w.is_last|ondefined(last):}">{$w.widget_id}</div>
+{/loop}
+{#}
+
+{!---------------------------------------------}
+{#looptest_counter}
+{.loop in $widgets counter_tags="true"}
+ {$0} {$1} {$widget_id} {$widget_name}<br/>
+{.divider}
+ <hr/>
+{.onEmpty}
+ <i>No widgets!</i>
+{/loop}
+{#}
+
+{!---------------------------------------------}
+{#looptest_counter_i}
+{.loop in $widgets counter_tag="$i"}
+ {$i} {$widget_id} {$widget_name}<br/>
+{.divider}
+ <hr/>
+{.onEmpty}
+ <i>No widgets!</i>
+{/loop}
+{#}
+
+{!---------------------------------------------}
+{#looptest_bad_close_tag}
+{.loop in $widgets counter_tag="$i"}
+ {$i} {$widget_id} {$widget_name}<br/>
+{.divider}
+ <hr/>
+{.onEmpty}
+ <i>No widgets!</i>
+{.loop}
+{#}
+
+{!---------------------------------------------}
+{#looptest_simple_loop_noblock}
+{^loop data="~widgets" template="#widget_row" nodata="#no_widgets" divider="<hr/>"}
+{#}
+
+{!---------------------------------------------}
+{#widget_row}
+{~widget_id} {~widget_name}<br/>
+{#}
+
+{!---------------------------------------------}
+{#no_widgets}
+<i>No widgets!</i>
+{#}
+
+{!---------------------------------------------}
+{#looptest_simple_loop_noblock_delim_tpl}
+{^loop data="~widgets" template="#widget_row" nodata="#no_widgets" divider="#delim"}
+{#}
+
+{!---------------------------------------------}
+{#delim}
+<hr/>
+{#}
+
+{!---------------------------------------------}
+{#looptest_simple_loop_noblock_bad_delim_tpl}
+{^loop data="~widgets" template="#widget_row" nodata="#no_widgets" divider="#not_exist"}
+{#}
+
+{!---------------------------------------------}
+{#looptest_nested_loops}
+ {.loop data="$widgets"}
+{$widget_name|_}{.if ($new == new)} new!{/if}
+  {.loop data="$wodgets"}
+ {$wodget_name|_}{$wodget_name|sel($widget_name, *)}
+  {.divider}
+ --
+  {/loop}
+ {.divider}
+==
+ {/loop}
+{#}
+
+
+{!---------------------------------------------}
+{#inline_if_nocollapse}
+Content{.if ($new)} NEW!{/if}
+{.loop in $abc as $x}
+{$x}
+{/loop}
+Content
+{.loop in $abc as $x}
+{$x}
+{/loop}
+{#}
+
+
+{!---------------------------------------------}
+{#looptest_nested_loops_ez_syntax}
+ {!-- outer loop --}
+ {^loop in ~widgets as w  array_tags="true" counter_tags="true"}
+{!-- can access table data via numbered array index ~w[0] ~w[1]
+     and/or object-style ~w.property_name --}
+{~1}. {~w[0]}:{~w.widget_name}
+  {!-- inner loop over same table --}
+  {^loop in ~widgets as x}
+ {~x.widget_name}{~x.widget_name|sel(~w.widget_name, *)}
+  {^divider}
+ --
+  {/loop}
+ {^divider}
+==
+ {/loop}
+{#}
+
+
+{!---------------------------------------------}
+{#if_regex_inside_loop}
+{~program_code}
+{^loop in ~widgets as x}
+  {^if (~program_code =~ /ATD/)}
+{!-- nothing! --}
+  {^elseIf (~x.is_toaster)}
+TOASTER!
+  {^else}
+NOT A TOASTER
+  {/if}
+{/loop}
+{#}
+
+
+{!---------------------------------------------}
+{#if_regex_inside_loop_tilde}
+{~program_code}
+{^loop in ~widgets as ~x}{!-- allow as ~x to mean as x --}
+  {^if (~program_code =~ /ATD/)}
+{!-- nothing! --}
+  {^elseIf (~x.is_toaster)}
+TOASTER!
+  {^else}
+NOT A TOASTER
+  {/if}
+{/loop}
+{#}
+
+
+{!---------------------------------------------}
+{#alt_prefix_test}
+{$program_code}
+{.loop in $widgets as $x}{!-- allow as ~x to mean as x --}
+  {.if ($program_code =~ /ATD/)}
+{!-- nothing! --}
+  {.elseIf ($x.is_toaster)}
+TOASTER!
+  {.else}
+NOT A TOASTER
+  {/if}
+{/loop}
+{#}
+
+
+{!---------------------------------------------}
+{#looptest_whitespace}
+<ul>
+
+{.loop in $widgets as $w}
+<li>{$w.widget_name}</li>
+{/loop}
+
+</ul>
+<ol>
+
+ {.loop in $widgets as $w}
+<li>{$w.widget_name}</li>
+ {/loop}
+
+</ol>
+{#}
+
+
+{!---------------------------------------------}
+{#tree_test}
+{.exec #print_x json}
+{"x":
+ {"name":"Bond",
+  "codename":"007",
+  "films":[{"name":"Goldfinger",
+            "year":"1964",
+            "actor":"Connery"},
+           {"name":"Casino Royale",
+            "year":"2006",
+            "actor":"Craig"}],
+  "enemies":[]
+  }
+}
+{/exec}
+{#}
+
+{#print_x}
+  {.if ($x|type == 'OBJECT') }
+{.exec #print_obj}{$obj=}{$x}{=}{/exec}
+  {.elseIf ($x|type == 'LIST') }
+{.exec #print_list}{$list=}{$x}{=}{/exec}
+  {.else}
+{$x}{/if}{#}
+
+{#print_obj}
+{.loop in $obj as $key:$val}
+<dt>{$key}</dt>
+  <dd>{.exec #print_x}{$x=}{$val}{=}{/exec}</dd>
+{.onEmpty}<i>[no attrs]</i>
+{/loop}
+{#}
+
+{#print_list}
+<ul>
+{.loop in $list as $item}
+ <li>{.exec #print_x}{$x=}{$item}{=}{/exec}</li>
+{.onEmpty}
+ <li><i>Empty List</i></li>
+{/loop}
+</ul>
+{#}
+
+{#tree_test_target_output}
+<dt>name</dt>
+  <dd>Bond</dd>
+<dt>codename</dt>
+  <dd>007</dd>
+<dt>films</dt>
+  <dd><ul>
+ <li><dt>name</dt>
+  <dd>Goldfinger</dd>
+<dt>year</dt>
+  <dd>1964</dd>
+<dt>actor</dt>
+  <dd>Connery</dd>
+</li>
+ <li><dt>name</dt>
+  <dd>Casino Royale</dd>
+<dt>year</dt>
+  <dd>2006</dd>
+<dt>actor</dt>
+  <dd>Craig</dd>
+</li>
+</ul>
+</dd>
+<dt>enemies</dt>
+  <dd><ul>
+ <li><i>Empty List</i></li>
+</ul>
+</dd>
+{#}
+
+{!---------------------------------------------}
+{#layer_test}
+Base Layer
+{#}
+
+
+{!---------------------------------------------}
+{!-- contains unterminated literal, make sure
+     this is the last snippet in the file!
+  --}
+{#uncapped_literal}
+Scooby Doo says {~go:ruff ruff}!
+{^literal}
+{#}
