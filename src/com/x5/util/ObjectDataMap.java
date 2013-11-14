@@ -90,8 +90,20 @@ public class ObjectDataMap implements Map
             return mapifyCapsule((DataCapsule)pojo);
         } else if (isBean) {
             try {
-                return mapifyBean(pojo);
-            } catch (java.beans.IntrospectionException e) {
+                // java.beans.* is missing on android.
+                // Test for existence before use...
+                try {
+                    Class<?> beanClass = Class.forName("java.beans.Introspector");
+                    return StandardIntrospector.mapifyBean(pojo);
+                } catch (ClassNotFoundException e) {
+                    try {
+                        Class<?> madrobotClass = Class.forName("com.madrobot.beans.Introspector");
+                        return MadRobotIntrospector.mapifyBean(pojo);
+                    } catch (ClassNotFoundException e2) {
+                        // soldier on, treat as pojo
+                    }
+                }
+            } catch (IntrospectionException e) {
                 // hmm, not a bean after all...
             }
         }
@@ -120,45 +132,7 @@ public class ObjectDataMap implements Map
                 if (pickle == null) pickle = new HashMap<String,Object>();
                 // convert isActive to is_active
                 paramName = splitCamelCase(paramName);
-                storeValue(pickle, paramClass, paramName, paramValue);
-            }
-        }
-
-        return pickle;
-    }
-
-    private Map<String,Object> mapifyBean(Object bean)
-    throws java.beans.IntrospectionException
-    {
-        BeanInfo beanInfo = Introspector.getBeanInfo(bean.getClass());
-        PropertyDescriptor[] properties = beanInfo.getPropertyDescriptors();
-
-        if (properties == null) return null;
-
-        Map<String,Object> pickle = null;
-
-        // copy properties into hashtable
-        for (PropertyDescriptor property : properties) {
-            Class paramClass = property.getPropertyType();
-            Method getter = property.getReadMethod();
-            try {
-                Object paramValue = getter.invoke(bean, (Object[])null);
-
-                if (paramValue != null) {
-                    // converts isActive() to is_active
-                    // converts getBookTitle() to book_title
-                    String paramName = property.getName();
-                    paramName = splitCamelCase(paramName);
-                    if (paramValue instanceof Boolean) {
-                        paramName = "is_"+paramName;
-                    }
-
-                    if (pickle == null) pickle = new HashMap<String,Object>();
-
-                    storeValue(pickle, paramClass, paramName, paramValue);
-                }
-            } catch (InvocationTargetException e) {
-            } catch (IllegalAccessException e) {
+                storeValue(pickle, paramClass, paramName, paramValue, isBean);
             }
         }
 
@@ -188,8 +162,8 @@ public class ObjectDataMap implements Map
         return pickle;
     }
 
-    private void storeValue(Map<String,Object> pickle, Class paramClass,
-                            String paramName, Object paramValue)
+    private static void storeValue(Map<String,Object> pickle, Class paramClass,
+                            String paramName, Object paramValue, boolean isBean)
     {
         if (paramClass.isArray() || paramValue instanceof List) {
             pickle.put(paramName, paramValue);
@@ -201,9 +175,6 @@ public class ObjectDataMap implements Map
             }
         } else if (paramClass.isPrimitive() || isWrapperType(paramClass)) {
             pickle.put(paramName, paramValue.toString());
-        } else if (paramValue == this) {
-            // tiny optimization
-            pickle.put(paramName, this);
         } else {
             // box all non-primitive object member fields
             // in their own ObjectDataMap wrapper.
@@ -296,4 +267,102 @@ public class ObjectDataMap implements Map
         init();
         return pickle.entrySet();
     }
+    
+    private static class IntrospectionException extends Exception
+    {
+    }
+    
+    private static class StandardIntrospector
+    {
+        private static Map<String,Object> mapifyBean(Object bean)
+        throws IntrospectionException
+        {
+            PropertyDescriptor[] properties = null;
+            try {
+                BeanInfo beanInfo = Introspector.getBeanInfo(bean.getClass());
+                properties = beanInfo.getPropertyDescriptors();
+            } catch (java.beans.IntrospectionException e) {
+                throw new IntrospectionException();
+            }
+
+            if (properties == null) return null;
+
+            Map<String,Object> pickle = null;
+
+            // copy properties into hashtable
+            for (PropertyDescriptor property : properties) {
+                Class paramClass = property.getPropertyType();
+                Method getter = property.getReadMethod();
+                try {
+                    Object paramValue = getter.invoke(bean, (Object[])null);
+
+                    if (paramValue != null) {
+                        // converts isActive() to is_active
+                        // converts getBookTitle() to book_title
+                        String paramName = property.getName();
+                        paramName = splitCamelCase(paramName);
+                        if (paramValue instanceof Boolean) {
+                            paramName = "is_"+paramName;
+                        }
+
+                        if (pickle == null) pickle = new HashMap<String,Object>();
+
+                        storeValue(pickle, paramClass, paramName, paramValue, true);
+                    }
+                } catch (InvocationTargetException e) {
+                } catch (IllegalAccessException e) {
+                }
+            }
+
+            return pickle;
+        }        
+    }
+
+    // mad robot provides a stopgap introspection library for android projects
+    private static class MadRobotIntrospector
+    {
+        private static Map<String,Object> mapifyBean(Object bean)
+        throws IntrospectionException
+        {
+            com.madrobot.beans.PropertyDescriptor[] properties = null;
+            try {
+                com.madrobot.beans.BeanInfo beanInfo = com.madrobot.beans.Introspector.getBeanInfo(bean.getClass());
+                properties = beanInfo.getPropertyDescriptors();
+            } catch (com.madrobot.beans.IntrospectionException e) {
+                throw new IntrospectionException();
+            }
+    
+            if (properties == null) return null;
+    
+            Map<String,Object> pickle = null;
+    
+            // copy properties into hashtable
+            for (com.madrobot.beans.PropertyDescriptor property : properties) {
+                Class paramClass = property.getPropertyType();
+                Method getter = property.getReadMethod();
+                try {
+                    Object paramValue = getter.invoke(bean, (Object[])null);
+    
+                    if (paramValue != null) {
+                        // converts isActive() to is_active
+                        // converts getBookTitle() to book_title
+                        String paramName = property.getName();
+                        paramName = splitCamelCase(paramName);
+                        if (paramValue instanceof Boolean) {
+                            paramName = "is_"+paramName;
+                        }
+    
+                        if (pickle == null) pickle = new HashMap<String,Object>();
+    
+                        storeValue(pickle, paramClass, paramName, paramValue, true);
+                    }
+                } catch (InvocationTargetException e) {
+                } catch (IllegalAccessException e) {
+                }
+            }
+    
+            return pickle;
+        }
+    }
+
 }
