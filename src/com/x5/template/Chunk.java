@@ -244,7 +244,7 @@ import com.x5.util.TableData;
  * Updates: <A href="http://www.x5software.com/chunk/">Chunk Documentation</A><BR>
  *
  * @author Tom McClure
- * @version 2.2.2
+ * @version 2.3
  */
 
 public class Chunk implements Map<String,Object>
@@ -252,7 +252,7 @@ public class Chunk implements Map<String,Object>
     public static final int HASH_THRESH = 8;
     public static final int DEPTH_LIMIT = 17;
 
-    public static final String VERSION = "2.2.2";
+    public static final String VERSION = "2.3";
 
     private static final String TRUE = "TRUE";
 
@@ -266,8 +266,6 @@ public class Chunk implements Map<String,Object>
     protected String tagEnd = TemplateSet.DEFAULT_TAG_END;
 
     private Vector<Vector<Chunk>> contextStack = null;
-
-    private String delayedFilter = null;
 
     private ContentSource macroLibrary = null;
     private ChunkFactory chunkFactory = null;
@@ -678,24 +676,11 @@ public class Chunk implements Map<String,Object>
             // PUSH ANCESTORS ONTO STACK AND LOCK DOWN
             synchronized(this) {
                 pushContextStack(ancestors);
-                if (delayedFilter != null) {
-                    Writer wrappedOut = new FilteredPrinter(out, this, delayedFilter);
-                    renderForParentToPrinter(wrappedOut);
-                    wrappedOut.flush();
-                } else {
-                    renderForParentToPrinter(out);
-                }
-
+                renderForParentToPrinter(out);
                 popContextStack();
             }
         } else {
-            if (delayedFilter != null) {
-                Writer wrappedOut = new FilteredPrinter(out, this, delayedFilter);
-                renderForParentToPrinter(wrappedOut);
-                wrappedOut.flush();
-            } else {
-                renderForParentToPrinter(out);
-            }
+            renderForParentToPrinter(out);
         }
     }
 
@@ -908,7 +893,7 @@ public class Chunk implements Map<String,Object>
         Matcher m = INCLUDEIF_PATTERN.matcher(tagName);
         if (m.find()) {
             // this is either lame or very sneaky
-            String translation = TextFilter.translateIncludeIf(tagName,tagStart,tagEnd,this);
+            String translation = Filter.translateIncludeIf(tagName,tagStart,tagEnd,this);
 
             return translation;
         }
@@ -1068,7 +1053,7 @@ public class Chunk implements Map<String,Object>
             String tagDefault = tag.getDefaultValue();
             if (filters != null && (tag.applyFiltersFirst() || tagDefault == null)) {
                 // filtering may result in null being transformed to not null
-                String filteredNull = TextFilter.applyTextFilter(this, filters, null);
+                Object filteredNull = Filter.applyFilter(this, filters, null);
                 if (filteredNull != null) {
                     return filteredNull;
                 }
@@ -1076,7 +1061,7 @@ public class Chunk implements Map<String,Object>
             if (tag.applyFiltersFirst()) {
                 return tagDefault;
             } else if (filters != null) {
-                return TextFilter.applyTextFilter(this, filters, tagDefault);
+                return Filter.applyFilter(this, filters, tagDefault);
             } else {
                 return tagDefault;
             }
@@ -1085,22 +1070,14 @@ public class Chunk implements Map<String,Object>
 
             if (filters == null) {
                 return tagValue;
+            } else {
+                Object filteredVal = Filter.applyFilter(this, filters, tagValue);
+                if (filteredVal == null && tag.applyFiltersFirst()) {
+                    return tag.getDefaultValue();
+                } else {
+                    return filteredVal;
+                }
             }
-
-            // tagValue could be some complex entity --
-            // delay filter application until it has been expanded into a string
-            Chunk filterMeLater = makeChildChunk();
-
-            String[] filterSequence = TextFilter.splitFilters(filters);
-            // innermost first...
-            // 3rd arg to set is ignored if 2nd arg is non-null,
-            // so I'm just passing the filters string to hit the right method
-            filterMeLater.set("oneTag",tagValue,"");
-            filterMeLater.append("{~oneTag}");
-            filterMeLater.delayedFilter = filterSequence[0];
-
-            return makeFilterOnion(tagValue, filterMeLater, filterSequence);
-
         }
     }
 
@@ -1121,89 +1098,6 @@ public class Chunk implements Map<String,Object>
         return _resolveTagValue(SnippetTag.parseTag(tagName), depth, false);
     }
 
-    @SuppressWarnings("rawtypes")
-    private Object makeFilterOnion(Object tagValue, Chunk filterMeLater, String[] filters)
-    {
-        // type filter must be handled here, before value is converted to a string
-        if (filters[0].equals("type")) {
-            filterMeLater.set("oneTag", TextFilter.typeFilter(this, tagValue) );
-            filterMeLater.delayedFilter = null;
-            return wrapRemainingFilters(filterMeLater, filters);
-        }
-
-        if (tagValue instanceof String[]) {
-            return makeFilterOnion((String[])tagValue, filterMeLater, filters);
-        } else if (tagValue instanceof List) {
-            String[] niceList = stringifyList((List)tagValue);
-            return makeFilterOnion(niceList, filterMeLater, filters);
-        } else if (tagValue instanceof String || tagValue instanceof Chunk || tagValue instanceof Snippet) {
-            return wrapRemainingFilters(filterMeLater, filters);
-        }
-
-        // not a String/Snippet/Chunk, and not a String array -- the only legal filter here
-        // is ondefined(...)
-        if (filters[0].startsWith("ondefined")) {
-            // got this far? it *is* defined...
-            filterMeLater.set("oneTag", "DEFINED");
-            return wrapRemainingFilters(filterMeLater, filters);
-        } else {
-            // no valid filters
-            return tagValue;
-        }
-    }
-
-    private Object makeFilterOnion(String[] tagValue, Chunk filterMeLater, String[] filters)
-    {
-        // String[] is only really legal here if the very first
-        // filter is join -- must pre-apply the filter here
-        if (filters[0].startsWith("join")) {
-            String joinedString = TextFilter.joinStringArray(tagValue,filters[0]);
-            filterMeLater.set("oneTag", joinedString);
-            filterMeLater.delayedFilter = null;
-        } else if (filters[0].startsWith("get")) {
-            String indexedValue = TextFilter.accessArrayIndex(tagValue,filters[0]);
-            filterMeLater.set("oneTag", indexedValue);
-            filterMeLater.delayedFilter = null;
-        } else if (filters[0].startsWith("ondefined")) {
-            // well, it *is* non-null... give it a dummy string value
-            // so it will pass the ondefined test.
-            filterMeLater.set("oneTag", "DEFINED");
-        }
-
-        return wrapRemainingFilters(filterMeLater,filters);
-    }
-
-    private Chunk wrapRemainingFilters(Chunk filterMeLater, String[] filters)
-    {
-        // then subsequent filters each wrap a new layer
-        for (int i=1; i<filters.length; i++) {
-            Chunk wrapper = makeChildChunk();
-            wrapper.set("oneTag",filterMeLater,"");
-            wrapper.append("{~oneTag}");
-            wrapper.delayedFilter = filters[i];
-            filterMeLater = wrapper;
-        }
-
-        return filterMeLater;
-    }
-
-    private Chunk makeChildChunk()
-    {
-        Chunk child = chunkFactory == null ? new Chunk() : chunkFactory.makeChunk();
-        child.setLocale(this.localeCode);
-        return child;
-    }
-
-    @SuppressWarnings("rawtypes")
-    private String[] stringifyList(List list)
-    {
-        String[] array = new String[list == null ? 0 : list.size()];
-        for (int i=0; i<array.length; i++) {
-            array[i] = list.get(i).toString();
-        }
-        return array;
-    }
-
     /**
      * Clears all tag replacement rules.
      */
@@ -1220,7 +1114,19 @@ public class Chunk implements Map<String,Object>
     {
         resetTags();
     }
-
+    
+    /**
+     * Clears template
+     */
+    public void resetTemplate()
+    {
+        if (this.template == null) {
+            this.templateRoot = null;
+        } else {
+            this.template.clear();
+        }
+    }
+    
     public boolean containsKey(Object key)
     {
         if (tags == null) {

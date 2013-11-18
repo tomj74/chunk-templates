@@ -7,14 +7,19 @@ import com.x5.template.ChunkLocale;
 
 public class LetterCaseFilter extends BasicFilter implements ChunkFilter
 {
+    int OP_UPPER = 0;
+    int OP_LOWER = 1;
+    int OP_CAPITALIZE = 2;
 
     public String transformText(Chunk chunk, String text, String[] args)
     {
         if (text == null) return null;
 
-        boolean isUpper = true;
+        int op = OP_UPPER;
         if (args != null && (args[0].equals("lower") || args[0].equals("lc"))) {
-            isUpper = false;
+            op = OP_LOWER;
+        } else if (args != null && (args[0].equals("capitalize") || args[0].equals("cap"))) {
+            op = OP_CAPITALIZE;
         }
 
         ChunkLocale locale = (chunk == null ? null : chunk.getLocale());
@@ -22,14 +27,37 @@ public class LetterCaseFilter extends BasicFilter implements ChunkFilter
         if (locale != null) javaLocale = locale.getJavaLocale();
 
         if (javaLocale == null) {
-            return isUpper ? text.toUpperCase() : text.toLowerCase();
-        } else {
-            if (isUpper) {
-                return text.toUpperCase(javaLocale);
+            if (op == OP_UPPER) {
+                return text.toUpperCase();
+            } else if (op == OP_LOWER) {
+                return text.toLowerCase();
             } else {
+                return capitalize(text,null);
+            }
+        } else {
+            if (op == OP_UPPER) {
+                return text.toUpperCase(javaLocale);
+            } else if (op == OP_LOWER) {
                 return text.toLowerCase(javaLocale);
+            } else {
+                return capitalize(text,javaLocale);
             }
         }
+    }
+    
+    private String capitalize(String text, Locale javaLocale)
+    {
+        char[] chars = text.toCharArray();
+        boolean found = false;
+        for (int i=0; i<chars.length; i++) {
+            if (!found && Character.isLetter(chars[i])) {
+                chars[i] = javaLocale == null ? Character.toUpperCase(chars[i]) : Character.toString(chars[i]).toUpperCase(javaLocale).charAt(0);
+                found = true;
+            } else if (Character.isWhitespace(chars[i]) || chars[i]=='.' || chars[i]=='\'') {
+                found = false;
+            }
+        }
+        return String.valueOf(chars);
     }
 
     public String getFilterName()
@@ -39,6 +67,6 @@ public class LetterCaseFilter extends BasicFilter implements ChunkFilter
 
     public String[] getFilterAliases()
     {
-        return new String[]{"uc","lower","lc"};
+        return new String[]{"uc","lower","lc","capitalize","cap"};
     }
 }

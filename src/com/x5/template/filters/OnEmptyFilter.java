@@ -1,7 +1,7 @@
 package com.x5.template.filters;
 
 import com.x5.template.Chunk;
-import com.x5.template.TextFilter;
+import com.x5.template.Filter;
 
 public class OnEmptyFilter extends BasicFilter implements ChunkFilter
 {
@@ -14,7 +14,7 @@ public class OnEmptyFilter extends BasicFilter implements ChunkFilter
         if (swapFor == null) return null;
 
         // null and empty string are both considered empty
-        return (text == null || text.trim().length() == 0) ? TextFilter.magicBraces(chunk, swapFor) : text;
+        return (text == null || text.trim().length() == 0) ? Filter.magicBraces(chunk, swapFor) : text;
     }
 
     public String getFilterName()

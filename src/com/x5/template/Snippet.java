@@ -793,7 +793,10 @@ public class Snippet
         List<SnippetPart> merged = new ArrayList<SnippetPart>();
         for (int i=0; i<template.size(); i++) {
             Snippet s = template.get(i);
-            merged.addAll(s.ungroupBlocks());
+            List<SnippetPart> parts = s.ungroupBlocks();
+            if (parts != null) {
+                merged.addAll(parts);
+            }
         }
 
         Snippet voltron = new Snippet(merged);

@@ -4,7 +4,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import com.x5.template.Chunk;
-import com.x5.template.TextFilter;
+import com.x5.template.Filter;
 
 public class OnMatchFilter extends BasicFilter implements ChunkFilter
 {
@@ -36,7 +36,7 @@ public class OnMatchFilter extends BasicFilter implements ChunkFilter
             String value = args[i+1];
 
             if (test.equals("|nomatch|")) {
-                return TextFilter.magicBraces(context, value);
+                return Filter.magicBraces(context, value);
             }
 
             if (text == null) continue; // won't ever match
@@ -64,7 +64,7 @@ public class OnMatchFilter extends BasicFilter implements ChunkFilter
             Pattern p = Pattern.compile(pattern);
             Matcher m = p.matcher(text);
             if (m.find()) {
-                return TextFilter.magicBraces(context, value);
+                return Filter.magicBraces(context, value);
             }
         }
 

@@ -7,6 +7,11 @@ import com.x5.template.Chunk;
 
 public abstract class BasicFilter implements ChunkFilter
 {
+    public Object applyFilter(Chunk chunk, String text, String[] args)
+    {
+        return transformText(chunk, text, args);
+    }
+
     public abstract String transformText(Chunk chunk, String text, String[] args);
     public abstract String getFilterName();
     public String[] getFilterAliases()
@@ -14,7 +19,7 @@ public abstract class BasicFilter implements ChunkFilter
         return null;
     }
 
-    public String transformObject(Chunk chunk, Object object, String[] args)
+    public Object applyFilter(Chunk chunk, Object object, String[] args)
     {
         String stringifiedObject = (object == null) ? null : object.toString();
         return transformText(chunk, stringifiedObject, args);
@@ -23,6 +28,7 @@ public abstract class BasicFilter implements ChunkFilter
     public BasicFilter() {}
 
     public static ChunkFilter[] stockFilters = new ChunkFilter[]{
+        // String in, String out
         new AlternateFilter(),
         new Base64DecodeFilter(),
         new Base64EncodeFilter(),
@@ -51,6 +57,16 @@ public abstract class BasicFilter implements ChunkFilter
         new TranslateFilter(),
         new URLDecodeFilter(),
         new URLEncodeFilter(),
+        // List in, List out
+        new SliceFilter(),
+        new ReverseFilter(),
+        // List in, String out
+        new JoinFilter(),
+        new ListIndexFilter(),
+        // String in, List out
+        new SplitFilter(),
+        // List/String in, String out
+        new LengthFilter(),
     };
 
     public static Map<String,ChunkFilter> getStockFilters()

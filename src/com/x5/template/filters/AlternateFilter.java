@@ -1,7 +1,7 @@
 package com.x5.template.filters;
 
 import com.x5.template.Chunk;
-import com.x5.template.TextFilter;
+import com.x5.template.Filter;
 
 public class AlternateFilter extends BasicFilter implements ChunkFilter
 {
@@ -28,7 +28,7 @@ public class AlternateFilter extends BasicFilter implements ChunkFilter
             }
 
             // tag-ify if necessary
-            return TextFilter.magicBraces(chunk, output);
+            return Filter.magicBraces(chunk, output);
 
         } catch (NumberFormatException e) {
             return text;

@@ -1,7 +1,7 @@
 package com.x5.template.filters;
 
 import com.x5.template.Chunk;
-import com.x5.template.TextFilter;
+import com.x5.template.Filter;
 
 public class OnDefinedFilter extends BasicFilter implements ChunkFilter
 {
@@ -16,7 +16,7 @@ public class OnDefinedFilter extends BasicFilter implements ChunkFilter
         if (swapFor == null) return null;
 
         // empty string is considered not-defined
-        return (text.trim().length() == 0) ? "" : TextFilter.magicBraces(chunk, swapFor);
+        return (text.trim().length() == 0) ? "" : Filter.magicBraces(chunk, swapFor);
     }
 
     public String getFilterName()
