@@ -4,7 +4,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import com.x5.template.Chunk;
-import com.x5.template.TextFilter;
+import com.x5.template.Filter;
 
 public class RegexFilter extends BasicFilter implements ChunkFilter
 {
@@ -27,7 +27,7 @@ public class RegexFilter extends BasicFilter implements ChunkFilter
 
     public static int nextRegexDelim(String regex, int searchFrom)
     {
-        return TextFilter.nextUnescapedDelim("/",regex,searchFrom);
+        return Filter.nextUnescapedDelim("/",regex,searchFrom);
     }
 
     public static String applyRegex(String text, String regex)

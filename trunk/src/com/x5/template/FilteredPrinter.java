@@ -27,12 +27,12 @@ public class FilteredPrinter extends Writer
     public void flush()
     throws IOException
     {
-        // until TextFilter is refactored to handle streams...
-        String output = TextFilter.applyTextFilter(context, filter, copout.toString());
+        // until Filter is refactored to handle streams...
+        Object output = Filter.applyFilter(context, filter, copout.toString());
         copout.setLength(0);
         // process one more time (!) since filtered output might contain new tags
         if (output != null) {
-            context.explodeToPrinter(finalOutput, output, 1);
+            context.explodeToPrinter(finalOutput, output.toString(), 1);
         }
         finalOutput.flush();
     }

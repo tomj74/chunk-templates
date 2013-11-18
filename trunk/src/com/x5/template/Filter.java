@@ -7,15 +7,16 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
-import com.x5.template.filters.BasicFilter;
 import com.x5.template.filters.ChunkFilter;
+import com.x5.template.filters.BasicFilter;
+import com.x5.template.filters.ListFilter;
 import com.x5.template.filters.RegexFilter;
 import com.x5.util.TableData;
 
 /* TextFilter provides a library of text filtering functions
    to support in-template presentation transformations. */
 
-public class TextFilter
+public class Filter
 {
     public static String FILTER_FIRST = "FILTER_FIRST";
     public static String FILTER_LAST  = "FILTER_LAST";
@@ -30,58 +31,19 @@ public class TextFilter
         return filters;
     }
  
-    /* haven't thought this through just yet...
-    public static Object applyFilter(Chunk context, String filter, Object data)
+    public static Object applyFilter(Chunk context, String filter, Object input)
     {
-        if (filter == null) return data;
-  
-        if (data instanceof String) {
-            return applyTextFilter(context, filter, (String)data);
-        }
+        if (filter == null) return input;
 
         // filters might be daisy-chained
         int pipePos = findNextFilter(filter);
         if (pipePos >= 0) {
             String firstFilter = filter.substring(0,pipePos);
             String nextFilters = filter.substring(pipePos+1);
-            data = applyFilter(context, firstFilter, data);
-            return applyFilter(context, nextFilters, data);
-        }
-  
-        // try to find a matching factory-standard stock filter for this job.
-        ChunkFilter stockFilter = filters.get(filterName);
-        if (stockFilter == null) {
-            return text;
-        } else {
-            return stockFilter.transformText(context, text, filterArgs);
-        }
-  
-    }*/
- 
-    public static String applyTextFilter(Chunk context, String filter, String text)
-    {
-        if (filter == null) return text;
-
-        // filters might be daisy-chained
-        int pipePos = findNextFilter(filter);
-        if (pipePos >= 0) {
-            String firstFilter = filter.substring(0,pipePos);
-            String nextFilters = filter.substring(pipePos+1);
-            text = applyTextFilter(context, firstFilter, text);
-            return applyTextFilter(context, nextFilters, text);
+            Object output = applyFilter(context, firstFilter, input);
+            return applyFilter(context, nextFilters, output);
         }
 
-        /*
-        if (text == null) {
-            if (filter.startsWith("onmatch")) {
-                // onmatch is special wrt null text
-                // onmatch can transform null into an empty string
-                // or even a nomatch string
-            } else {
-                return null;
-            }
-        }*/
-  
         String filterName = filter;
         String[] filterArgs = null;
   
@@ -107,55 +69,59 @@ public class TextFilter
   
         if (customFilters != null) {
             ChunkFilter userFilter = customFilters.get(filterName);
-            if (userFilter != null) {
-                try {
-                    return userFilter.transformText(context, text, filterArgs);
-                } catch (Exception e) {
-                    // poorly behaved contrib code.  don't buy the farm, just
-                    // complain to stderr and move along.
-                    e.printStackTrace(System.err);
-                    return text;
-                }
+            try {
+                return userFilter.applyFilter(context, input, filterArgs);
+            } catch (Exception e) {
+                // poorly behaved contrib code.  don't buy the farm, just
+                // complain to stderr and move along.
+                e.printStackTrace(System.err);
+                return input;
             }
         }
 
-        // provide a few basic filters without making a whole class for each one.
-  
-        if (filter.equals("trim")) {
-            // trim leading and trailing whitespace
-            return text == null ? null : text.trim(); //text.replaceAll("^\\s+","").replaceAll("\\s+$","");
-        } else if (filter.equals("qs") || filter.equals("quoted") || filter.equals("quotedstring") || filter.equals("escapequotes")) {
-            // qs is a quoted string - escape " and ' with backslashes
-            if (text != null) {
-                text = Chunk.findAndReplace(text,"\\","\\\\");
-                text = Chunk.findAndReplace(text,"\"","\\\"");
-                text = Chunk.findAndReplace(text,"'","\\'");
-            }
-            return text;
-        } else if (filter.startsWith("join(")) {
-            if (text != null) {
-                TableData array = InlineTable.parseTable(text);
-                if (array != null) {
-                    return joinInlineTable(array,filter);
+        if (filter.equals("type")) {
+            return typeFilter(context, input);
+        }
+        
+        if (input instanceof String) {
+            // provide a few basic filters without making a whole class for each one.
+            String text = (String)input;
+            if (filter.equals("trim")) {
+                // trim leading and trailing whitespace
+                return text == null ? null : text.trim(); //text.replaceAll("^\\s+","").replaceAll("\\s+$","");
+            } else if (filter.equals("qs") || filter.equals("quoted") || filter.equals("quotedstring") || filter.equals("escapequotes")) {
+                // qs is a quoted string - escape " and ' with backslashes
+                if (text != null) {
+                    text = Chunk.findAndReplace(text,"\\","\\\\");
+                    text = Chunk.findAndReplace(text,"\"","\\\"");
+                    text = Chunk.findAndReplace(text,"'","\\'");
                 }
-            }
-        } else if (filter.startsWith("get(")) {
-            if (text != null) {
-                TableData array = InlineTable.parseTable(text);
-                if (array != null) {
-                    return accessArrayIndex(array,filter);
+                return text;
+            } else if (filter.startsWith("join(")) {
+                if (text != null) {
+                    TableData array = InlineTable.parseTable(text);
+                    if (array != null) {
+                        return joinInlineTable(array,filter);
+                    }
                 }
+            } else if (filter.startsWith("get(")) {
+                if (text != null) {
+                    TableData array = InlineTable.parseTable(text);
+                    if (array != null) {
+                        return accessArrayIndex(array,filter);
+                    }
+                }
+            } else if (filter.equals("type")) {
+                return "STRING";
             }
-        } else if (filter.equals("type")) {
-            return text == null ? "NULL" : "STRING";
         }
   
         // try to find a matching factory-standard stock filter for this job.
         ChunkFilter stockFilter = filters.get(filterName);
-        if (stockFilter == null) {
-            return text;
+        if (stockFilter != null) {
+            return stockFilter.applyFilter(context, input, filterArgs);
         } else {
-            return stockFilter.transformText(context, text, filterArgs);
+            return input;
         }
     }
  

@@ -11,7 +11,7 @@ import com.x5.template.filters.ChunkFilter;
 
 import static org.junit.Assert.*;
 
-public class TextFilterTest
+public class FilterTest
 {
     @Test
     public void testSimpleIndent()
@@ -414,7 +414,7 @@ public class TextFilterTest
         Chunk c = new Chunk();
         String beatles = "[[name],[John],[Paul],[George],[Ringo]]";
         c.set("beatles", beatles);
-        c.append("The beatles are: {~beatles|join(, )}.");
+        c.append("The beatles are: {$beatles|join(, )}.");
         assertEquals(c.toString(),"The beatles are: John, Paul, George, Ringo.");
     }
 
@@ -424,16 +424,43 @@ public class TextFilterTest
         Chunk c = new Chunk();
         String[] beatles = new String[]{"John","Paul","George","Ringo"};
         c.set("beatles", beatles);
-        c.append("The 2nd beatle is: {~beatles|get(1)}.");
+        c.append("The 2nd beatle is: {$beatles|get(1)}.");
         assertEquals(c.toString(),"The 2nd beatle is: Paul.");
+
+        c.resetTemplate();
+        c.append("The 2nd to last beatle is: {$beatles|get(-2)}.");
+        assertEquals(c.toString(),"The 2nd to last beatle is: George.");
     }
 
+    @Test
+    public void testGetTooFar()
+    {
+        Chunk c = new Chunk();
+        String[] beatles = new String[]{"John","Paul","George","Ringo"};
+        c.set("beatles", beatles);
+        c.append("{$beatles|get(4):too far} {$beatles|get(-5):too far}");
+        assertEquals("too far too far", c.toString());
+    }
+    
+    @Test
+    public void testSplit()
+    {
+        Chunk c = new Chunk();
+        String x = "a b\n c d";
+        String y = "1-2--3-4";
+        c.set("x",x);
+        c.set("y",y);
+        c.append("{$x|split|join} {$y|split(-)|join(,)} {$y|split(/-+/)|join(,)}\n");
+        c.append("{$x|split(,2)|join} {$y|split(-,2)|join(,)} {$y|split(/-+/,3)|join(,)}");
+        assertEquals("abcd 1,2,,3,4 1,2,3,4\nab 1,2 1,2,3", c.toString());
+    }
+    
     @Test
     public void testUC()
     {
         Chunk c = new Chunk();
         c.set("xyz", "Mixed Case");
-        c.append("This is no longer {~xyz|uc}.");
+        c.append("This is no longer {$xyz|uc}.");
         assertEquals(c.toString(),"This is no longer MIXED CASE.");
     }
 
@@ -576,6 +603,80 @@ public class TextFilterTest
 
         assertEquals("STRING LIST OBJECT CHUNK NULL",c.toString());
     }
+    
+    @Test
+    public void testSliceFilter()
+    {
+        Theme theme = new Theme();
+        Chunk c = theme.makeChunk();
+        c.append("{$x|slice(::-1)|get(0)}");
+        c.set("x",new String[]{"A","B","C"});
+        assertEquals("C", c.toString());
+        
+        c.resetTemplate();
+        c.append("{$x|slice(1:2)|get(0)}");
+        assertEquals("B", c.toString());
+
+        c.resetTemplate();
+        c.append("{$x|slice(-1:)|get(0)}");
+        assertEquals("C", c.toString());
+
+        c.resetTemplate();
+        c.append("{$x|slice(-2:-1)|get(0)}");
+        assertEquals("B", c.toString());
+        
+        c.resetTemplate();
+        c.append("{$x|slice(2::-2)|get(1)}");
+        assertEquals("A", c.toString());
+    }
+    
+    @Test
+    public void testReverseFilter()
+    {
+        Theme theme = new Theme();
+        Chunk c = theme.makeChunk();
+        c.append("{$x|reverse|join}");
+        c.set("x",new String[]{"A","B","C"});
+        assertEquals("CBA", c.toString());
+    }
+    
+    @Test
+    public void testLengthFilter()
+    {
+        Theme theme = new Theme();
+        Chunk c = theme.makeChunk();
+        c.append("{$x|length} {$y|length}");
+        c.set("x",new String[]{"A","B","C"});
+        c.set("y","abcd");
+        assertEquals("3 4", c.toString());
+    }
+    
+    @Test
+    public void testCapitalizeFilter()
+    {
+        Theme theme = new Theme();
+        Chunk c = theme.makeChunk();
+        c.append("{$x|capitalize} {$y|capitalize} {$z|capitalize}");
+        c.set("x","johnny o'Brien");
+        c.set("y","MAD PROPS");
+        c.set("z","my favorite\nthings.");
+        assertEquals("Johnny O'Brien MAD PROPS My Favorite\nThings.", c.toString());
+    }
+    
+    @Test
+    public void testBadArgs()
+    {
+        Theme theme = new Theme();
+        Chunk c = theme.makeChunk();
+        c.append("{$x|slice(a,b,c)|join}");
+        c.set("x",new String[]{"A","B","C"});
+        assertEquals("ABC", c.toString());
+        
+        c.resetTemplate();
+        c.set("x","a b c d e");
+        c.append("{$x|split(,giraffe)|join}");
+        assertEquals("abcde", c.toString());
+    }
 
     @Test
     public void testUserFilter()
@@ -588,7 +689,7 @@ public class TextFilterTest
         assertEquals("xxxBob  xxx",c.toString());
     }
 
-    public class LeftTrimFilter extends BasicFilter implements ChunkFilter
+    public class LeftTrimFilter extends BasicFilter
     {
 
         public String transformText(Chunk chunk, String text, String[] args)

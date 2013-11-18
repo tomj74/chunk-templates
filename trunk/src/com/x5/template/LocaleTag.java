@@ -172,10 +172,10 @@ public class LocaleTag extends BlockTag
     {
         if (isSimple) {
             // scan for matching non-escaped ]
-            return TextFilter.nextUnescapedDelim(LOCALE_SIMPLE_CLOSE, template, tagPos + LOCALE_SIMPLE_OPEN.length());
+            return Filter.nextUnescapedDelim(LOCALE_SIMPLE_CLOSE, template, tagPos + LOCALE_SIMPLE_OPEN.length());
         } else {
             // scan for matching non-escaped }
-            return TextFilter.nextUnescapedDelim(LOCALE_TAG_CLOSE, template, tagPos + LOCALE_TAG_OPEN.length());
+            return Filter.nextUnescapedDelim(LOCALE_TAG_CLOSE, template, tagPos + LOCALE_TAG_OPEN.length());
         }
     }
 

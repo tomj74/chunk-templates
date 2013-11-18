@@ -73,7 +73,7 @@ public class SnippetTag extends SnippetPart
 
             String defValue = null;
             String filter = null;
-            String order = TextFilter.FILTER_LAST;
+            String order = Filter.FILTER_LAST;
 
             if (pipePos > 0 && colonPos > 0) {
                 // can come in either order.
@@ -90,7 +90,7 @@ public class SnippetTag extends SnippetPart
             }
 
             this.ifNull = defValue;
-            this.applyFiltersIfNull = order.equals(TextFilter.FILTER_LAST);
+            this.applyFiltersIfNull = order.equals(Filter.FILTER_LAST);
             this.filters = filter;
         }
   
@@ -131,7 +131,7 @@ public class SnippetTag extends SnippetPart
         String filter = null;
         String defValue = null;
 
-        String order = TextFilter.FILTER_LAST;
+        String order = Filter.FILTER_LAST;
 
         if (colonPos < 0) {
             // no colon token, just pipe
@@ -143,13 +143,13 @@ public class SnippetTag extends SnippetPart
             // these need to be IGNORED!!
             //
             // pipe may NOT appear in default value, so at least we can limit our scan to the final filter
-            int finalPipe = TextFilter.grokFinalFilterPipe(tagName,pipePos);
+            int finalPipe = Filter.grokFinalFilterPipe(tagName,pipePos);
             int nextColon = tagName.indexOf(":",finalPipe+1);
             if (nextColon < 0) {
                 // lucked out, colon was fake-out, embedded in earlier filter
                 filter = tagName.substring(pipePos+1);
             } else {
-                int startScan = TextFilter.grokValidColonScanPoint(tagName,finalPipe+1);
+                int startScan = Filter.grokValidColonScanPoint(tagName,finalPipe+1);
                 nextColon = tagName.indexOf(":",startScan);
                 if (nextColon < 0) {
                     // colon was fake-out
@@ -157,7 +157,7 @@ public class SnippetTag extends SnippetPart
                 } else {
                     filter = tagName.substring(pipePos+1,nextColon);
                     defValue = tagName.substring(nextColon+1);
-                    order = TextFilter.FILTER_FIRST;
+                    order = Filter.FILTER_FIRST;
                 }
             }
         } else {
