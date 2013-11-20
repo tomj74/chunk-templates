@@ -371,6 +371,12 @@ public class FilterTest
     }
 
     @Test
+    public void testApplyFilter()
+    {
+        assertEquals("&lt;p&gt;", Filter.applyFilter(new Chunk(),"htmlescape","<p>"));
+    }
+
+    @Test
     public void testXMLUnescape()
     {
         Chunk c = new Chunk();
@@ -701,9 +707,9 @@ public class FilterTest
         Theme theme = new Theme();
         theme.registerFilter(new LeftTrimFilter());
         Chunk c = theme.makeChunk();
-        c.append("xxx{~name|ltrim}xxx");
+        c.append("xxx{$name|ltrim}xxx{$name|trim}xxx");
         c.set("name","  \nBob  ");
-        assertEquals("xxxBob  xxx",c.toString());
+        assertEquals("xxxBob  xxxBobxxx",c.toString());
     }
 
     public class LeftTrimFilter extends BasicFilter

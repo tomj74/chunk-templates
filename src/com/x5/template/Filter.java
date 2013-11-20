@@ -69,13 +69,15 @@ public class Filter
 
         if (customFilters != null) {
             ChunkFilter userFilter = customFilters.get(filterName);
-            try {
-                return userFilter.applyFilter(context, input, filterArgs);
-            } catch (Exception e) {
-                // poorly behaved contrib code.  don't buy the farm, just
-                // complain to stderr and move along.
-                e.printStackTrace(System.err);
-                return input;
+            if (userFilter != null) {
+                try {
+                    return userFilter.applyFilter(context, input, filterArgs);
+                } catch (Exception e) {
+                    // poorly behaved contrib code.  don't buy the farm, just
+                    // complain to stderr and move along.
+                    e.printStackTrace(System.err);
+                    return input;
+                }
             }
         }
 
