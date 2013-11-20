@@ -14,7 +14,7 @@ public abstract class ListFilter implements ChunkFilter
         // transform text input into a list of length one
         return applyFilter(chunk, new String[]{text}, args);
     }
-    
+
     public abstract String getFilterName();
     public String[] getFilterAliases()
     {
@@ -36,9 +36,9 @@ public abstract class ListFilter implements ChunkFilter
         }
         return transformList(chunk, list, args);
     }
-    
+
     public abstract Object transformList(Chunk chunk, List list, String[] args);
-    
+
     public ListFilter() {}
 
 }

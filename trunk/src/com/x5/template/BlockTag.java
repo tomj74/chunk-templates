@@ -10,7 +10,7 @@ public abstract class BlockTag
         throws IOException;
     public abstract String getBlockStartMarker();
     public abstract String getBlockEndMarker();
-    
+
     private static int locateTag(List<SnippetPart> parts, String tagToMatch, int startAt)
     {
         for (int i=startAt; i<parts.size(); i++) {
@@ -33,15 +33,15 @@ public abstract class BlockTag
 
         String beginBlock = helper.getBlockStartMarker();
         String nestedScanFor = "." + beginBlock;
-        
+
         int nestDepth = 0;
         int nestedBlockPos = locateTag(parts,nestedScanFor,startAt);
         int endMarkerPos = locateTag(parts,scanFor,startAt);
-        
+
         if (nestedBlockPos > -1 && nestedBlockPos < endMarkerPos) {
             nestDepth++;
         }
-        
+
         while (nestDepth > 0 && endMarkerPos > 0) {
             while (nestedBlockPos > -1 && nestedBlockPos < endMarkerPos) {
                 // check for another nested block starting before this end-candidate
@@ -59,15 +59,15 @@ public abstract class BlockTag
                 nestDepth++;
             }
         }
-        
+
         return endMarkerPos;
     }
-    
+
     public boolean hasBody(String openingTag)
     {
         return true;
     }
-    
+
     public boolean doSmartTrimAroundBlock()
     {
         return false;

@@ -17,7 +17,7 @@ import com.x5.util.TableData;
  * ObjectTable wraps a Map in a TableData interface,
  * making it look like a table of keys and values without
  * actually copying it into a table of keys and values.
- * 
+ *
  * @author tmcclure
  *
  */
@@ -27,11 +27,11 @@ public class ObjectTable implements TableData, Map<String,Object>
     private Map obj;
     private Iterator i = null;
     private Object currentKey = null;
- 
+
     public static final String KEY = "key";
     public static final String VALUE = "value";
     private static final String[] LABELS = new String[]{KEY,VALUE};
- 
+
     public ObjectTable(Map map)
     {
         this.obj = map;
@@ -56,11 +56,11 @@ public class ObjectTable implements TableData, Map<String,Object>
     public boolean hasNext()
     {
         if (obj == null) return false;
-  
+
         if (i == null) {
             i = getOrderedKeys().iterator();
         }
-  
+
         return i.hasNext();
     }
 
@@ -74,7 +74,7 @@ public class ObjectTable implements TableData, Map<String,Object>
             return null;
         }
     }
- 
+
     private List getOrderedKeys()
     {
         List keys = new ArrayList(obj.keySet());
@@ -123,13 +123,13 @@ public class ObjectTable implements TableData, Map<String,Object>
     public Object get(Object key)
     {
         if (key == null || currentKey == null) return null;
-  
+
         if (key.equals(KEY)) {
             return currentKey;
         } else if (key.equals(VALUE)) {
             return obj.get(currentKey);
         }
-  
+
         return null;
     }
 

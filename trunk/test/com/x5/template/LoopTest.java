@@ -144,15 +144,15 @@ public class LoopTest
         assertEquals("thingamabob\n thingamabob *\n --\n doodad\n==\ndoodad new!\n thingamabob\n --\n doodad *\n",
             c.toString());
     }
-    
+
     @Test
     public void testInlineIfPreserveLinefeed()
     {
         Theme theme = new Theme("themes","test/base");
-        
+
         Chunk c = theme.makeChunk("chunk_test#inline_if_nocollapse");
         c.set("abc",new String[]{"a","b","c"});
-        
+
         assertEquals("Content\na\nb\nc\nContent\na\nb\nc\n",c.toString());
     }
 

@@ -9,23 +9,23 @@ import com.x5.template.filters.RegexFilter;
 public class SnippetTag extends SnippetPart
 {
     protected String tag;
- 
+
     private String[] path;
     private String filters;
     private String ifNull;
     private boolean applyFiltersIfNull = false;
- 
+
     public SnippetTag(String text, String tag)
     {
         super(text);
         this.tag = tag;
     }
- 
+
     public boolean isTag()
     {
         return true;
     }
- 
+
     public String getTag()
     {
         return this.tag;
@@ -38,9 +38,9 @@ public class SnippetTag extends SnippetPart
 
         Object tagValue = null;
         if (path == null) init(tag);
-  
+
         tagValue = rules.resolveTagValue(this, depth);
-  
+
         if (tagValue == null) {
             // preserve tag in final output (can be used as template)
             out.append(super.snippetText);
@@ -54,7 +54,7 @@ public class SnippetTag extends SnippetPart
             rules.explodeToPrinter(out, tagValue, depth+1);
         }
     }
- 
+
     private void init(String tag)
     {
         String lookupName = tag;
@@ -93,12 +93,12 @@ public class SnippetTag extends SnippetPart
             this.applyFiltersIfNull = order.equals(Filter.FILTER_LAST);
             this.filters = filter;
         }
-  
+
         // break deep references like bob.hand.thumb into an array
         // of path segments
         this.path = parsePath(lookupName);
     }
- 
+
     private String[] parsePath(String deepRef)
     {
         if (deepRef.indexOf('.',1) < 0 || deepRef.charAt(0) == '.') {
@@ -119,7 +119,7 @@ public class SnippetTag extends SnippetPart
             return path;
         }
     }
- 
+
     // pipe denotes a request to apply a filter
     // colon denotes a default value
     // they may come in either order {$tag_name:hello there|url} or {$tag_name|url:hello there}
@@ -192,7 +192,7 @@ public class SnippetTag extends SnippetPart
         if (nextParen < 0 || nextParen < pipePos) return pipePos;
         return tagName.indexOf("|",nextParen+1);
     }
-  
+
     public String[] getPath()
     {
         return path;
@@ -213,25 +213,25 @@ public class SnippetTag extends SnippetPart
                 return '{'+ifNull+'}';
             }
         }
-  
+
         // leading magic $~.^+ might be backslash-escaped to nullify
         if (ifNull.charAt(0)=='\\') {
             return ifNull.substring(1);
         }
-  
+
         return ifNull;
     }
- 
+
     public String getFilters()
     {
         return filters;
     }
- 
+
     public boolean applyFiltersFirst()
     {
         return !applyFiltersIfNull;
     }
- 
+
     static SnippetTag parseTag(String tag)
     {
         SnippetTag parsedTag = new SnippetTag(tag,tag);
@@ -247,7 +247,7 @@ public class SnippetTag extends SnippetPart
                     };
 
     private static final String[] BLOCK_TAG_TOKENS = extractTagTokens(BLOCK_TAGS);
- 
+
     private static String[] extractTagTokens(BlockTag[] blockTags)
     {
         String[] tokens = new String[blockTags.length];
@@ -257,7 +257,7 @@ public class SnippetTag extends SnippetPart
         }
         return tokens;
     }
- 
+
     public BlockTag getBlockTagType()
     {
         for (int i=0; i<BLOCK_TAG_TOKENS.length; i++) {

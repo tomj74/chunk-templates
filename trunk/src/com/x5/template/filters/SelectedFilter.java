@@ -52,25 +52,6 @@ public class SelectedFilter extends BasicFilter implements ChunkFilter
                 return "";
             }
 
-            // this was a sneaky way of allowing {~xyz|sel(~tag)}
-            // -- flip it into an onmatch, and let it get re-eval'ed:
-            //
-            // {~tag|onmatch(/^[text]$/,SELECTED_TOKEN)}
-            //
-            // I think this means that this would have to be the
-            // final filter in the chain, but I can't imagine
-            // wanting to filter the output token.
-            //
-            // The more crazy crap like this that I did, the more
-            // I realized the Chunk tag table needed to just get passed
-            // into applyTextFilter.  done.
-            //
-
-            /*
-            String xlation = testValue + "|onmatch(/^"
-                + RegexFilter.escapeRegex(text) + "$/," + token + ")";
-            return TextFilter.magicBraces(context, xlation);
-            */
         }
 
         // simple case, compare to static text string

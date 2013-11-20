@@ -8,14 +8,14 @@ import com.x5.template.Chunk;
 public class SplitFilter implements ChunkFilter
 {
     public static final String DEFAULT_DELIM = "/\\s+/";
-    
+
     public Object applyFilter(Chunk chunk, String text, String[] args)
     {
         if (text == null) return text;
-        
+
         String delim = null;
         int limit = -1;
-        
+
         if (args == null || args.length < 1 || args[0].length() < 1 || args[0].equals("split")) {
             delim = DEFAULT_DELIM;
         } else {
@@ -68,7 +68,7 @@ public class SplitFilter implements ChunkFilter
     {
         return splitNonRegex(input,delim,-1);
     }
-    
+
     public static String[] splitNonRegex(String input, String delim, int limit)
     {
         List<String> l = new ArrayList<String>();

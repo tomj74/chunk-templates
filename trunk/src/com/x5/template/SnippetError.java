@@ -9,7 +9,7 @@ public class SnippetError extends SnippetPart
         super(errMsg);
         super.setLiteral(true);
     }
- 
+
     public void render(Writer out, Chunk rules, int depth)
     throws java.io.IOException
     {
@@ -17,5 +17,5 @@ public class SnippetError extends SnippetPart
             out.append(snippetText);
         }
     }
- 
+
 }

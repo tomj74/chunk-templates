@@ -16,10 +16,10 @@ public class JoinFilter extends ListFilter
     {
         if (list == null) return "";
         if (list.size() == 1) return list.get(0);
-  
+
         // the only arg is the divider
         String divider = args.length > 0 && !args[0].equals("join") ? args[0] : null;
-        
+
         StringBuilder x = new StringBuilder();
         int i = 0;
         for (Object s : list) {

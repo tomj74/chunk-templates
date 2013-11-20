@@ -1114,7 +1114,7 @@ public class Chunk implements Map<String,Object>
     {
         resetTags();
     }
-    
+
     /**
      * Clears template
      */
@@ -1126,7 +1126,7 @@ public class Chunk implements Map<String,Object>
             this.template.clear();
         }
     }
-    
+
     public boolean containsKey(Object key)
     {
         if (tags == null) {
