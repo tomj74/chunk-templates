@@ -59,6 +59,7 @@ public abstract class BasicFilter implements ChunkFilter
         new URLEncodeFilter(),
         // List in, List out
         new SliceFilter(),
+        new SortFilter(),
         new ReverseFilter(),
         // List in, String out
         new JoinFilter(),

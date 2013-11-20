@@ -11,12 +11,12 @@ public class SnippetPart
     {
         this.snippetText = text;
     }
- 
+
     public String getText()
     {
         return snippetText;
     }
- 
+
     public void setText(String text)
     {
         this.snippetText = text;
@@ -26,17 +26,17 @@ public class SnippetPart
     {
         this.isLiteral = isLiteral;
     }
- 
+
     public boolean isLiteral()
     {
         return this.isLiteral;
     }
- 
+
     public boolean isTag()
     {
         return false;
     }
- 
+
     public boolean depthCheckFails(int depth, Writer out)
     throws java.io.IOException
     {
@@ -47,7 +47,7 @@ public class SnippetPart
             return false;
         }
     }
- 
+
     public void render(Writer out, Chunk rules, int depth)
     throws java.io.IOException
     {
@@ -59,7 +59,7 @@ public class SnippetPart
             // do their dynamic rendering here by overriding the render method.
         }
     }
- 
+
     /**
      * toString() returns the un-interpreted content for this part
      */

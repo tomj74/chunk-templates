@@ -267,11 +267,11 @@ public class ObjectDataMap implements Map
         init();
         return pickle.entrySet();
     }
-    
+
     private static class IntrospectionException extends Exception
     {
     }
-    
+
     private static class StandardIntrospector
     {
         private static Map<String,Object> mapifyBean(Object bean)
@@ -315,7 +315,7 @@ public class ObjectDataMap implements Map
             }
 
             return pickle;
-        }        
+        }
     }
 
     // mad robot provides a stopgap introspection library for android projects
@@ -331,18 +331,18 @@ public class ObjectDataMap implements Map
             } catch (com.madrobot.beans.IntrospectionException e) {
                 throw new IntrospectionException();
             }
-    
+
             if (properties == null) return null;
-    
+
             Map<String,Object> pickle = null;
-    
+
             // copy properties into hashtable
             for (com.madrobot.beans.PropertyDescriptor property : properties) {
                 Class paramClass = property.getPropertyType();
                 Method getter = property.getReadMethod();
                 try {
                     Object paramValue = getter.invoke(bean, (Object[])null);
-    
+
                     if (paramValue != null) {
                         // converts isActive() to is_active
                         // converts getBookTitle() to book_title
@@ -351,16 +351,16 @@ public class ObjectDataMap implements Map
                         if (paramValue instanceof Boolean) {
                             paramName = "is_"+paramName;
                         }
-    
+
                         if (pickle == null) pickle = new HashMap<String,Object>();
-    
+
                         storeValue(pickle, paramClass, paramName, paramValue, true);
                     }
                 } catch (InvocationTargetException e) {
                 } catch (IllegalAccessException e) {
                 }
             }
-    
+
             return pickle;
         }
     }

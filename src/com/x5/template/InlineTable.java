@@ -40,7 +40,7 @@ public class InlineTable
     {
         return _parseTable(data);
     }
-    
+
     /*
      * example [[code,name,price],[abc,Apples,$2.50],[xyz,Whiz-Bang \[you\, and everyone\, will love it!\],$13.99]]
      */
@@ -61,7 +61,7 @@ public class InlineTable
 
         String[] labels = null;
         ArrayList<String[]> records = null;
-        
+
         // parse a row
         while (marker > -1 && marker < dataLen) {
             // scan for bracket marking start of row
@@ -105,7 +105,7 @@ public class InlineTable
             // scan to start of next row
             if (marker > 0) marker = data.indexOf(",",marker+1);
         }
-        
+
         return new SimpleTable(labels, records);
     }
 

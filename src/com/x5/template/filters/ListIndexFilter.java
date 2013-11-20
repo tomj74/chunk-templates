@@ -14,7 +14,7 @@ public class ListIndexFilter extends ListFilter
     public Object transformList(Chunk chunk, List list, String[] args)
     {
         if (list == null || args.length < 1) return null;
-        
+
         int i = Integer.parseInt(args[0]);
         if (i < 0) {
             // permit negative indices

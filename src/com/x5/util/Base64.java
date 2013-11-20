@@ -124,7 +124,7 @@ public class Base64
      * @since 1.3
      */
     @SuppressWarnings("unused")
-	private static byte[] encode3to4( byte[] threeBytes )
+        private static byte[] encode3to4( byte[] threeBytes )
     {   return encode3to4( threeBytes, 3 );
     }   // end encodeToBytes
 

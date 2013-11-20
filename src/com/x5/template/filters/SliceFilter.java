@@ -13,7 +13,7 @@ public class SliceFilter extends ListFilter
     {
         return "slice";
     }
-    
+
     private static int parseSliceArg(String arg, int defaultVal, int len)
     {
         int x = defaultVal;
@@ -36,11 +36,11 @@ public class SliceFilter extends ListFilter
     public Object transformList(Chunk chunk, List list, String[] args)
     {
         if (list == null) return list;
-        
+
         int len = list.size();
         int from,to,step;
         String fromArg = null, endArg = null, stepArg = null;
-        
+
         String firstArg = null;
         if (args.length == 1) {
             // no commas
@@ -49,7 +49,7 @@ public class SliceFilter extends ListFilter
             // commas
             firstArg = args[1];
         }
-        
+
         if (args.length > 0) {
             String[] sliceArgs = SplitFilter.splitNonRegex(firstArg,":");
             boolean colonDelim = sliceArgs.length > 1;
@@ -79,7 +79,7 @@ public class SliceFilter extends ListFilter
             to = len;
             step = 1;
         }
-        
+
         if (step == 1) {
             return list.subList(from, to);
         } else {

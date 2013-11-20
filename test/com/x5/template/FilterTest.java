@@ -441,7 +441,7 @@ public class FilterTest
         c.append("{$beatles|get(4):too far} {$beatles|get(-5):too far}");
         assertEquals("too far too far", c.toString());
     }
-    
+
     @Test
     public void testSplit()
     {
@@ -454,7 +454,7 @@ public class FilterTest
         c.append("{$x|split(,2)|join} {$y|split(-,2)|join(,)} {$y|split(/-+/,3)|join(,)}");
         assertEquals("abcd 1,2,,3,4 1,2,3,4\nab 1,2 1,2,3", c.toString());
     }
-    
+
     @Test
     public void testUC()
     {
@@ -556,6 +556,19 @@ public class FilterTest
     }
 
     @Test
+    public void testSortFilter()
+    {
+        Chunk c = new Chunk();
+        c.set("stooges",new String[]{"Larry","Curly","Moe"});
+        c.append("{$stooges|sort|join}");
+
+        assertEquals("CurlyLarryMoe", c.toString());
+
+        c.set("stooges",new String[]{"Larry","Curly","Moe",null});
+        assertEquals("LarryCurlyMoe", c.toString());
+    }
+
+    @Test
     public void testOnEmptyFilter()
     {
         Chunk c = new Chunk();
@@ -603,7 +616,7 @@ public class FilterTest
 
         assertEquals("STRING LIST OBJECT CHUNK NULL",c.toString());
     }
-    
+
     @Test
     public void testSliceFilter()
     {
@@ -612,7 +625,7 @@ public class FilterTest
         c.append("{$x|slice(::-1)|get(0)}");
         c.set("x",new String[]{"A","B","C"});
         assertEquals("C", c.toString());
-        
+
         c.resetTemplate();
         c.append("{$x|slice(1:2)|get(0)}");
         assertEquals("B", c.toString());
@@ -624,12 +637,12 @@ public class FilterTest
         c.resetTemplate();
         c.append("{$x|slice(-2:-1)|get(0)}");
         assertEquals("B", c.toString());
-        
+
         c.resetTemplate();
         c.append("{$x|slice(2::-2)|get(1)}");
         assertEquals("A", c.toString());
     }
-    
+
     @Test
     public void testReverseFilter()
     {
@@ -639,7 +652,7 @@ public class FilterTest
         c.set("x",new String[]{"A","B","C"});
         assertEquals("CBA", c.toString());
     }
-    
+
     @Test
     public void testLengthFilter()
     {
@@ -650,19 +663,23 @@ public class FilterTest
         c.set("y","abcd");
         assertEquals("3 4", c.toString());
     }
-    
+
     @Test
     public void testCapitalizeFilter()
     {
         Theme theme = new Theme();
         Chunk c = theme.makeChunk();
         c.append("{$x|capitalize} {$y|capitalize} {$z|capitalize}");
-        c.set("x","johnny o'Brien");
+        c.set("x","johnny o'Brien james mcDonald");
         c.set("y","MAD PROPS");
         c.set("z","my favorite\nthings.");
-        assertEquals("Johnny O'Brien MAD PROPS My Favorite\nThings.", c.toString());
+        assertEquals("Johnny O'Brien James McDonald MAD PROPS My Favorite\nThings.", c.toString());
+
+        c.resetTemplate();
+        c.append("{$x|title} {$y|title} {$z|title}");
+        assertEquals("Johnny O'Brien James Mcdonald Mad Props My Favorite\nThings.", c.toString());
     }
-    
+
     @Test
     public void testBadArgs()
     {
@@ -671,7 +688,7 @@ public class FilterTest
         c.append("{$x|slice(a,b,c)|join}");
         c.set("x",new String[]{"A","B","C"});
         assertEquals("ABC", c.toString());
-        
+
         c.resetTemplate();
         c.set("x","a b c d e");
         c.append("{$x|split(,giraffe)|join}");
