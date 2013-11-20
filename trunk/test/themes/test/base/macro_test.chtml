@@ -31,8 +31,8 @@ Once I ate a {~kind_of_food} and drank some {~kind_of_drink} at {~host}'s house 
 
 {!---------------------------------------------}
 {#table_test}
-{^exec #TABLE}
- {~some_data=}[[item,price],[spoon,.2],[fork,.3],[knife,1.03]]{=}
+{.exec #TABLE}
+ {$some_data=}[[item,price],[spoon,.2],[fork,.3],[knife,1.03]]{=}
 {/exec}
 {#}
 
@@ -265,9 +265,12 @@ knife $1.03
 
 {!---------------------------------------------}
 {#TABLE}
+Featured: {$some_data|get(1)}
+
+All:
 <table>
-{^loop in ~some_data as i}
-<tr><td>{~i.item}</td><td>{~i.price|sprintf($%,.2f)}</td></tr>
+{.loop in $some_data as $i}
+<tr><td>{$i.item}</td><td>{$i.price|sprintf($%,.2f)}</td></tr>
 {/loop}
 </table>
 {#}
@@ -380,4 +383,25 @@ Hello
 {!---------------------------------------------}
 {#bug29}
 It doesn't matter what I put here, it gets overridden in the override layer.
+{#}
+
+
+{!---------------------------------------------}
+{#bug55}
+{.exec #bug55exec}
+ {$x=}{.include #bug55abcd}{=}
+{/exec}
+{#}
+
+{!---------------------------------------------}
+{#bug55exec}
+{$x|indent(2)}
+{#}
+
+{!---------------------------------------------}
+{#bug55abcd}
+a
+b
+c
+d
 {#}

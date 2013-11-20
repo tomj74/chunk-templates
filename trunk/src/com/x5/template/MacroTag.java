@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import com.x5.util.LiteXml;
 
@@ -373,8 +374,34 @@ public class MacroTag extends BlockTag
             }
         }
 
-        macro.setMultiple(macroDefs);
+        if (macroDefs != null) {
+            Set<String> keys = macroDefs.keySet();
+            if (keys != null) {
+                for (String tagName : keys) {
+                    Object o = macroDefs.get(tagName);
+                    macro.setOrDelete(tagName,resolvePointers(context,o,0));
+                }
+            }
+        }
         macro.render(out, context);
+    }
+    
+    private Object resolvePointers(Chunk context, Object o, int depth)
+    {
+        // don't recurse forever...
+        if (depth > 10) return o;
+        
+        if (o instanceof String) o = Snippet.getSnippet((String)o);
+        if (o instanceof Snippet) {
+            Snippet s = (Snippet)o;
+            if (s.isSimplePointer()) {
+                // resolve values which are one single tag
+                Object n = context.get(s.getPointer());
+                if (n == null) return o;
+                o = resolvePointers(context, n, depth+1);
+            }
+        }
+        return o;
     }
 
     public String getBlockStartMarker()
