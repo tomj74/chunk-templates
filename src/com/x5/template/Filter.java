@@ -85,9 +85,9 @@ public class Filter
             return typeFilter(context, input);
         }
 
-        if (input instanceof String) {
+        if (input instanceof String || input instanceof Snippet) {
             // provide a few basic filters without making a whole class for each one.
-            String text = (String)input;
+            String text = input.toString();
             if (filter.equals("trim")) {
                 // trim leading and trailing whitespace
                 return text == null ? null : text.trim(); //text.replaceAll("^\\s+","").replaceAll("\\s+$","");

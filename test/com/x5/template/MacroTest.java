@@ -28,7 +28,7 @@ public class MacroTest
 
         Chunk c = theme.makeChunk("macro_test#table_test");
 
-        assertEquals("<table>\n"
+        assertEquals("Featured: fork\n\nAll:\n<table>\n"
                 + "<tr><td>spoon</td><td>$0.20</td></tr>\n"
                 + "<tr><td>fork</td><td>$0.30</td></tr>\n"
                 + "<tr><td>knife</td><td>$1.03</td></tr>\n"
@@ -212,6 +212,14 @@ public class MacroTest
         assertEquals("",c.toString());
     }
 
+    @Test
+    public void execIndentTest()
+    {
+        Theme theme = new Theme("test/base");
+        Chunk c = theme.makeChunk("macro_test#bug55");
+        assertEquals("  a\n  b\n  c\n  d\n\n", c.toString());
+    }
+    
     @Test
     public void execFilterTest()
     {
