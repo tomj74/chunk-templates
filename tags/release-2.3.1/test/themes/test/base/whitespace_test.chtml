@@ -1,0 +1,31 @@
+{!---------------------------------------------}
+Line
+    {!--comment
+        multiline--}
+    {.if ($x) }
+    asdf
+    {/if}
+    {!--comment--}
+    {.if ($y) }
+    Line
+    {.else}
+    {!--comment--}
+    Line
+    {/if}
+    Line
+    Line
+    {$tag}
+    Line
+
+{#comment_after_if}
+    {.if (!$x)}{!-- comment --}
+    Line
+    {/if}
+    {.if (!$x)}{!-- comment --}
+    Line
+    {/if}
+    {!--comment--}
+    {.if (!$x)}{!-- comment --}
+    Line
+    {/if}
+{#}
