@@ -244,7 +244,7 @@ import com.x5.util.TableData;
  * Updates: <A href="http://www.x5software.com/chunk/">Chunk Documentation</A><BR>
  *
  * @author Tom McClure
- * @version 2.3.1
+ * @version 2.3.2
  */
 
 public class Chunk implements Map<String,Object>
@@ -252,7 +252,7 @@ public class Chunk implements Map<String,Object>
     public static final int HASH_THRESH = 8;
     public static final int DEPTH_LIMIT = 17;
 
-    public static final String VERSION = "2.3.1";
+    public static final String VERSION = "2.3.2";
 
     private static final String TRUE = "TRUE";
 
@@ -638,6 +638,14 @@ public class Chunk implements Map<String,Object>
             return e.getLocalizedMessage();
         }
     }
+    
+    public void render(PrintStream out)
+    throws IOException
+    {
+        java.io.PrintWriter writer = new java.io.PrintWriter(out);
+        render(writer);
+        writer.flush();
+    }
 
     public void render(Writer out)
     throws IOException
@@ -976,12 +984,17 @@ public class Chunk implements Map<String,Object>
             return lookupName;
         }
 
-        String dynLookupName = lookupName.substring(0,backtickA)
-          + resolveTagValue(embeddedTag, depth)
-          + lookupName.substring(backtickB+1);
-
-        // there may be more...
-        return resolveBackticks(dynLookupName, depth);
+        Object backtickExprValue = resolveTagValue(embeddedTag, depth);
+        if (backtickExprValue == null) {
+            return lookupName;
+        } else {
+            String dynLookupName = lookupName.substring(0,backtickA)
+              + backtickExprValue
+              + lookupName.substring(backtickB+1);
+    
+            // there may be more...
+            return resolveBackticks(dynLookupName, depth);
+        }
     }
 
     protected Object resolveTagValue(SnippetTag tag, int depth)
@@ -1007,18 +1020,18 @@ public class Chunk implements Map<String,Object>
         } else if (hasValue(segmentName)) {
             tagValue = getTagValue(segmentName);
         } else {
+            if (ignoreParentContext) {
+                return tagValue;
+            }
             Vector<Chunk> parentContext = getCurrentParentContext();
             if (parentContext != null) {
                 // now look in ancestors (iteration, not recursion, so sue me)
                 for (Chunk ancestor : parentContext) {
-                    tagValue = ancestor._resolveTagValue(tag, depth, true);
+                    tagValue = ancestor.getTagValue(segmentName);
+                    ////tagValue = ancestor._resolveTagValue(tag, depth, true);
                     if (tagValue != null) break;
                 }
             }
-        }
-
-        if (ignoreParentContext) {
-            return tagValue;
         }
 
         segment++;

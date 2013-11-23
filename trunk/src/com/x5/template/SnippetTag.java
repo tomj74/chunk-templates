@@ -174,22 +174,37 @@ public class SnippetTag extends SnippetPart
      */
     private int confirmPipe(String tagName, int pipePos)
     {
-        int doesntCountParen = tagName.indexOf("includeIf(");
+        String skipToken = "includeIf(";
+        String closeToken = ")";
+        int doesntCountParen = tagName.indexOf(skipToken);
         if (doesntCountParen < 0) {
             // also have to check for expanded {+(...)} syntax
-            doesntCountParen = tagName.indexOf("include.(");
+            skipToken = "include.(";
+            doesntCountParen = tagName.indexOf(skipToken);
+            if (doesntCountParen < 0) {
+                // also skip filters inside a backtick group
+                skipToken = "`";
+                closeToken = "`";
+                doesntCountParen = tagName.indexOf(skipToken);
+            }
         }
         if (doesntCountParen < 0) return pipePos;
         // skip to the end-paren and search from there
-        int nextSlash = tagName.indexOf("/",doesntCountParen+7);
-        int nextParen = tagName.indexOf(")",doesntCountParen+7);
-        // for the pipe not to count, has to be in /reg|ex/
-        if (nextSlash < 0 || nextParen < 0) return pipePos;
-        if (nextParen < nextSlash) return pipePos;
-        // okay, we found a regex. find the end of the regex.
-        int regexEnd = RegexFilter.nextRegexDelim(tagName,nextSlash+1);
-        nextParen = tagName.indexOf(")",regexEnd+1);
-        if (nextParen < 0 || nextParen < pipePos) return pipePos;
+        int scanFrom = doesntCountParen + skipToken.length();
+        int nextParen = tagName.indexOf(closeToken,scanFrom);
+        if (closeToken.equals("`")) {
+            // skip pipe if it is before close-tick
+            if (pipePos > nextParen) return pipePos;
+        } else {
+            // for the pipe not to count, has to be in /reg|ex/
+            int nextSlash = tagName.indexOf("/",scanFrom);
+            if (nextSlash < 0 || nextParen < 0) return pipePos;
+            if (nextParen < nextSlash) return pipePos;
+            // okay, we found a regex. find the end of the regex.
+            int regexEnd = RegexFilter.nextRegexDelim(tagName,nextSlash+1);
+            nextParen = tagName.indexOf(")",regexEnd+1);
+            if (nextParen < 0 || nextParen < pipePos) return pipePos;
+        }
         return tagName.indexOf("|",nextParen+1);
     }
 

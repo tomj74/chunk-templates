@@ -1,39 +1,39 @@
 {!-- chunk_test.html contains snippets for use in the test suite --}
 
-{^include #layer_test}
+{.include #layer_test}
 
 {!---------------------------------------------}
 {#looptest_simple_block_loop}
-{^loop data="~widgets"}
- {~widget_id} {~widget_name}<br/>
+{.loop data="$widgets"}
+ {$widget_id} {$widget_name}<br/>
 {/loop}
 {#}
 
 {!---------------------------------------------}
 {#looptest_less_simple_block_loop}
-{^loop data="~widgets"}
- {~widget_id} {~widget_name}<br/>
-{^divider}
+{.loop data="$widgets"}
+ {$widget_id} {$widget_name}<br/>
+{.divider}
  <hr/>
-{^onEmpty}
+{.onEmpty}
  <i>No widgets!</i>
 {/loop}
 {#}
 
 {!---------------------------------------------}
 {#looptest_ez_syntax}
-{^loop in ~widgets}
- {~widget_id} {~widget_name}<br/>
-{^divider}
+{.loop in $widgets}
+ {$widget_id} {$widget_name}<br/>
+{.divider}
  <hr/>
-{^onEmpty}
+{.onEmpty}
  <i>No widgets!</i>
 {/loop}
 {#}
 
 {!---------------------------------------------}
 {#looptest_first_last}
-{.loop in $widgets first_last="true"}
+{.loop in $widgets first_last=true}
 <div class="{$is_first|ondefined(first):}{$is_last|ondefined(last):}">{$widget_id}</div>
 {/loop}
 {#}
@@ -67,6 +67,28 @@
 {#looptest_counter_i}
 {.loop in $widgets counter_tag="$i"}
  {$i} {$widget_id} {$widget_name}<br/>
+{.divider}
+ <hr/>
+{.onEmpty}
+ <i>No widgets!</i>
+{/loop}
+{#}
+
+{!---------------------------------------------}
+{#looptest_counter_i2}
+{.loop in $widgets counter=$i,5 counter_tags=true}
+ {$0} {$1} {$i} {$widget_name}<br/>
+{.divider}
+ <hr/>
+{.onEmpty}
+ <i>No widgets!</i>
+{/loop}
+{#}
+
+{!---------------------------------------------}
+{#looptest_counter_i3}
+{.loop in $widgets counter=$i,5,-2}
+ {$i} {$widget_name}<br/>
 {.divider}
  <hr/>
 {.onEmpty}
@@ -303,6 +325,17 @@ NOT A TOASTER
 {!---------------------------------------------}
 {#layer_test}
 Base Layer
+{#}
+
+
+{!---------------------------------------------}
+{#literal_test}
+{$tags:bye}
+<!-- {.literal} -->
+{$tags:hello}
+{#confuser}I am the CONFUSER{#}
+<!-- {/literal} -->
+{$tags:bye}
 {#}
 
 

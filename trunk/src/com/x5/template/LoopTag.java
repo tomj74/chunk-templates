@@ -159,7 +159,8 @@ public class LoopTag extends BlockTag
         }
     }
 
-    private static final Pattern PARAM_AND_VALUE = Pattern.compile(" ([a-zA-Z0-9_-]+)=(\"([^\"]*)\"|'([^\']*)')");
+    private static final Pattern PARAM_AND_VALUE =
+        Pattern.compile(" ([a-zA-Z0-9_-]+)=(\"([^\"]*)\"|'([^\']*)'|([^ \"\']+))");
 
     private Map<String,Object> _parseAttributes(String params)
     {
@@ -169,9 +170,20 @@ public class LoopTag extends BlockTag
         while (m.find()) {
             m.group(0); // need to do this for subsequent number to be correct?
             String paramName = m.group(1);
-            String paramValue = m.group(3);
-            if (opts == null) opts = new HashMap<String,Object>();
-            opts.put(paramName, paramValue);
+            if (paramName != null) {
+                if (opts == null) opts = new HashMap<String,Object>();
+                String doubleQuoted = m.group(3);
+                String singleQuoted = m.group(4);
+                String unQuoted = m.group(5);
+                String paramValue = doubleQuoted;
+                if (paramValue == null) paramValue = singleQuoted;
+                if (paramValue == null) paramValue = unQuoted;
+                opts.put(paramName, paramValue);
+                // counter is an alias for counter_tag
+                if (paramName.equals("counter")) {
+                    opts.put("counter_tag", paramValue);
+                }
+            }
         }
         return opts;
     }
@@ -339,6 +351,8 @@ public class LoopTag extends BlockTag
         Snippet dividerSnippet = null;
         boolean createArrayTags = false;
         boolean counterTags = false;
+        int counterOffset = 0;
+        int counterStep = 1;
         String counterTag = null;
         String firstRunTag = null;
         String lastRunTag = null;
@@ -367,6 +381,19 @@ public class LoopTag extends BlockTag
             if (options.containsKey("counter_tag")) {
                 counterTag = (String)options.get("counter_tag");
                 counterTag = eatTagSymbol(counterTag);
+                if (counterTag.indexOf(",") > 0) {
+                    String[] counterArgs = counterTag.split(",");
+                    counterTag = counterArgs[0];
+                    try {
+                        counterOffset = Integer.parseInt(counterArgs[1]);
+                    } catch (NumberFormatException e) {}
+                    // optional third arg is step size
+                    if (counterArgs.length > 2) {
+                        try {
+                            counterStep = Integer.parseInt(counterArgs[2]);
+                        } catch (NumberFormatException e) {}
+                    }
+                }
             }
             if (options.containsKey("first_last")) {
                 String tagNames = (String)options.get("first_last");
@@ -454,7 +481,7 @@ public class LoopTag extends BlockTag
                 rowX.set("1",counter+1);
             }
             if (counterTag != null) {
-                rowX.set(counterTag, counter);
+                rowX.set(counterTag, counterOffset + counter * counterStep);
             }
 
             if (dividerSnippet != null && counter > 0) {
