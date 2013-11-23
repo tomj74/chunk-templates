@@ -22,11 +22,16 @@ public class SplitFilter implements ChunkFilter
             if (args.length == 1) {
                 delim = args[0];
             } else if (args.length > 2) {
-                delim = args[1];
-                if (delim.length() == 0) delim = DEFAULT_DELIM;
-                try {
-                    limit = Integer.parseInt(args[2]);
-                } catch (NumberFormatException e) {}
+                // edge case -- split(,) is not supposed to be split("","")
+                if (args[0].equals(",")) {
+                    delim = ",";
+                } else {
+                    delim = args[1];
+                    if (delim.length() == 0) delim = DEFAULT_DELIM;
+                    try {
+                        limit = Integer.parseInt(args[2]);
+                    } catch (NumberFormatException e) {}
+                }
             }
         }
         if (delim.length() > 1 && delim.charAt(0) == '/' && delim.charAt(delim.length()-1) == '/') {

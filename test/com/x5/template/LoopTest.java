@@ -277,6 +277,16 @@ public class LoopTest
         assertEquals("<ul>\n\n<li>thingamabob</li>\n<li>doodad</li>\n\n</ul>\n<ol>\n\n<li>thingamabob</li>\n<li>doodad</li>\n\n</ol>\n",
                 c.toString());
     }
+    
+    @Test
+    public void testLoopOverSplit()
+    {
+        Theme theme = new Theme();
+        Chunk c = theme.makeChunk();
+        c.set("nums","1,2,3,4");
+        c.append("{.loop in $nums|split(,) as $n}{$n}{.divider} {/divider}{/loop}");
+        assertEquals("1 2 3 4", c.toString());
+    }
 
     @Test
     public void testBadCloseTag()
