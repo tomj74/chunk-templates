@@ -242,6 +242,30 @@ public class LoopTest
     }
 
     @Test
+    public void testCounterTagOffset()
+    {
+        Theme theme = new Theme("themes","test/base,test/override");
+
+        Chunk c = theme.makeChunk("chunk_test#looptest_counter_i2");
+        String widgets = "[[widget_id,widget_name],[1,thingamabob],[2,doodad]]";
+        c.set("widgets",widgets);
+
+        assertEquals(c.toString()," 0 1 5 thingamabob<br/>\n <hr/>\n 1 2 6 doodad<br/>\n");
+    }
+
+    @Test
+    public void testCounterTagOffsetStep()
+    {
+        Theme theme = new Theme("themes","test/base,test/override");
+
+        Chunk c = theme.makeChunk("chunk_test#looptest_counter_i3");
+        String widgets = "[[widget_id,widget_name],[1,thingamabob],[2,doodad]]";
+        c.set("widgets",widgets);
+
+        assertEquals(c.toString()," 5 thingamabob<br/>\n <hr/>\n 3 doodad<br/>\n");
+    }
+
+    @Test
     public void testWhitespaceStrip()
     {
         Theme theme = new Theme("test/base");

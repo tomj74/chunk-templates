@@ -354,14 +354,22 @@ public class TemplateDoc implements Iterator<TemplateDoc.Doclet>, Iterable<Templ
 
     public static int findLiteralMarker(String text, int startAt)
     {
-        int literalPos = text.indexOf(LITERAL_START, startAt);
-        int litPos     = text.indexOf(LITERAL_SHORTHAND, startAt);
-        if (litPos > -1 && literalPos > -1) {
-            literalPos = Math.min(literalPos, litPos);
-        } else if (litPos > -1 || literalPos > -1) {
-            literalPos = Math.max(literalPos, litPos);
+        int literalPos  = text.indexOf(LITERAL_START, startAt);
+        int literal2Pos = text.indexOf(LITERAL_START2, startAt);
+        int litPos      = text.indexOf(LITERAL_SHORTHAND, startAt);
+        int[] pos = new int[]{literalPos,literal2Pos,litPos};
+        int firstEncounter = -1;
+        for (int i=0; i<3; i++) {
+            int p = pos[i];
+            if (p > -1) {
+                if (firstEncounter < 0) {
+                    firstEncounter = p;
+                } else {
+                    firstEncounter = Math.min(firstEncounter, p);
+                }
+            }
         }
-        return literalPos;
+        return firstEncounter;
     }
 
     private ArrayList<String> lineStack = new ArrayList<String>();

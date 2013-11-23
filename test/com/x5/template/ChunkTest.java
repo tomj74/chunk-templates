@@ -279,12 +279,26 @@ public class ChunkTest
     public void testBackticksNewSyntax()
     {
         // TODO: add some tests for backtick edge cases
-        // (eg, what if ~id is not defined, what if ~name21 is not defined)
+        // (eg, what if $id is not defined, what if $name21 is not defined)
         Chunk c = new Chunk();
         c.set("name", "Bob");
         c.set("name21", "Rob");
         c.set("id", "21");
-        c.append("Hello, my name is {~name`$id`}!");
+        c.append("Hello, my name is {$name`$id`}!");
+
+        assertEquals(c.toString(), "Hello, my name is Rob!");
+    }
+
+    @Test
+    public void testFilteredBacktick()
+    {
+        // TODO: add some tests for backtick edge cases
+        // (eg, what if ~id is not defined, what if ~name21 is not defined)
+        Chunk c = new Chunk();
+        c.set("name", "Bob");
+        c.set("name22", "Rob");
+        c.set("id", "21");
+        c.append("Hello, my name is {$name`$id|qcalc(+1)`}!");
 
         assertEquals(c.toString(), "Hello, my name is Rob!");
     }
@@ -305,6 +319,15 @@ public class ChunkTest
         Chunk c = theme.makeChunk("chunk_test#uncapped_literal");
 
         assertEquals(c.toString(), "Scooby Doo says ruff ruff!\n{^literal}\n{#}\n");
+    }
+
+    @Test
+    public void testLiteralInFile()
+    {
+        Theme theme = new Theme("test/base");
+        Chunk c = theme.makeChunk("chunk_test#literal_test");
+
+        assertEquals(c.toString(), "bye\n<!-- {.literal} -->\n{$tags:hello}\n{#confuser}I am the CONFUSER{#}\n<!-- {/literal} -->\nbye\n");
     }
 
     @Test
