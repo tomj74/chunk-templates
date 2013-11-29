@@ -625,14 +625,14 @@ public class TemplateDoc implements Iterator<TemplateDoc.Doclet>, Iterable<Templ
                 // inside any literal blocks.
                 int afterLiteralBlock = skipLiterals(template,cursor);
                 if (afterLiteralBlock == cursor) {
-                    // ^ is shorthand for ~. eg {^include.#xyz} or {^wiki.External_Content}
+                    // . is shorthand for ~. eg {.include #xyz} or {.wiki.External_Content}
                     template.replace(cursor+1,cursor+2,"~.");
                     // re-process, do not advance cursor.
                 } else {
                     cursor = afterLiteralBlock;
                 }
             } else if (afterBrace == '/') {
-                // {/ is short for {^/ which is short for {~./
+                // {/ is short for {./ which is short for {~./
                 template.replace(cursor+1,cursor+2,"~./");
                 // re-process, do not advance cursor.
             } else if (afterBrace == '*') {
@@ -759,11 +759,11 @@ public class TemplateDoc implements Iterator<TemplateDoc.Doclet>, Iterable<Templ
 
         int hashPos = fnCall.indexOf("#");
 
-        // let's just (lame but works) assume that all hashes after a
-        // delimiter are hashrefs that need to be expanded
+        // Just assume that all hashes after a delimiter
+        // are hashrefs that need to be expanded (lame but works).
         while (hashPos > 1) {
             char preH = fnCall.charAt(hashPos-1);
-            if (preH == '"' || preH == ',' || preH == ' ' || preH == '(') {
+            if (preH == '"' || preH == ',' || preH == ' ' || preH == '(' || preH == '=') {
                 if (expanded == null) expanded = new StringBuilder();
                 // everything new up to now is certified "clean"
                 expanded.append(fnCall.substring(tagCursor,hashPos));
