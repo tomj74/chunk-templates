@@ -1,0 +1,171 @@
+Release History
+
+v2.4 - Android helper classes.
+
+  New template provider for Android is now included out-of-the-box:
+  com.x5.template.providers.AndroidTemplates.  See docs for usage notes.
+
+v2.3.2 - Minor fixes/enhancements.
+
+  Now able to render directly to a PrintStream (such as System.out)
+  Filters now legal inside a backtick expansion.
+  Fixed bug with backtick tag resolution.
+  Loop tag option values no longer require quotes.
+  Renamed counter_tag loop option to counter and added optional params
+    counter=$tag[,offset[,step]].
+    eg {.loop in $list as $x counter=$i,1}
+    Note: counter options just affect $i values -
+    use $list|slice(a:b:step) to subset the actual list being looped over.
+  Fixed bug in template parser, wasn't catching new-style literal blocks.
+  interpret |split(,) as |split(",") and not as |split("","")
+
+v2.3.1 - Refactored filter processing.  New filters:
+         slice, length, capitalize, title, reverse, sort, split.
+
+v2.2.2 - Fixed issue with android.
+         InlineTable less brittle.
+         Smarter whitespace handling.
+
+v2.2 - Theme objects can now be created with custom template provider.
+       Full details with examples:
+         http://x5software.com/chunk/examples/ChunkExample?example=net
+
+v2.1.2 - Fixed bug in addData(capsule,"x")
+
+v2.1.1 - Fixed bug with boxed primitive wrapper objects
+         like Double, Character, Integer etc.
+
+v2.1 - New {$tag|filter(#x_template)} runs the #x_template snippet as
+         a macro, binding {$x} to the value of {$tag}
+       Easier access to POJO attributes and bean properties:
+         * chunk.setToBean('my_thing',someObject)
+             copies someObject's public accessor properties to a Map
+	     so the template can do this:
+                {$my_thing.price}
+             to get the value of
+                someObject.getPrice()
+         * chunk.set('item',somePOJO)
+             copies somePOJO's non-private attributes to a Map
+	     so the template can do this:
+                {$item.price}
+             to get the value of
+                somePOJO.price
+         * Map values seen by template renderer are a snapshot from
+	   time of first attribute access.
+
+v2.0 - Refactored for 20% speed gain.
+       New |type filter {$what_am_i|type} outputs one of the following:
+         STRING LIST OBJECT CHUNK NULL
+       Improved support for objects (ie associative arrays)
+         {.exec #template json} now preserves JSON object key order.
+         {.loop in $obj as $key:$val} now loops through the attributes
+           of an associative array (aka Map/Object)
+         {$obj} now visible from inside loops/chunks, not just {$obj.attr}
+         Loop can now resolve object/list references like $x = "{$y}"
+       Theme can now be configured to not route errors to output,
+       and/or print errors to STDERR or another PrintWriter.
+         theme.setErrorHandling(false,System.err);
+       Fixed bug with backticks and new {$syntax`$num`}
+       The |escapexml filter has been refactored to be more efficient,
+         now handles upper-page unicode escapes.
+       Fixed bug in translate filter.
+
+v1.9 - Minor enhancements to {.loop} tag, several minor bugfixes.
+        Updating to the latest version is strongly recommended.
+
+v1.8 - Major syntax change: new {$tag} and {.command} syntax
+        replaces older, unfriendly syntax: {~tag} and {^command}
+        Not to worry, library remains back-compatible.
+
+       Other changes:
+         * {.exec} Macro enhancements
+           - xml attributes now avail as {$elt_name@attr_name}
+           - introduced @inline keyword in {.exec} syntax
+               eg: {.exec @inline xml} means, check {.body}...{/body} block
+               for template, and args will be in xml format.
+         * Some new text filters
+           - {$tag|onempty(N/A)} outputs N/A in null *and* empty-string case
+           - {$tag|unescape} unescapes xml-entities.
+
+v1.7 - New features:
+         * New built-in filters |get(x) and |alternate(even_output,odd_output)
+         * Better support for lists and trees (ie nested maps) of data.
+         * New {.loop} options counter_tags="true" and array_index_tags="true"
+            default for both options is now false.
+         * Macro invocation overhaul.  New syntax:
+              {.exec MACRO} ... params ... {/exec}
+           With option to provide params json-formatted** or xml-formatted:
+              {.exec MACRO json}
+               { x : 3,
+                 a : 'some-string',
+                 list : ['a','b','c'] }
+              {/exec}
+           And an inline template body marker a la:
+              {.exec} ...params... {.body} ... {/exec}
+            ** json-smart library is required for parsing json.
+         * Several minor bugfixes.
+
+v1.6 - Major refactor for speed.
+         * Chunk can now write to stream.
+            Use chunk.render( out ) instead of chunk.toString()
+         * Templates are now pre-compiled for big performance gain.
+         * Users may now register contributed filters without modifying
+            the chunk source code.  See online docs for example.
+
+v1.5 - New features:
+         * Localization: mark a string for translation in your template
+             with clean _[one two three] syntax.
+           Create a translations file /locale/xx_XX/translate.csv in the
+             classpath with lines like:
+             "one two three","un deux trois"
+           Then, wnen you set up your Theme, call theme.setLocale("xx_XX")
+             and all toString() output will get sent through the translator.
+         * Localized strings support sprintf format directive %s
+           Provide args like so: {_[Acct # %s balance is %s],$account,$balance}
+         * Translate filter: dynamic output can also be translated via the
+             "_" filter like so: {$any_tag|_}
+             or more verbosely, {$any_tag|translate} or {$any_tag|xlate}
+         * UTF-8 support: all templates are now assumed to be UTF-8.
+           Use system property -Dchunk.template.charset=... to override.
+         * Improved examples to better demonstrate features.
+
+v1.4 - Simplified block-tag syntax, got tired of typing {./if}
+         * {.if} ... {/if} and {.loop} ... {/loop} is the new standard.
+         * Fixed glaring if-else block conditional bug.
+         * Now easier to instantiate Theme object.  Just put your themes
+           in src/themes/*.chtml and use the no-arg Theme() constructor
+           and you're good to go.  Deploying in a jar?  Just include the
+           themes folder in your jar and the template engine will find them.
+
+v1.3 - New features:
+         * Nestable {.if}...{/if} and {.loop}...{/loop} constructs
+         * Cleaner {.include file} {.include #snippet} include syntax
+         * Cleaner {.loop in $data as $d} loop syntax
+         * Better comment-stripping (removes any whitespace-only lines left
+             after stripping the comment).
+         * Even smarter about finding theme files.  Just put a folder named
+             "themes" directly under your project's src folder.  As long as
+             it gets exported to classpath (alongside your classes that
+             import and use Chunk), your templates will get found.
+         * JUnit test suite.  Bout time.
+         * New indent(n) filter indents tag output by n spaces.
+         * New HEX filter -- shorthand for {$x|hex|uc}
+
+v1.2 - New features:
+         * Literal blocks w/ {.literal} no interpolation
+         * Dynamic tags with backticks {$pkg_`$pkg_id`}
+         * getSnippet(templateRef) now returns Snippet obj
+             - use fetch(templateRef) to get tpl as string.
+         * Chunk can now find and use templates that are packaged
+           inside a jar on the classpath.
+         * nodata="" now supported by {.loop} tag.
+         * xml,xmlesc,xmlescape now synonyms for htmlescape filter.
+         * implemented perl case-conv regex directives via hack:
+              s/.*/\U$0/ now working (but {$tag|uc} is still quicker)
+
+v1.1 - Java source code missing from initial release, fixed.
+     - Handles missing jeplite jar more gracefully.
+
+v1.0 - Initial release
+     - Add optional jeplite jar to classpath (from jeplite.sourceforge.net)
+       to enable |calc filter and {.calc()} special tag - math expressions.
