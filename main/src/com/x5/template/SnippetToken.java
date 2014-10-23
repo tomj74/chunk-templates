@@ -50,17 +50,26 @@ public class SnippetToken extends SnippetPart
             // no end bracket, no args
             return new SnippetToken(wholeTag,wholeTag.substring(bodyA));
         }
-        String body = wholeTag.substring(bodyA,bodyB);
-        SnippetToken tokenWithArgs = new SnippetToken(wholeTag,body);
 
         int argsA = bodyB+1;
         int argsB = wholeTag.length();
         if (wholeTag.endsWith(LocaleTag.LOCALE_TAG_CLOSE)) argsB--;
 
+        // remove trailing whitespace if this is a {% whitespace-friendly %} tag
+        if (wholeTag.startsWith("{%")) {
+            bodyA++;
+            while (Character.isWhitespace(wholeTag.charAt(bodyA-2))) bodyA++;
+            if (wholeTag.charAt(argsB-1) == '%') argsB--;
+            while (Character.isWhitespace(wholeTag.charAt(argsB-1))) argsB--;
+        }
+
         // skip initial comma.
         if (wholeTag.charAt(argsA) == ',') argsA++;
-
         String params = wholeTag.substring(argsA,argsB);
+
+        String body = wholeTag.substring(bodyA,bodyB);
+        SnippetToken tokenWithArgs = new SnippetToken(wholeTag,body);
+
         if (params != null && params.trim().length() > 0) {
             String[] args = params.split(" *, *");
             tokenWithArgs.args = args;

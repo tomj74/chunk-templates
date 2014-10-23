@@ -135,6 +135,19 @@ public class LocaleTagTest
     }
 
     @Test
+    public void testTranslationNewSyntax()
+    {
+        // translate and substitute dynamic tag correctly
+        Chunk c = new Chunk();
+        c.set("color", "_[blue]");
+        c.set("make", "lexus");
+        ChunkLocale.registerLocale("de_DE", new String[]{"A new %s %s!","Eine neue %s %s!","blue","blau"});
+        c.setLocale("de_DE");
+        c.append("Bla bla bla {% _[A new %s %s!],$color,$make %} bla bla");
+        assertEquals("Bla bla bla Eine neue blau lexus! bla bla", c.toString());
+    }
+
+    @Test
     public void testTranslation()
     {
         // translate and substitute dynamic tag correctly

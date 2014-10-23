@@ -17,6 +17,62 @@ public class ChunkTest
     }
 
     @Test
+    public void testSimpleDefaultIgnoreWhitespace()
+    {
+        Chunk c = new Chunk();
+        c.append("Hello, my name is {% $name:Bob %}!");
+        assertEquals("Hello, my name is Bob!",c.toString());
+    }
+
+    @Test
+    public void testSimpleDefaultIncludeWhitespace()
+    {
+        Chunk c = new Chunk();
+        c.append("Hello, my name is {$name:Bob }!");
+        assertEquals("Hello, my name is Bob !",c.toString());
+    }
+
+    @Test
+    public void testMissingExpression()
+    {
+        Chunk c = new Chunk();
+        c.append("Hello, {%} my {%%} name is {% %}!");
+        assertEquals("Hello, {%} my {%%} name is {% %}!",c.toString());
+    }
+
+    @Test
+    public void testBadExpression()
+    {
+        Chunk c = new Chunk();
+        c.append("Hello, my name is {% monkeys %}!");
+        assertEquals("Hello, my name is {% monkeys %}!",c.toString());
+    }
+
+    @Test
+    public void testUndefinedExpression()
+    {
+        Chunk c = new Chunk();
+        c.append("Hello, my name is {% $monkeys %}!");
+        assertEquals("Hello, my name is {% $monkeys %}!",c.toString());
+    }
+
+    @Test
+    public void testMissingEndPercent()
+    {
+        Chunk c = new Chunk();
+        c.append("Hello, my name is {% $name:Bob }!");
+        assertEquals("Hello, my name is Bob!",c.toString());
+    }
+
+    @Test
+    public void testMissingEndBrace()
+    {
+        Chunk c = new Chunk();
+        c.append("Hello, my name is {% $name:Bob !");
+        assertEquals("Hello, my name is {% $name:Bob !",c.toString());
+    }
+
+    @Test
     public void testPassThru()
     {
         Chunk c = new Chunk();

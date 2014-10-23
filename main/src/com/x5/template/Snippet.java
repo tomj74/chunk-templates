@@ -408,6 +408,14 @@ public class Snippet
         // and now focus on the tag...
         String wholeTag = template.substring(tagStart,i+1);
 
+        // remove trailing whitespace from expr if nec.
+        if (wholeTag.charAt(1) == '%') {
+            if (wholeTag.charAt(wholeTag.length()-2) == '%') i--;
+            while (i > tagStart && Character.isWhitespace(wholeTag.charAt(i-tagStart-1))) {
+                i--;
+            }
+        }
+
         if (magicChar == '~' || magicChar == '$') {
             String gooeyCenter = template.substring(exprStart,i);
             SnippetTag tag = new SnippetTag(wholeTag,gooeyCenter);
@@ -464,6 +472,11 @@ public class Snippet
                 SnippetTag include = new SnippetTag(wholeTag,includeTag);
                 return include;
             }
+        } else if (magicChar == '%') {
+            // invalid expr, pass through as literal
+            SnippetPart literal = new SnippetPart(wholeTag);
+            literal.setLiteral(true);
+            return literal;
         }
 
         // huh? in other words, we should never reach here.
