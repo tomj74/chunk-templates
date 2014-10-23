@@ -19,7 +19,7 @@ public class IfTagTest
     {
         Chunk c = new Chunk();
         c.append("{.if ($x == \"velveeta\")}happy{/if}");
-        c.append("{.if ($x == 'velveeta')}happy{/if}");
+        c.append("{% if ($x == 'velveeta') %}happy{% endif %}");
         c.set("x","velveeta");
 
         assertEquals("happyhappy",c.toString());

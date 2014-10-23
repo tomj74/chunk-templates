@@ -12,7 +12,7 @@ public class ChunkTest
     public void testSimpleDefault()
     {
         Chunk c = new Chunk();
-        c.append("Hello, my name is {~name:Bob}!");
+        c.append("Hello, my name is {$name:Bob}!");
         assertEquals("Hello, my name is Bob!",c.toString());
     }
 
@@ -20,15 +20,15 @@ public class ChunkTest
     public void testPassThru()
     {
         Chunk c = new Chunk();
-        c.append("Hello, my name is {~name}!");
-        assertEquals("Hello, my name is {~name}!",c.toString());
+        c.append("Hello, my name is {$name}!");
+        assertEquals("Hello, my name is {$name}!",c.toString());
     }
 
     @Test
     public void testSimpleExpand()
     {
         Chunk c = new Chunk();
-        c.append("Hello, my name is {~name}!");
+        c.append("Hello, my name is {$name}!");
         c.set("name","Harold");
         assertEquals("Hello, my name is Harold!",c.toString());
     }
@@ -37,20 +37,20 @@ public class ChunkTest
     public void testPrimitiveSet()
     {
         Chunk c = new Chunk();
-        c.append("{~d|sprintf(%.11f)} ");
-        c.append("{~D|sprintf(%.11f)} ");
-        c.append("{~f|sprintf(%.02f)} ");
-        c.append("{~F|sprintf(%.02f)} ");
-        c.append("{~int} ");
-        c.append("{~Int} ");
-        c.append("{~long} ");
-        c.append("{~Long} ");
-        c.append("{~bool} ");
-        c.append("{~Bool} ");
-        c.append("{~char} ");
-        c.append("{~Char} ");
-        c.append("{~byte} ");
-        c.append("{~Byte} ");
+        c.append("{% $d|sprintf(%.11f) %} ");
+        c.append("{% $D|sprintf(%.11f) %} ");
+        c.append("{% $f|sprintf(%.02f) %} ");
+        c.append("{% $F|sprintf(%.02f) %} ");
+        c.append("{$int} ");
+        c.append("{$Int} ");
+        c.append("{$long} ");
+        c.append("{$Long} ");
+        c.append("{$bool} ");
+        c.append("{$Bool} ");
+        c.append("{$char} ");
+        c.append("{$Char} ");
+        c.append("{$byte} ");
+        c.append("{$Byte} ");
         Double d = new Double(Math.E);
         c.set("D",d);
         c.set("d",d.doubleValue());
@@ -81,23 +81,13 @@ public class ChunkTest
     public void testSimpleExpandWithDefault()
     {
         Chunk c = new Chunk();
-        c.append("Hello, my name is {~name:Bob}!");
+        c.append("Hello, my name is {$name:Bob}!");
         c.set("name","Harold");
         assertEquals("Hello, my name is Harold!",c.toString());
     }
 
     @Test
     public void testSimpleExpandWithTagDefault()
-    {
-        Chunk c = new Chunk();
-        c.append("Hello, my name is {~name:~full_name}!");
-        c.unset("name");
-        c.set("full_name","Bob Johnson");
-        assertEquals("Hello, my name is Bob Johnson!",c.toString());
-    }
-
-    @Test
-    public void testSimpleExpandWithTagDefaultAltSyntax()
     {
         Chunk c = new Chunk();
         c.append("Hello, my name is {$name:$full_name}!");
@@ -107,10 +97,20 @@ public class ChunkTest
     }
 
     @Test
+    public void testSimpleExpandWithTagDefaultAltSyntax()
+    {
+        Chunk c = new Chunk();
+        c.append("Hello, my name is {~name:~full_name}!");
+        c.unset("name");
+        c.set("full_name","Bob Johnson");
+        assertEquals("Hello, my name is Bob Johnson!",c.toString());
+    }
+
+    @Test
     public void testFilteredDefault()
     {
         Chunk c = new Chunk();
-        c.append("Hello, my name is {~name:O'Reilly|qs}!");
+        c.append("Hello, my name is {$name:O'Reilly|qs}!");
         assertEquals("Hello, my name is O\\'Reilly!",c.toString());
     }
 
@@ -118,22 +118,12 @@ public class ChunkTest
     public void testUnfilteredDefault()
     {
         Chunk c = new Chunk();
-        c.append("Hello, my name is {~name|qs:O'Reilly}!");
+        c.append("Hello, my name is {$name|qs:O'Reilly}!");
         assertEquals("Hello, my name is O'Reilly!",c.toString());
     }
 
     @Test
     public void testSimpleRecursion()
-    {
-        Chunk c = new Chunk();
-        c.append("Hello, my name is {~name}!");
-        c.set("name", "{~username}");
-        c.set("username", "Bob");
-        assertEquals("Hello, my name is Bob!", c.toString());
-    }
-
-    @Test
-    public void testSimpleRecursionAlt()
     {
         Chunk c = new Chunk();
         c.append("Hello, my name is {$name}!");
@@ -143,11 +133,21 @@ public class ChunkTest
     }
 
     @Test
-    public void testInfiniteRecursion()
+    public void testSimpleRecursionAlt()
     {
         Chunk c = new Chunk();
         c.append("Hello, my name is {~name}!");
-        c.set("name", "Bob and my cat is also {~name}");
+        c.set("name", "{~username}");
+        c.set("username", "Bob");
+        assertEquals("Hello, my name is Bob!", c.toString());
+    }
+
+    @Test
+    public void testInfiniteRecursion()
+    {
+        Chunk c = new Chunk();
+        c.append("Hello, my name is {$name}!");
+        c.set("name", "Bob and my cat is also {$name}");
         assertTrue(c.toString().indexOf("max template recursions") > 0);
     }
 
@@ -158,8 +158,8 @@ public class ChunkTest
         Chunk c = new Chunk();
         p.set("name", "Dad");
         p.set("child", c);
-        p.append("{~child}");
-        c.append("Hello, my name is {~name}!");
+        p.append("{$child}");
+        c.append("Hello, my name is {$name}!");
         assertEquals(p.toString(),"Hello, my name is Dad!");
     }
 
@@ -170,8 +170,8 @@ public class ChunkTest
         Chunk c = new Chunk();
         p.set("name", "Dad");
         p.set("child", c);
-        p.append("{~child}");
-        c.append("Hello, my name is {~name}!");
+        p.append("{$child}");
+        c.append("Hello, my name is {$name}!");
         c.set("name", "Son");
         assertEquals(p.toString(),"Hello, my name is Son!");
     }
@@ -186,9 +186,9 @@ public class ChunkTest
         g.set("name", "Grandpa");
         g.set("parent", p);
         p.set("child", c);
-        g.append("G: {~parent}");
-        p.append("P: {~child}");
-        c.append("C: Hello, my name is {~name}!");
+        g.append("G: {$parent}");
+        p.append("P: {$child}");
+        c.append("C: Hello, my name is {$name}!");
         assertEquals(g.toString(),"G: P: C: Hello, my name is Grandpa!");
     }
 
@@ -202,9 +202,9 @@ public class ChunkTest
         g.set("name", "Grandpa");
         g.set("parent", p);
         p.set("child", c);
-        g.append("G: {~parent}  Grandpa is {~name}!");
-        p.append("P: {~child}");
-        c.append("C: Hello, my name is {~name}!");
+        g.append("G: {$parent}  Grandpa is {$name}!");
+        p.append("P: {$child}");
+        c.append("C: Hello, my name is {$name}!");
 
         p.set("name", "Parent");
 
@@ -215,7 +215,7 @@ public class ChunkTest
     public void testIfNull()
     {
         Chunk c = new Chunk();
-        c.append("Hello, my name is {~name}!");
+        c.append("Hello, my name is {$name}!");
 
         String name = null;
         c.set("name",name,"UNKNOWN");
@@ -227,7 +227,7 @@ public class ChunkTest
     public void testNullToEmptyString()
     {
         Chunk c = new Chunk();
-        c.append("Hello, my name is {~name}!");
+        c.append("Hello, my name is {$name}!");
 
         String name = null;
         c.set("name",name);
@@ -239,26 +239,26 @@ public class ChunkTest
     public void testNullToPassThru()
     {
         Chunk c = new Chunk();
-        c.append("Hello, my name is {~name}!");
+        c.append("Hello, my name is {$name}!");
 
         String name = null;
         c.setOrDelete("name",name);
 
-        assertEquals(c.toString(), "Hello, my name is {~name}!");
+        assertEquals(c.toString(), "Hello, my name is {$name}!");
     }
 
     @Test
     public void testSetOrDelete()
     {
         Chunk c = new Chunk();
-        c.append("Hello, my name is {~name}!");
+        c.append("Hello, my name is {$name}!");
 
         c.set("name","Bob");
 
         String name = null;
         c.setOrDelete("name",name);
 
-        assertEquals(c.toString(), "Hello, my name is {~name}!");
+        assertEquals(c.toString(), "Hello, my name is {$name}!");
     }
 
     @Test

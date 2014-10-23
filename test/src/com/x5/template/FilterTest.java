@@ -589,6 +589,20 @@ public class FilterTest
     }
 
     @Test
+    public void testDefaultFilter()
+    {
+        Chunk c = new Chunk();
+
+        String x = null;
+        c.set("empty_tag",x);
+        c.set("std_tag","boo hoo!");
+
+        c.append("{% $tag|default(boo!) %} {% $empty_tag|default(foo!) %} {% $std_tag|default(hufu!) %}");
+
+        assertEquals("boo!  boo hoo!", c.toString());
+    }
+
+    @Test
     public void testPoorlyBehavedUserFilter()
     {
         Theme theme = new Theme();

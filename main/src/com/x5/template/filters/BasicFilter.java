@@ -35,6 +35,7 @@ public abstract class BasicFilter implements ChunkFilter
         new CalcFilter(),
         new CheckedFilter(),
         new DefangFilter(),
+        new DefaultFilter(),
         new EscapeXMLFilter(),
         new UnescapeXMLFilter(),
         new ExecFilter(),

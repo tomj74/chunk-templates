@@ -111,7 +111,7 @@ public class Snippet
         return parts;
     }
 
-    private static final String MAGIC_CHARS = "~$^./!*=+_";
+    private static final String MAGIC_CHARS = "~$%^./!*=+_";
 
     /**
      * One pass over the string.  Identify all dynamic tags and slice into
@@ -130,13 +130,14 @@ public class Snippet
         // first pass was just to catch literals. reset.
         simpleText = null;
 
-        char c, c2;
+        char c, c2, e0;
 
         // how many regex delims left before tag parser has to wake up again
         int regexDelimCount = 0;
 
         int marker = 0; // beginning of latest static span
         int tagStart = -1; // beginning of latest tag span
+        int exprStart = -1; // beginning of tag expression
         int trailingBackslashes = 0; // track escape chars so we can ignore escapes
 
         // the parser has to ignore certain chars when in various states
@@ -168,11 +169,33 @@ public class Snippet
                         if (c2 == '$' && isJavascriptHeadFake(i,template)) {
                             // not a chunk tag, keep scanning, nothing to see here.
                         } else {
-                            // FOUND TAG START
                             tagStart = i;
                             trailingBackslashes = 0;
-                            i++;
-                            magicChar = c2;
+                            // {% signals that whitespace is ok around the tag expression
+                            // eg: {% $tag %}
+                            //     {% if ($tag) %} ... {% endif %}
+                            if (c2 == '%') {
+                                i += 2;
+                                if (i == len) break;
+                                e0 = template.charAt(i);
+                                while (i < len && Character.isWhitespace(e0)) {
+                                    i++;
+                                    e0 = template.charAt(i);
+                                }
+                                if (MAGIC_CHARS.indexOf(e0) > -1) {
+                                    magicChar = e0;
+                                    exprStart = i+1;
+                                } else {
+                                    // implicit bareword/command eg {% exec %}
+                                    magicChar = '.';
+                                    exprStart = i;
+                                }
+                            } else {
+                                // FOUND TAG START
+                                i++;
+                                magicChar = c2;
+                                exprStart = i+1;
+                            }
                         }
                     }
                 } else if (c == '_' && c2 == '[') {
@@ -239,7 +262,7 @@ public class Snippet
                             // FOUND TAG END, extract and add to sequence along with
                             // preceding static content, if any.
                             //////////////////////////////////////////////////////////
-                            SnippetPart tag = extractTag(magicChar,template,marker,tagStart,i);
+                            SnippetPart tag = extractTag(magicChar,template,marker,tagStart,exprStart,i);
                             if (tag != null) {
                                 parts.add(tag);
                                 // reset scan mode
@@ -369,7 +392,7 @@ public class Snippet
     }
 
     private SnippetPart extractTag(char magicChar, String template,
-            int marker, int tagStart, int i)
+            int marker, int tagStart, int exprStart, int i)
     {
         // FOUND TAG END
         // extract and add to part sequence
@@ -386,23 +409,26 @@ public class Snippet
         String wholeTag = template.substring(tagStart,i+1);
 
         if (magicChar == '~' || magicChar == '$') {
-            String gooeyCenter = template.substring(tagStart+2,i);
+            String gooeyCenter = template.substring(exprStart,i);
             SnippetTag tag = new SnippetTag(wholeTag,gooeyCenter);
             return tag;
         } else if (magicChar == '^' || magicChar == '.') {
-            String gooeyCenter = template.substring(tagStart+2,i);
+            String gooeyCenter = template.substring(exprStart,i);
             // check for literal block (includes abandoned {^^} shorthand syntax)
             if (gooeyCenter.equals("literal") || gooeyCenter.equals("^")) {
                 // null return signals literal-start to caller
                 return null;
             }
-            // expand ^ to ~.
+            if (gooeyCenter.startsWith("end")) {
+                gooeyCenter = "/" + gooeyCenter.substring(3);
+            }
+            // prepend . to signal bareword/command
             SnippetTag tag = new SnippetTag(wholeTag,"."+gooeyCenter);
             return tag;
         } else if (magicChar == '/') {
-            String gooeyCenter = template.substring(tagStart+1,i);
+            String gooeyCenter = template.substring(exprStart,i);
             // expand {/ to {^/ to {~./
-            SnippetTag tag = new SnippetTag(wholeTag,"."+gooeyCenter);
+            SnippetTag tag = new SnippetTag(wholeTag,"./"+gooeyCenter);
             return tag;
         } else if (magicChar == '*') {
             // convert macro syntax to internal macro block-tag
@@ -413,7 +439,7 @@ public class Snippet
             } else {
                 int refEnd = i;
                 if (template.charAt(i-1) == '*') refEnd--;
-                String macroTemplate = template.substring(tagStart+2,refEnd).trim();
+                String macroTemplate = template.substring(exprStart,refEnd).trim();
                 SnippetTag macroHead = new SnippetTag(wholeTag,"."+MacroTag.MACRO_MARKER+" "+macroTemplate+" original");
                 return macroHead;
             }
@@ -429,12 +455,12 @@ public class Snippet
             return token;
         } else if (magicChar == '+') {
             // include shorthand: {+template#ref} or {+(cond)template#ref}
-            if (wholeTag.startsWith("{+(")) {
-                String includeIfTag = ".includeIf(" + template.substring(tagStart+3,i);
+            if (wholeTag.startsWith("{+(") || wholeTag.indexOf("+(") == exprStart - tagStart) {
+                String includeIfTag = ".includeIf(" + template.substring(exprStart+1,i);
                 SnippetTag condInclude = new SnippetTag(wholeTag,includeIfTag);
                 return condInclude;
             } else {
-                String includeTag = ".include " + template.substring(tagStart+2,i);
+                String includeTag = ".include " + template.substring(exprStart,i);
                 SnippetTag include = new SnippetTag(wholeTag,includeTag);
                 return include;
             }
