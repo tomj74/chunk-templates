@@ -1,0 +1,174 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>com.x5dev</groupId>
+  <artifactId>chunk-templates</artifactId>
+  <packaging>jar</packaging>
+  <version>2.4</version>
+  <name>Chunk Templates</name>
+  <description>Chunk Template Engine for Java</description>
+  <url>http://www.x5software.com/chunk/</url>
+
+  <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+  </properties>
+
+  <parent>
+    <groupId>org.sonatype.oss</groupId>
+    <artifactId>oss-parent</artifactId>
+    <version>7</version>
+  </parent>
+
+  <licenses>
+    <license>
+      <name>The Apache Software License, Version 2.0</name>
+      <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+      <distribution>repo</distribution>
+    </license>
+  </licenses>
+
+  <scm>
+    <url>http://code.google.com/p/chunk-templates/source/browse/tags/release-2.4</url>
+    <connection>scm:svn:http://chunk-templates.googlecode.com/svn/tags/release-2.4</connection>
+    <developerConnection>scm:svn:https://chunk-templates.googlecode.com/svn/tags/release-2.4</developerConnection>
+  </scm>
+
+  <dependencies>
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <version>4.8.1</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>net.minidev</groupId>
+      <artifactId>json-smart</artifactId>
+      <version>1.1.1</version>
+      <scope>compile</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.cheffo</groupId>
+      <artifactId>jeplite</artifactId>
+      <version>0.8.7a</version>
+      <scope>compile</scope>
+      <optional>true</optional>
+    </dependency>
+    <dependency>
+      <groupId>com.madrobot</groupId>
+      <artifactId>madrobotbeans</artifactId>
+      <version>0.1</version>
+      <scope>compile</scope>
+      <optional>true</optional>
+    </dependency>
+    <dependency>
+      <groupId>com.google.android</groupId>
+      <artifactId>android</artifactId>
+      <version>1.5_r4</version>
+      <scope>provided</scope>
+    </dependency>
+  </dependencies>
+
+  <developers>
+    <developer>
+      <id>goredsoxgo</id>
+      <name>Tom McClure</name>
+      <email>tom@dagblastit.com</email>
+      <url>http://www.dagblastit.com/</url>
+      <organization>X5 Software</organization>
+      <organizationUrl>http://www.x5software.com/</organizationUrl>
+      <roles>
+        <role>architect</role>
+        <role>developer</role>
+      </roles>
+      <timezone>-8</timezone>
+      <properties>
+        <picUrl>http://tinyurl.com/TomMcClureAvatar</picUrl>
+      </properties>
+    </developer>
+  </developers>
+
+  <build>
+    <pluginManagement>
+      <plugins>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-source-plugin</artifactId>
+          <version>2.0.4</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-javadoc-plugin</artifactId>
+          <version>2.3</version>
+        </plugin>
+      </plugins>
+    </pluginManagement>
+
+    <plugins>
+      <plugin>
+	<groupId>org.apache.maven.plugins</groupId>
+	<artifactId>maven-compiler-plugin</artifactId>
+	<version>2.0.2</version>
+	<configuration>
+	  <source>1.5</source>
+	  <target>1.5</target>
+	</configuration>
+      </plugin>
+
+      <plugin>
+	<groupId>org.apache.maven.plugins</groupId>
+	<artifactId>maven-source-plugin</artifactId>
+	<executions>
+	  <execution>
+	    <id>attach-sources</id>
+	    <goals>
+	      <goal>jar</goal>
+	    </goals>
+	  </execution>
+	</executions>
+      </plugin>
+
+      <plugin>
+	<groupId>org.apache.maven.plugins</groupId>
+	<artifactId>maven-javadoc-plugin</artifactId>
+	<executions>
+	  <execution>
+	    <id>attach-javadocs</id>
+	    <goals>
+	      <goal>jar</goal>
+	    </goals>
+	  </execution>
+	</executions>
+      </plugin>
+    </plugins>
+  </build>
+
+  <profiles>
+    <profile>
+      <id>release-sign-artifacts</id>
+      <activation>
+	<property>
+	  <name>performRelease</name>
+	  <value>true</value>
+	</property>
+      </activation>
+      <build>
+	<plugins>
+	  <plugin>
+	    <groupId>org.apache.maven.plugins</groupId>
+	    <artifactId>maven-gpg-plugin</artifactId>
+	    <version>1.1</version>
+	    <executions>
+	      <execution>
+		<id>sign-artifacts</id>
+		<phase>verify</phase>
+		<goals>
+		  <goal>sign</goal>
+		</goals>
+	      </execution>
+	    </executions>
+	  </plugin>
+	</plugins>
+      </build>
+    </profile>
+  </profiles>     
+
+</project>
