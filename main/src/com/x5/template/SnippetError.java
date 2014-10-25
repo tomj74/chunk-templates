@@ -10,7 +10,7 @@ public class SnippetError extends SnippetPart
         super.setLiteral(true);
     }
 
-    public void render(Writer out, Chunk rules, int depth)
+    public void render(Writer out, Chunk rules, String origin, int depth)
     throws java.io.IOException
     {
         if (rules == null || rules.renderErrorsToOutput()) {

@@ -31,15 +31,15 @@ public class SnippetTag extends SnippetPart
         return this.tag;
     }
 
-    public void render(Writer out, Chunk rules, int depth)
+    public void render(Writer out, Chunk rules, String origin, int depth)
     throws IOException
     {
         if (depthCheckFails(depth,out)) return;
 
         Object tagValue = null;
-        if (path == null) init(tag);
+        if (path == null) init();
 
-        tagValue = rules.resolveTagValue(this, depth);
+        tagValue = rules.resolveTagValue(this, depth, origin);
 
         if (tagValue == null) {
             // preserve tag in final output (can be used as template)
@@ -55,7 +55,7 @@ public class SnippetTag extends SnippetPart
         }
     }
 
-    private void init(String tag)
+    private void init()
     {
         String lookupName = tag;
 
@@ -210,6 +210,7 @@ public class SnippetTag extends SnippetPart
 
     public String[] getPath()
     {
+        if (path == null) init();
         return path;
     }
 
@@ -250,7 +251,7 @@ public class SnippetTag extends SnippetPart
     static SnippetTag parseTag(String tag)
     {
         SnippetTag parsedTag = new SnippetTag(tag,tag);
-        parsedTag.init(tag);
+        parsedTag.init();
         return parsedTag;
     }
 
@@ -286,6 +287,4 @@ public class SnippetTag extends SnippetPart
         }
         return null;
     }
-
-
 }

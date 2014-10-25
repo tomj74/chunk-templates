@@ -48,7 +48,7 @@ public class SnippetPart
         }
     }
 
-    public void render(Writer out, Chunk rules, int depth)
+    public void render(Writer out, Chunk rules, String origin, int depth)
     throws java.io.IOException
     {
         if (isLiteral) {

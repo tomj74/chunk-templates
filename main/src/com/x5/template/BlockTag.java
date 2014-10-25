@@ -6,7 +6,7 @@ import java.util.List;
 
 public abstract class BlockTag
 {
-    public abstract void renderBlock(Writer out, Chunk context, int depth)
+    public abstract void renderBlock(Writer out, Chunk context, String origin, int depth)
         throws IOException;
     public abstract String getBlockStartMarker();
     public abstract String getBlockEndMarker();
@@ -73,4 +73,14 @@ public abstract class BlockTag
         return false;
     }
 
+    // make relative template reference into
+    // fully qualified absolute reference.
+    public static String qualifyTemplateRef(String origin, String templateRef)
+    {
+        if (origin != null && templateRef.charAt(0) == '#') {
+            return origin + templateRef;
+        } else {
+            return templateRef;
+        }
+    }
 }

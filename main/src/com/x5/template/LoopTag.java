@@ -44,12 +44,12 @@ public class LoopTag extends BlockTag
         System.out.println("empty_tpl="+loop.emptyTemplate);
     }
 
-    public static String expandLoop(String params, Chunk ch, int depth)
+    public static String expandLoop(String params, Chunk ch, String origin, int depth)
     {
-        LoopTag loop = new LoopTag(params, ch);
+        LoopTag loop = new LoopTag(params, ch, origin);
         StringWriter out = new StringWriter();
         try {
-            loop.renderBlock(out, ch, depth);
+            loop.renderBlock(out, ch, origin, depth);
         } catch (IOException e) {
             e.printStackTrace(System.err);
         }
@@ -60,17 +60,17 @@ public class LoopTag extends BlockTag
     {
     }
 
-    public LoopTag(String params, Chunk ch)
+    public LoopTag(String params, Chunk ch, String origin)
     {
         this.chunk = ch;
         parseParams(params);
 
         // this constructor is only called when the loop tag has no body
         // eg {^loop data="~mydata" template="#test_row" no_data="#test_empty" divider="<hr/>"}
-        initWithoutBlock();
+        initWithoutBlock(origin);
     }
 
-    private void initWithoutBlock()
+    private void initWithoutBlock(String origin)
     {
         // set up snippets
         if (this.chunk == null) return;
@@ -79,10 +79,12 @@ public class LoopTag extends BlockTag
         if (snippetRepo == null) return;
 
         if (this.rowTemplate != null) {
-            this.rowSnippet = snippetRepo.getSnippet(rowTemplate);
+            String templateRef = qualifyTemplateRef(origin, rowTemplate);
+            this.rowSnippet = snippetRepo.getSnippet(templateRef);
         }
         if (this.emptyTemplate != null) {
-            this.emptySnippet = snippetRepo.getSnippet(emptyTemplate);
+            String templateRef = qualifyTemplateRef(origin, emptyTemplate);
+            this.emptySnippet = snippetRepo.getSnippet(templateRef);
         }
     }
 
@@ -328,15 +330,15 @@ public class LoopTag extends BlockTag
         options.put(param,value);
     }
 
-    public void cookLoopToPrinter(Writer out, Chunk context,
+    public void cookLoopToPrinter(Writer out, Chunk context, String origin,
             boolean isBlock, int depth, TableData data)
     throws IOException
     {
         if (data == null || !data.hasNext()) {
             if (emptySnippet == null) {
                 String errMsg = "[Loop error: Empty Table - please "
-                    + (isBlock ? "supply .onEmpty section in .loop block]"
-                               : "specify no_data template parameter in .loop tag]");
+                    + (isBlock ? "supply onEmpty section in loop block]"
+                               : "specify no_data template parameter in loop tag]");
 
                 if (context == null || context.renderErrorsToOutput()) {
                     out.append(errMsg);
@@ -364,6 +366,7 @@ public class LoopTag extends BlockTag
                 dividerSnippet = (Snippet)options.get("dividerSnippet");
             } else if (options.containsKey("divider")) {
                 String dividerTemplate = (String)options.get("divider");
+                dividerTemplate = qualifyTemplateRef(origin, dividerTemplate);
                 ContentSource templates = context.getTemplateSet();
                 if (templates != null && templates.provides(dividerTemplate)) {
                     dividerSnippet = templates.getSnippet(dividerTemplate);
@@ -831,7 +834,7 @@ public class LoopTag extends BlockTag
     }
 
     @Override
-    public void renderBlock(Writer out, Chunk context, int depth)
+    public void renderBlock(Writer out, Chunk context, String origin, int depth)
         throws IOException
     {
         if (dividerSnippet != null && !options.containsKey("dividerSnippet")) {
@@ -845,7 +848,7 @@ public class LoopTag extends BlockTag
             data = fetchData((String)options.get("data"));
         }
 
-        cookLoopToPrinter(out, context, true, depth, data);
+        cookLoopToPrinter(out, context, origin, true, depth, data);
     }
 
 }

@@ -51,11 +51,16 @@ public class MacroTag extends BlockTag
             int spacePos = templateRef.indexOf(' ');
             if (spacePos > 0) {
                 defFormat = templateRef.substring(spacePos+1).toLowerCase();
-                templateRef = templateRef.substring(0,spacePos);
+                if (defFormat.charAt(0) == '@') defFormat = defFormat.substring(1);
+                templateRef = templateRef.substring(0, spacePos);
             }
 
             // @inline should trigger a search for inline body within exec block
-            if (templateRef.startsWith("@")) {
+            // 1st arg can also be inline exec args format eg @json
+            if (templateRef.charAt(0) == '@') {
+                if (!templateRef.startsWith("@inline") && spacePos < 0) {
+                    defFormat = templateRef.substring(1).toLowerCase();
+                }
                 templateRef = null;
             }
         }
@@ -68,7 +73,7 @@ public class MacroTag extends BlockTag
         if (templateRef == null) {
             parseInlineTemplate(bodyDouble);
         }
-        parseDefs(bodyDouble,defFormat);
+        parseDefs(bodyDouble, defFormat);
     }
 
     private void parseInlineTemplate(Snippet body)
@@ -84,6 +89,7 @@ public class MacroTag extends BlockTag
                 } else if (tag.getTag().equals(".body")) {
                     // everything after this marker is the template
                     Snippet inlineSnippet = new Snippet(parts, i+1, bodyEnd);
+                    inlineSnippet.setOrigin(body.getOrigin());
 
                     // trim leading whitespace up to first line break
                     List<SnippetPart> inlineParts = inlineSnippet.getParts();
@@ -119,6 +125,7 @@ public class MacroTag extends BlockTag
     @SuppressWarnings("unchecked")
     private void parseDefsJsonLax(Snippet body)
     {
+        body.setOrigin(null); // don't render ORIGIN comment
         String json = body.toString();
 
         // check for json-smart jar, if not present then output a helpful
@@ -145,6 +152,7 @@ public class MacroTag extends BlockTag
     private void parseDefsJsonStrict(Snippet body)
     {
         try {
+            body.setOrigin(null); // don't render ORIGIN comment
             String json = body.toString();
 
             // check for json-smart jar, if not present then output a helpful
@@ -197,6 +205,7 @@ public class MacroTag extends BlockTag
 
     private void parseDefsXML(Snippet body)
     {
+        body.setOrigin(null); // don't render ORIGIN comment
         LiteXml xml = new LiteXml(body.toString());
         this.macroDefs = parseXMLObject(xml);
     }
@@ -246,6 +255,7 @@ public class MacroTag extends BlockTag
                 if (tagText.trim().endsWith("=")) {
                     int j = findMatchingDefEnd(parts,i+1);
                     Snippet def = new Snippet(parts,i+1,j);
+                    def.setOrigin(body.getOrigin());
                     String varName = tagText.substring(0,tagText.length()-1);
                     saveDef(varName,def);
                     // skip to next def
@@ -262,7 +272,7 @@ public class MacroTag extends BlockTag
                     // some vars are defined simply, like so {~name=Bob} or {~name = Bob}
                     String[] simpleDef = getSimpleDef(tagText);
                     if (simpleDef != null) {
-                        saveDef(simpleDef[0],simpleDef[1]);
+                        saveDef(simpleDef[0],simpleDef[1],body.getOrigin());
                     }
                 }
             }
@@ -330,10 +340,10 @@ public class MacroTag extends BlockTag
         }
     }
 
-    private void saveDef(String tag, String def)
+    private void saveDef(String tag, String def, String origin)
     {
         if (tag == null || def == null) return;
-        Snippet simple = Snippet.getSnippet(def);
+        Snippet simple = Snippet.getSnippet(def, origin);
         saveDef(tag,simple);
     }
 
@@ -344,13 +354,14 @@ public class MacroTag extends BlockTag
         macroDefs.put(tag, snippet);
     }
 
-    public void renderBlock(Writer out, Chunk context, int depth)
+    public void renderBlock(Writer out, Chunk context, String origin, int depth)
         throws IOException
     {
         Chunk macro = null;
         ChunkFactory theme = context.getChunkFactory();
 
         if (templateRef != null && theme != null) {
+            templateRef = qualifyTemplateRef(origin, templateRef);
             macro = theme.makeChunk(templateRef);
         } else if (template != null) {
             macro = (theme == null) ? new Chunk() : theme.makeChunk();
@@ -379,26 +390,26 @@ public class MacroTag extends BlockTag
             if (keys != null) {
                 for (String tagName : keys) {
                     Object o = macroDefs.get(tagName);
-                    macro.setOrDelete(tagName,resolvePointers(context,o,0));
+                    macro.setOrDelete(tagName,resolvePointers(context,origin,o,0));
                 }
             }
         }
         macro.render(out, context);
     }
     
-    private Object resolvePointers(Chunk context, Object o, int depth)
+    private Object resolvePointers(Chunk context, String origin, Object o, int depth)
     {
         // don't recurse forever...
         if (depth > 10) return o;
         
-        if (o instanceof String) o = Snippet.getSnippet((String)o);
+        if (o instanceof String) o = Snippet.getSnippet((String)o, origin);
         if (o instanceof Snippet) {
             Snippet s = (Snippet)o;
             if (s.isSimplePointer()) {
                 // resolve values which are one single tag
-                Object n = context.get(s.getPointer());
+                Object n = context.resolveTagValue(s.getPointerTag(), 1, origin);
                 if (n == null) return o;
-                o = resolvePointers(context, n, depth+1);
+                o = resolvePointers(context, origin, n, depth+1);
             }
         }
         return o;

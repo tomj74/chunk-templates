@@ -190,7 +190,7 @@ public class LocaleTag extends BlockTag
     }
 
     @Override
-    public void renderBlock(Writer out, Chunk context, int depth)
+    public void renderBlock(Writer out, Chunk context, String origin, int depth)
         throws IOException
     {
         if (body == null) return;

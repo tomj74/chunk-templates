@@ -13,6 +13,7 @@ public class Snippet
 {
     private List<SnippetPart> parts = null;
     private String simpleText = null;
+    private String origin = null;
 
     private static boolean useCache = isCacheEnabled();
     private static HashMap<String,Snippet> snippetCache = new HashMap<String,Snippet>();
@@ -27,12 +28,27 @@ public class Snippet
         parseParts(template);
     }
 
+    private Snippet(String template, String origin)
+    {
+        this.origin = origin;
+        parseParts(template);
+    }
+
     public static Snippet getSnippet(String template)
     {
         if (Snippet.useCache) {
             return getSnippetFromCache(template);
         } else {
             return new Snippet(template);
+        }
+    }
+
+    public static Snippet getSnippet(String template, String origin)
+    {
+        if (Snippet.useCache) {
+            return getSnippetFromCache(template);
+        } else {
+            return new Snippet(template, origin);
         }
     }
 
@@ -106,12 +122,22 @@ public class Snippet
         }
     }
 
+    public void setOrigin(String origin)
+    {
+        this.origin = origin;
+    }
+
+    public String getOrigin()
+    {
+        return this.origin;
+    }
+
     public List<SnippetPart> getParts()
     {
         return parts;
     }
 
-    private static final String MAGIC_CHARS = "~$%^./!*=+_";
+    public static final String MAGIC_CHARS = "~$%^./!*=+_";
 
     /**
      * One pass over the string.  Identify all dynamic tags and slice into
@@ -212,7 +238,7 @@ public class Snippet
                 if (insideTrToken && c == ']') {
                     if (trailingBackslashes % 2 == 0) {
                         // FOUND TOKEN END
-                        if (parts == null) parts = new ArrayList<SnippetPart>();
+                        parts = getPartsForAppend();
                         if (marker < tagStart) {
                             SnippetPart literal = new SnippetPart(template.substring(marker,tagStart));
                             literal.setLiteral(true);
@@ -396,7 +422,7 @@ public class Snippet
     {
         // FOUND TAG END
         // extract and add to part sequence
-        if (parts == null) parts = new ArrayList<SnippetPart>();
+        parts = getPartsForAppend();
 
         // any static content leading up to tag?  capture static part.
         if (marker < tagStart) {
@@ -417,8 +443,11 @@ public class Snippet
         }
 
         if (magicChar == '~' || magicChar == '$') {
-            String gooeyCenter = template.substring(exprStart,i);
-            SnippetTag tag = new SnippetTag(wholeTag,gooeyCenter);
+            String gooeyCenter = template.substring(exprStart, i);
+            if (gooeyCenter.startsWith(".end")) {
+                gooeyCenter = "./" + gooeyCenter.substring(4);
+            }
+            SnippetTag tag = new SnippetTag(wholeTag, gooeyCenter);
             return tag;
         } else if (magicChar == '^' || magicChar == '.') {
             String gooeyCenter = template.substring(exprStart,i);
@@ -485,10 +514,16 @@ public class Snippet
         return wackyTag;
     }
 
+    private List<SnippetPart> getPartsForAppend()
+    {
+        if (parts == null) parts = new ArrayList<SnippetPart>();
+        return parts;
+    }
+
     private int extractComment(int marker, int tagStart, int i, String template, int len)
     {
         // strip comment into non-rendering part
-        if (parts == null) parts = new ArrayList<SnippetPart>();
+        parts = getPartsForAppend();
         String precedingComment = null;
 
         int startOfThisLine = marker;
@@ -540,8 +575,17 @@ public class Snippet
         // this grabs the comment tag as well as any surrounding
         // whitespace that's being eaten (see above)
         String wholeComment = template.substring(tagStart,i+1);
-        SnippetComment comment = new SnippetComment(wholeComment);
-        parts.add(comment);
+
+        if (origin == null && parts.size() == 0 && wholeComment.startsWith("{!--@ORIGIN:")) {
+            // parse origin and don't commit this comment, it will
+            // get regenerated automatically if toString() is ever called.
+            int endOfOrigin = wholeComment.indexOf("@", 12);
+            if (endOfOrigin < 0) endOfOrigin = wholeComment.length();
+            origin = wholeComment.substring(12, endOfOrigin);
+        } else {
+            SnippetComment comment = new SnippetComment(wholeComment);
+            parts.add(comment);
+        }
 
         return i;
     }
@@ -567,7 +611,7 @@ public class Snippet
                         // recurse
                         groupBlocks(subBodyParts);
 
-                        SnippetBlockTag blockTag = new SnippetBlockTag(tag,subBodyParts,endTag);
+                        SnippetBlockTag blockTag = new SnippetBlockTag(tag,subBodyParts,endTag,origin);
                         bodyParts.add(i,blockTag);
 
                         if (blockTag.doSmartTrimAroundBlock()) {
@@ -753,6 +797,13 @@ public class Snippet
 
         // reassemble parts back into original template
         StringBuilder sb = new StringBuilder();
+
+        if (origin != null) {
+            sb.append("{!--@ORIGIN:");
+            sb.append(origin);
+            sb.append("@--}");
+        }
+
         for (SnippetPart part : parts) {
             sb.append(part.toString());
         }
@@ -766,7 +817,7 @@ public class Snippet
             out.append(simpleText);
         } else if (parts != null) {
             for (SnippetPart part : parts) {
-                part.render(out, rules, depth+1);
+                part.render(out, rules, origin, depth+1);
             }
         }
     }
@@ -781,6 +832,7 @@ public class Snippet
             List<SnippetPart> partsCopy = new ArrayList<SnippetPart>();
             partsCopy.addAll(parts);
             Snippet copy = new Snippet(partsCopy);
+            copy.origin = this.origin;
             return copy;
         }
     }
@@ -818,6 +870,16 @@ public class Snippet
             SnippetPart onlyPart = parts.get(0);
             SnippetTag tag = (SnippetTag)onlyPart;
             return tag.getTag();
+        }
+        return null;
+    }
+
+    SnippetTag getPointerTag()
+    {
+        if (isSimplePointer()) {
+            SnippetPart onlyPart = parts.get(0);
+            SnippetTag tag = (SnippetTag)onlyPart;
+            return tag;
         }
         return null;
     }

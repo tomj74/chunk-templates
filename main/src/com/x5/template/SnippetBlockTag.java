@@ -12,12 +12,13 @@ public class SnippetBlockTag extends SnippetTag
 
     private BlockTag renderer;
 
-    public SnippetBlockTag(SnippetTag tagOpen, List<SnippetPart> bodyParts, SnippetTag tagClose)
+    public SnippetBlockTag(SnippetTag tagOpen, List<SnippetPart> bodyParts, SnippetTag tagClose, String origin)
     {
         super(tagOpen.snippetText, tagOpen.tag);
         this.tagOpen = tagOpen;
         this.tagClose = tagClose;
         this.body = new Snippet(bodyParts);
+        this.body.setOrigin(origin);
 
         initBlockTag();
     }
@@ -36,13 +37,13 @@ public class SnippetBlockTag extends SnippetTag
         }
     }
 
-    public void render(Writer out, Chunk context, int depth)
+    public void render(Writer out, Chunk context, String origin, int depth)
     throws IOException
     {
         if (depthCheckFails(depth,out)) return;
 
         if (renderer == null) return;
-        renderer.renderBlock(out,context,depth);
+        renderer.renderBlock(out, context, origin, depth);
     }
 
     public String toString()

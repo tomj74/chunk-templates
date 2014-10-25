@@ -1,5 +1,6 @@
 package com.x5.template.filters;
 
+import com.x5.template.BlockTag;
 import com.x5.template.Chunk;
 import com.x5.template.ContentSource;
 import com.x5.template.Snippet;
@@ -11,6 +12,7 @@ public class ExecFilter extends BasicFilter
         String templateName;
         if (args != null && args.length > 0) {
             templateName = args[0];
+            templateName = BlockTag.qualifyTemplateRef(chunk.getTemplateOrigin(), templateName);
         } else {
             return null;
         }

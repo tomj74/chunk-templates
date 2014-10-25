@@ -15,39 +15,39 @@
 
 {!---------------------------------------------}
 {#simple_test}
-{^exec #SIMPLE_TEST_MACRO}
- {~kind_of_food = burrito}
- {~kind_of_drink=}sangria{=}
- {~host=}{~host_name}{=}
-{/exec}
+{% exec #SIMPLE_TEST_MACRO %}
+ {$kind_of_food = burrito}
+ {$kind_of_drink=}sangria{=}
+ {$host=}{$host_name}{=}
+{% endexec %}
 {#}
 
 
 {!---------------------------------------------}
 {#SIMPLE_TEST_MACRO}
-Once I ate a {~kind_of_food} and drank some {~kind_of_drink} at {~host}'s house and I had awful indigestion afterwards.
+Once I ate a {$kind_of_food} and drank some {$kind_of_drink} at {$host}'s house and I had awful indigestion afterwards.
 {#}
 
 
 {!---------------------------------------------}
 {#table_test}
-{.exec #TABLE}
+{% exec #TABLE %}
  {$some_data=}[[item,price],[spoon,.2],[fork,.3],[knife,1.03]]{=}
-{/exec}
+{% endexec %}
 {#}
 
 
 {!---------------------------------------------}
 {#simplified_syntax_test}
-{^exec #SIMPLE_TEST_MACRO }
- {~kind_of_food = burrito}
- {~kind_of_drink=sangria}
- {~host=}{~host_name}{=}
- {~multiline_value=}This value spans<br/>
+{% exec #SIMPLE_TEST_MACRO %}
+ {$kind_of_food = burrito}
+ {$kind_of_drink=sangria}
+ {$host=}{$host_name}{=}
+ {$multiline_value=}This value spans<br/>
 multiple lines!<br/>
 {=}
- {~some_data=}[[item,price],[spoon,.2],[fork,.3],[knife,1.03]]{=}
-{/exec}
+ {$some_data=}[[item,price],[spoon,.2],[fork,.3],[knife,1.03]]{=}
+{% endexec %}
 {#}
 
 
@@ -85,25 +85,25 @@ Once I ate a burrito and drank some sangria at Harry's house and I had awful ind
   DECIDED NOT TO IMPLEMENT THIS FORMAT - "chunk" is now synonymous with "original"
    
   --}
-{^exec #SIMPLE_TEST_MACRO }
- ~kind_of_food  : burrito
- ~kind_of_drink : sangria
- ~host          : {~host_name}
- ~quoted_value  : ' gherkin : schmerkin '
- ~quoted_value2 : " gherkin : schmerkin "
- ~four_colons   : ::::
+{% exec #SIMPLE_TEST_MACRO %}
+ $kind_of_food  : burrito
+ $kind_of_drink : sangria
+ $host          : {$host_name}
+ $quoted_value  : ' gherkin : schmerkin '
+ $quoted_value2 : " gherkin : schmerkin "
+ $four_colons   : ::::
  
- ~multiline_value :
+ $multiline_value :
 This value spans<br/>
 multiple lines!<br/>
 
- ~multiline_value_preserve_whitespace : {{
+ $multiline_value_preserve_whitespace : {{
 This value spans<br/>
 multiple lines!<br/>
 }}
 
- ~some_data     : [[item,price],[spoon,.2],[fork,.3],[knife,1.03]]
-{/exec}
+ $some_data     : [[item,price],[spoon,.2],[fork,.3],[knife,1.03]]
+{% endexec %}
 {#}
 
 
@@ -111,16 +111,16 @@ multiple lines!<br/>
 {#simplified_syntax_test_json_strict}
 {!-- Strict json is also available as a macro-arg format.
 
-     Array values may be used in loops eg {^loop in ~array as x}...{~x}...{/loop}
-     or arrays of strings may be output using the join filter {~array|join(,)}
+     Array values may be used in loops eg {% loop in $array as $x %}...{$x}...{% endloop %}
+     or arrays of strings may be output using the join filter {$array|join(,)}
 
      Object parameters may be accessed using standard dot-syntax like so:
-       {~obj.name} {~obj.id}
+       {$obj.name} {$obj.id}
 
      Same idea for nested objects:
-       {~obj.child.name}
+       {$obj.child.name}
   --}
-{^exec #HAIRY_MACRO json-strict}
+{% exec #HAIRY_MACRO @json-strict %}
 {"kind_of_food":"burrito",
  "kind_of_drink":"sangria",
  "host":"{~host_name}",
@@ -132,7 +132,7 @@ multiple lines!<br/>
  "null_value":null,
  "numeric_value":123
 }
-{/exec}
+{% endexec %}
 {#}
 
 
@@ -143,7 +143,7 @@ multiple lines!<br/>
    * string values may be double-quoted OR single-quoted
    * trailing commas!
   --}
-{^exec #HAIRY_MACRO json}
+{% exec #HAIRY_MACRO @json %}
 { kind_of_food  : 'burrito',
   kind_of_drink : "sangria",
   host          : "{~host_name}",
@@ -155,28 +155,28 @@ multiple lines!<br/>
   null_value    : null,
   numeric_value : 123,
 }
-{/exec}
+{% endexec %}
 {#}
 
 
 {!---------------------------------------------}
 {#HAIRY_MACRO}
-We ate {~kind_of_food}.
-We drank {~kind_of_drink}.
-We partied at {~host}'s house.
-We yelled {~array|join(,):no array}!
-We had {~null_value:nothing} to say.
-We counted up to {~numeric_value:42}.
-We like {~value_with_quotes} every day.
-The guy named {~obj.name} is emp. no. {~obj.id}.
-His boss is {~obj.boss.name}.
-{~multiline_value}
-{^loop in ~some_data as i}
-{~i.item} {~i.price|sprintf($%,.2f)}
-{/loop}
-{^loop in ~array as x}
-{~x}{^divider}-{/divider}{^onEmpty}{/onEmpty}
-{/loop}
+We ate {$kind_of_food}.
+We drank {$kind_of_drink}.
+We partied at {$host}'s house.
+We yelled {$array|join(,):no array}!
+We had {$null_value:nothing} to say.
+We counted up to {$numeric_value:42}.
+We like {$value_with_quotes} every day.
+The guy named {$obj.name} is emp. no. {$obj.id}.
+His boss is {$obj.boss.name}.
+{$multiline_value}
+{% loop in $some_data as $i %}
+{$i.item} {$i.price|sprintf($%,.2f)}
+{% endloop %}
+{% loop in $array as $x %}
+{$x}{% divider %}-{% enddivider %}{% onEmpty %}{% endonEmpty %}
+{% endloop %}
 {#}
 
 
@@ -212,11 +212,11 @@ knife $1.03
       * Make sure to escape angle-brackets in HTML or enclose in CDATA envelope
      
   --}
-{^exec #HAIRY_MACRO xml}
+{% exec #HAIRY_MACRO @xml %}
 <values>
  <kind_of_food>burrito</kind_of_food>
  <kind_of_drink>sangria</kind_of_drink>
- <host>{~host_name}</host>
+ <host>{$host_name}</host>
  <value_with_quotes>value with "quotes"</value_with_quotes>
  <obj>
    <name>bob</name>
@@ -239,7 +239,7 @@ multiple lines!<br/>
  
  <null_value/>
 </values>
-{/exec}
+{% endexec %}
 {#}
 
 
@@ -265,30 +265,30 @@ knife $1.03
 
 {!---------------------------------------------}
 {#TABLE}
-Featured: {$some_data|get(1)}
+Featured: {% $some_data|get(1) %}
 
 All:
 <table>
-{.loop in $some_data as $i}
-<tr><td>{$i.item}</td><td>{$i.price|sprintf($%,.2f)}</td></tr>
-{/loop}
+{% loop in $some_data as $i %}
+<tr><td>{$i.item}</td><td>{% $i.price|sprintf($%,.2f) %}</td></tr>
+{% endloop %}
 </table>
 {#}
 
 
 {!---------------------------------------------}
 {#assignment_trick_test}
-{^exec #SIMPLE_TEST_MACRO}
- {~kind_of_food = burrito}
- {~kind_of_drink=}sangria{=}
- {~host=}{^if (~kind_of_food == burrito)}Jane{^else}{~host_name}{/if}{=}
-{/exec}
+{% exec #SIMPLE_TEST_MACRO %}
+ {$kind_of_food = burrito}
+ {$kind_of_drink=}sangria{=}
+ {$host=}{% if (~kind_of_food == burrito) %}Jane{%else%}{$host_name}{% endif %}{=}
+{% endexec %}
 {#}
 
 
 {!---------------------------------------------}
 {#table_of_maps_test}
-{^exec #MAP_LOOP json}
+{% exec #MAP_LOOP @json %}
 { items :
  [
   { price: 20, id: 3, name: weeble},
@@ -310,9 +310,9 @@ All:
 
 {!---------------------------------------------}
 {#MAP_LOOP}
-{^loop in ~items}
-{~id} - {~name} {~price|sprintf($%,.2f)}<br/>
-{/loop}
+{% loop in $items %}
+{$id} - {$name} {% $price|sprintf($%,.2f) %}<br/>
+{% endloop %}
 {#}
 
 
@@ -321,18 +321,18 @@ All:
 {!-- macro value test using xml with attributes.
      attributes should be visible as param_name@attr_name
   --}
-{^exec @inline xml}
+{% exec @xml %}
 <values>
  <obj_with_attrs xyz="hello" foo="\\bar\\" abc="I hate &quot;air-quotes&quot;" baz="hello \"ladies\"" />
 </values>
-{^body}
+{% body %}
 
-I said {~obj_with_attrs@xyz}.
-foo is {~obj_with_attrs@foo}.
-He said "{~obj_with_attrs@abc}."
-She said "{~obj_with_attrs@baz}!"
-{/body}
-{/exec}
+I said {$obj_with_attrs@xyz}.
+foo is {$obj_with_attrs@foo}.
+He said "{$obj_with_attrs@abc}."
+She said "{$obj_with_attrs@baz}!"
+{% endbody %}
+{% endexec %}
 {#}
 
 
@@ -349,34 +349,34 @@ She said "hello "ladies"!"
 {!---------------------------------------------}
 {#filter_exec}
 {$some_tag|filter(#every_other)}
-{$some_num|filter(#currency_usd)}
+{% $some_num|filter(#currency_usd) %}
 {#}
 
 
 {!---------------------------------------------}
-{#every_other}{$x:|s/(.)./$1/g}{#}
-{#currency_usd}{$x:|sprintf($%,.2f)}{#}
+{#every_other}{% $x|default()|s/(.)./$1/g %}{#}
+{#currency_usd}{% $x|default()|sprintf($%,.2f) %}{#}
 
 
 {!---------------------------------------------}
 {#json_array}{!-- template engine should not blow up when it encounters json array --}
-{.exec @inline json}
+{% exec @inline json %}
 ["3","4"]
-{.body}
+{% body %}
 Hello
-{/body}
-{/exec}
+{% endbody %}
+{% endexec %}
 {#}
 
 
 {!---------------------------------------------}
 {#bad_json}{!-- template engine should not blow up when it encounters bad json --}
-{.exec @inline json}
+{% exec @json %}
 I am not JSON.
-{.body}
+{% body %}
 Hello
-{/body}
-{/exec}
+{% endbody %}
+{% endexec %}
 {#}
 
 
@@ -388,14 +388,14 @@ It doesn't matter what I put here, it gets overridden in the override layer.
 
 {!---------------------------------------------}
 {#bug55}
-{.exec #bug55exec}
- {$x=}{.include #bug55abcd}{=}
-{/exec}
+{% exec #bug55exec %}
+ {$x=}{% include #bug55abcd %}{=}
+{% endexec %}
 {#}
 
 {!---------------------------------------------}
 {#bug55exec}
-{$x|indent(2)}
+{% $x|indent(2) %}
 {#}
 
 {!---------------------------------------------}

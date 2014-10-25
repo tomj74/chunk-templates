@@ -349,7 +349,7 @@ public class IfTag extends BlockTag
         return -1;
     }
 
-    public void renderBlock(Writer out, Chunk context, int depth)
+    public void renderBlock(Writer out, Chunk context, String origin, int depth)
     throws IOException
     {
 
@@ -361,7 +361,7 @@ public class IfTag extends BlockTag
         if (isTrueExpr(primaryCond, context)) {
             //chosenPath = 0;
             if (nextElseTag < 0) nextElseTag = bodyParts.size();
-            renderChosenParts(out, context, depth, bodyParts, 0, nextElseTag);
+            renderChosenParts(out, context, origin, depth, bodyParts, 0, nextElseTag);
         } else {
             // locate next {^else} or {^elseIf} tag, or output nothing
             while (nextElseTag > -1) {
@@ -369,7 +369,7 @@ public class IfTag extends BlockTag
                 String elseTag = ((SnippetTag)bodyParts.get(nextElseTag)).getTag();
                 if (elseTag.equals(".else")) {
                     //chosenPath = path;
-                    renderChosenParts(out, context, depth, bodyParts, nextElseTag+1, bodyParts.size());
+                    renderChosenParts(out, context, origin, depth, bodyParts, nextElseTag+1, bodyParts.size());
                     break;
                 } else {
                     String elseIfCond = parseCond(elseTag);
@@ -377,7 +377,7 @@ public class IfTag extends BlockTag
                         //chosenPath = path;
                         int nextBoundary = nextElseTag(bodyParts,nextElseTag+1);
                         if (nextBoundary == -1) nextBoundary = bodyParts.size();
-                        renderChosenParts(out, context, depth, bodyParts, nextElseTag+1, nextBoundary);
+                        renderChosenParts(out, context, origin, depth, bodyParts, nextElseTag+1, nextBoundary);
                         break;
                     }
                     nextElseTag = nextElseTag(bodyParts,nextElseTag+1);
@@ -386,14 +386,14 @@ public class IfTag extends BlockTag
         }
     }
 
-    public void renderChosenParts(Writer out, Chunk context, int depth,
+    public void renderChosenParts(Writer out, Chunk context, String origin, int depth,
             List<SnippetPart> parts, int a, int b)
     throws IOException
     {
         if (!doTrim) {
             for (int i=a; i<b; i++) {
                 SnippetPart part = parts.get(i);
-                part.render(out, context, depth);
+                part.render(out, context, origin, depth);
             }
         } else if (b > a) {
             if (isTrimAll()) {
@@ -405,7 +405,7 @@ public class IfTag extends BlockTag
                         String trimmed = onlyPart.getText().trim();
                         out.append(trimmed);
                     } else {
-                        onlyPart.render(out, context, depth);
+                        onlyPart.render(out, context, origin, depth);
                     }
                 } else {
                     // output first part (left-trimmed)
@@ -417,7 +417,7 @@ public class IfTag extends BlockTag
                     // output middle (untouched)
                     for (int i=a+1; i<b-1; i++) {
                         SnippetPart part = parts.get(i);
-                        part.render(out, context, depth);
+                        part.render(out, context, origin, depth);
                     }
                     // output last part (right-trimmed)
                     SnippetPart partB = parts.get(b-1);
@@ -434,12 +434,12 @@ public class IfTag extends BlockTag
                     String smartTrimmed = smartTrim(partA.getText());
                     out.append(smartTrimmed);
                 } else {
-                    partA.render(out,context,depth);
+                    partA.render(out, context, origin, depth);
                 }
                 // output rest (untouched)
                 for (int i=a+1; i<b; i++) {
                     SnippetPart part = parts.get(i);
-                    part.render(out, context, depth);
+                    part.render(out, context, origin, depth);
                 }
             }
         }

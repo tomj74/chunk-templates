@@ -515,7 +515,7 @@ public class TemplateSet implements ContentSource, ChunkFactory
         StringBuilder tpl = TemplateDoc.expandShorthand(name,new StringBuilder(template));
         if (tpl == null) return;
         String fastTpl = removeBlockTagIndents(tpl.toString());
-        cache.put(ref, Snippet.getSnippet(fastTpl));
+        cache.put(ref, Snippet.getSnippet(fastTpl, doclet.getOrigin()));
         cacheFetch.put(ref, System.currentTimeMillis());
     }
 

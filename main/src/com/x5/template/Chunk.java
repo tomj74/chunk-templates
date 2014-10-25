@@ -257,6 +257,7 @@ public class Chunk implements Map<String,Object>
     private static final String TRUE = "TRUE";
 
     protected Snippet templateRoot = null;
+    private String templateOrigin = null;
     private String[] firstTags = new String[HASH_THRESH];
     private Object[] firstValues = new Object[HASH_THRESH];
     private int tagCount = 0;
@@ -348,7 +349,7 @@ public class Chunk implements Map<String,Object>
             if (templateRoot != null) template.addElement(templateRoot);
         }
         // internally, we stash in tag table and wrap in Snippet.
-        String chunkKey = "%CHUNK_" + toAdd.hashCode();
+        String chunkKey = ";CHUNK_" + toAdd.hashCode();
         set(chunkKey,toAdd);
         String autoTag = makeTag(chunkKey);
         template.addElement(Snippet.getSnippet(autoTag));
@@ -358,8 +359,8 @@ public class Chunk implements Map<String,Object>
      * Creates a find-and-replace rule for tag replacement.  Overwrites any
      * previous rules for this tagName.  Do not include the tag boundary
      * markers in the tagName, ie
-     * GOOD: set("this","that")
-     * BAD: set("{$this}","that")
+     * GOOD: set("this", "that")
+     * BAD: set("{$this}", "that")
      *
      * @param tagName will be ignored if null.
      * @param tagValue will be translated to the empty String if null -- use setOrDelete() instead of set() if you don't need/want this behavior.
@@ -425,11 +426,12 @@ public class Chunk implements Map<String,Object>
      * be protected from the engine in that second pass.
      *
      * To prevent re-processing higher up the chain, encase your string
-     * in {.literal}{/literal} tags, with the tradeoff that they will
-     * appear in your final output.  This is by design, so the literal
-     * will be preserved even after multiple passes through the engine.
+     * in {% literal %}...{% endliteral %} tags, with the tradeoff that
+     * they will appear in your final output.  This is by design, so the
+     * literal will be preserved even after multiple passes through the
+     * engine.
      *
-     * Typical workaround: <!-- {.literal} --> ... <!-- {/literal} -->
+     * Typical workaround: <!-- {% literal %} --> ... <!-- {% endliteral %} -->
      *
      * Or, just be super-careful to use setLiteral() again when placing
      * pre-processed output into higher-level chunks.
@@ -631,14 +633,14 @@ public class Chunk implements Map<String,Object>
     {
         StringWriter out = new StringWriter();
         try {
-            render(out,context);
+            render(out, context);
             out.flush();
             return out.toString();
         } catch (IOException e) {
             return e.getLocalizedMessage();
         }
     }
-    
+
     public void render(PrintStream out)
     throws IOException
     {
@@ -727,7 +729,7 @@ public class Chunk implements Map<String,Object>
         } else if (obj instanceof Snippet) {
 
             Snippet snippet = (Snippet)obj;
-            snippet.render(out,this,depth);
+            snippet.render(out, this, depth);
 
         } else if (obj instanceof String) {
 
@@ -879,7 +881,7 @@ public class Chunk implements Map<String,Object>
 
         // the .loop(...) fn
         if (tagName.startsWith(".loop")) {
-            return LoopTag.expandLoop(tagName,this,depth);
+            return LoopTag.expandLoop(tagName, this, this.templateOrigin, depth);
         }
 
         // the .tagStack fn
@@ -946,7 +948,8 @@ public class Chunk implements Map<String,Object>
                 // include's are special, handle via macroLibrary TemplateSet
                 // slight optimization, return Snippet instead of String
                 Theme theme = (Theme)fetcher;
-                Snippet s = theme.getSnippet(cleanItemName);
+                String templateRef = BlockTag.qualifyTemplateRef(templateOrigin, cleanItemName);
+                Snippet s = theme.getSnippet(templateRef);
                 if (s != null) return s;
             } else {
                 tagValue = fetcher.fetch(cleanItemName);
@@ -991,9 +994,22 @@ public class Chunk implements Map<String,Object>
             String dynLookupName = lookupName.substring(0,backtickA)
               + backtickExprValue
               + lookupName.substring(backtickB+1);
-    
+
             // there may be more...
             return resolveBackticks(dynLookupName, depth);
+        }
+    }
+
+    protected Object resolveTagValue(SnippetTag tag, int depth, String origin)
+    {
+        if (origin == null) {
+            return _resolveTagValue(tag, depth, false);
+        } else {
+            this.templateOrigin = origin;
+            Object value = _resolveTagValue(tag, depth, false);
+            this.templateOrigin = null;
+
+            return value;
         }
     }
 
@@ -1487,6 +1503,11 @@ public class Chunk implements Map<String,Object>
         }
         sb.append(toSearch.substring(marker));
         return sb.toString();
+    }
+
+    public String getTemplateOrigin()
+    {
+        return this.templateOrigin;
     }
 
 }

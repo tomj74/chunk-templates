@@ -10,7 +10,7 @@ public class SnippetComment extends SnippetPart
     }
 
     /* comments do not render */
-    public void render(Writer out, Chunk context, int depth)
+    public void render(Writer out, Chunk context, String origin, int depth)
     throws java.io.IOException
     {
     }

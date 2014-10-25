@@ -765,7 +765,7 @@ public class Filter
 
     private static boolean isInlineTable(String value)
     {
-     // make sure it's not an inline table
+        // make sure it's not an inline table
         TableData inlineTable = InlineTable.parseTable(value);
         if (inlineTable != null) {
             return true;

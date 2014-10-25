@@ -9,6 +9,7 @@ import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.regex.Matcher;
 
 public class TemplateDoc implements Iterator<TemplateDoc.Doclet>, Iterable<TemplateDoc.Doclet>
 {
@@ -67,11 +68,13 @@ public class TemplateDoc implements Iterator<TemplateDoc.Doclet>, Iterable<Templ
     {
         private String name;
         private String rawTemplate;
+        private String origin;
 
-        public Doclet(String name, String rawTemplate)
+        public Doclet(String name, String rawTemplate, String origin)
         {
             this.name = name;
             this.rawTemplate = rawTemplate;
+            this.origin = origin;
         }
 
         public String getName()
@@ -84,9 +87,14 @@ public class TemplateDoc implements Iterator<TemplateDoc.Doclet>, Iterable<Templ
             return rawTemplate;
         }
 
+        public String getOrigin()
+        {
+            return origin;
+        }
+
         public Snippet getSnippet()
         {
-            return Snippet.getSnippet(rawTemplate);
+            return Snippet.getSnippet(rawTemplate, origin);
         }
     }
 
@@ -195,7 +203,7 @@ public class TemplateDoc implements Iterator<TemplateDoc.Doclet>, Iterable<Templ
         }
         String root = rootTemplate.toString();
         rootTemplate = null;
-        return new Doclet(stub,root);
+        return new Doclet(stub, root, stub);
     }
 
     private String getCommentLines(int comBegin, String firstLine, BufferedReader brTemp, StringBuilder sbTemp)
@@ -437,7 +445,7 @@ public class TemplateDoc implements Iterator<TemplateDoc.Doclet>, Iterable<Templ
             // aha, the subtemplate ends on this line.
             sbTemp.append(firstLine.substring(0,subEndPos));
             line = firstLine.substring(subEndPos+SUB_END.length());
-            return new Doclet(name,sbTemp.toString());
+            return new Doclet(name, sbTemp.toString(), stub);
         } else {
             // subtemplate not finished, keep going
             if (!skipFirstLine) {
@@ -458,12 +466,12 @@ public class TemplateDoc implements Iterator<TemplateDoc.Doclet>, Iterable<Templ
                     if (brTemp.ready()) sbTemp.append("\n");
                 } catch (EndOfSnippetException e) {
                     line = e.getRestOfLine();
-                    return new Doclet(name,sbTemp.toString());
+                    return new Doclet(name, sbTemp.toString(), stub);
                 }
             }
             // end of file but with no matching SUB_END? -- wrap it up...
             line = "";
-            return new Doclet(name,sbTemp.toString());
+            return new Doclet(name, sbTemp.toString(), stub);
         }
     }
 
@@ -576,11 +584,16 @@ public class TemplateDoc implements Iterator<TemplateDoc.Doclet>, Iterable<Templ
         return null;
     }
 
+    private static final java.util.regex.Pattern SUPER_TAG =
+            java.util.regex.Pattern.compile("\\{\\% *super *\\%?\\}");
+
     public static StringBuilder expandShorthand(String name, StringBuilder template)
     {
         // do NOT place in cache if ^super directive is found
         // that way, the parent layer will be used instead.
         if (template.indexOf("{^super}") > -1 || template.indexOf("{.super}") > -1) return null;
+        Matcher m = SUPER_TAG.matcher(template);
+        if (m.find()) return null;
 
         // to allow shorthand intra-template references, must pre-process the template
         // at this point and expand any intra-template references, eg:
@@ -616,11 +629,19 @@ public class TemplateDoc implements Iterator<TemplateDoc.Doclet>, Iterable<Templ
         while (cursor > -1) {
             if (template.length() == cursor+1) return template; // kick out at first sign of trouble
             char afterBrace = template.charAt(cursor+1);
-            if (afterBrace == '+') {
-                cursor = expandShorthandInclude(template,fullRef,cursor);
-            } else if (afterBrace == '~' || afterBrace == '$') {
-                cursor = expandShorthandTag(template,fullRef,cursor);
-            } else if (afterBrace == '^' || afterBrace == '.') {
+            if (afterBrace == '%') {
+                // skip over whitespace, assume '.' directive unless other magic char is found
+                cursor++;
+                while (cursor+1 < template.length() && Character.isWhitespace(template.charAt(cursor+1))) {
+                    cursor++;
+                }
+                afterBrace = template.charAt(cursor+1);
+                if (Snippet.MAGIC_CHARS.indexOf(afterBrace) < 0) {
+                    template.replace(cursor+1,cursor+1,"~.");
+                    afterBrace = '~';
+                }
+            }
+            if (afterBrace == '^' || afterBrace == '.') {
                 // check for literal block, and do not perform expansions
                 // inside any literal blocks.
                 int afterLiteralBlock = skipLiterals(template,cursor);
@@ -645,149 +666,6 @@ public class TemplateDoc implements Iterator<TemplateDoc.Doclet>, Iterable<Templ
         }
 
         return template;
-    }
-
-    private static int expandShorthandInclude(StringBuilder template, String fullRef, int cursor)
-    {
-        if (template.length() == cursor+2) return -1;
-
-        char afterPlus = template.charAt(cursor+2);
-        if (afterPlus == '#') {
-            // got one, replace + with long include syntax and fully qualified reference
-            template.replace(cursor+1,cursor+2,"~.include."+fullRef);
-            cursor += 11; // skip {~.include.
-            cursor += fullRef.length(); // skip what we just inserted
-            cursor = template.indexOf("}",cursor);
-        } else if (afterPlus == '(') {
-            // scan to end of condition
-            int endCond = nextUnescapedDelim(")",template,cursor+3);
-            if (endCond < 0) return -1; // kick out at any sign of trouble
-            String cond = template.substring(cursor+2,endCond+1);
-            if (template.length() == endCond+1) return -1;
-            if (template.charAt(endCond) == '#') {
-                // got one, replace +(cond) with long includeIf syntax and FQRef
-                String expanded = "~.includeIf"+cond+"."+fullRef;
-                template.replace(cursor+1,endCond+1,expanded);
-                cursor++; // skip {
-                cursor += expanded.length();
-                cursor = template.indexOf("}",cursor);
-            }
-        } else {
-            // move along, nothing to expand here.
-            cursor += 2;
-        }
-
-        return cursor;
-    }
-
-    private static int expandShorthandTag(StringBuilder template, String fullRef, int cursor)
-    {
-        int tagEnd = nextUnescapedDelim("}",template,cursor+2);
-        if (tagEnd < 0) return -1; // kick out at any sign of trouble
-
-        // so, this is lame but 99.999% of the time the following strings
-        // inside a tag body can be expanded correctly without regard to context:
-        //
-        //  ,+# => ,~.include.xxx# - inside onmatch
-        //  :+# => :~.include.xxx# - ifnull-include
-        //  (+# => (~.include.xxx# - inside nomatch/ondefined
-        //  ).# => ).xxx# => - long includeIf(...) syntax
-        //  ~.include.# => ~.include.xxx# - long include syntax
-        //
-        // where xxx is the fully qualified template reference
-        //
-        // not the most efficient, but fast enough
-        //
-        String tagDirective = template.substring(cursor+2,tagEnd);
-
-        //
-        // shorthand refs in fnCall args like ^loop(...) and ^grid(...)
-        // will present a little differently.
-        //
-        if (tagDirective.startsWith(".loop") || tagDirective.startsWith(".grid")) {
-            return expandFnArgs(template, fullRef, cursor, tagDirective, tagEnd);
-        }
-
-        int tagCursor = 0;
-        StringBuilder expanded = null;
-
-        int hashPos = tagDirective.indexOf("#");
-
-        while (hashPos > 1) {
-            char a = tagDirective.charAt(hashPos-2);
-            char b = tagDirective.charAt(hashPos-1);
-            if (b == '+') {
-                if (a == ',' || a == ':' || a == '(') {
-                    if (expanded == null) expanded = new StringBuilder();
-                    expanded.append(tagDirective.substring(tagCursor,hashPos-1));
-                    expanded.append("~.include.");
-                    expanded.append(fullRef);
-                    tagCursor = hashPos;
-                }
-            } else if ((a == ')' || a == 'e' || a == 'c') && (b == '.' || b == ' ')) {
-                // e for include, c for exec
-                if (expanded == null) expanded = new StringBuilder();
-                expanded.append(tagDirective.substring(tagCursor,hashPos));
-                expanded.append(fullRef);
-                tagCursor = hashPos;
-            } else if (b == '(' && a == 'r') {
-                // {$tag|filter(#ref)}
-                if (expanded == null) expanded = new StringBuilder();
-                expanded.append(tagDirective.substring(tagCursor,hashPos));
-                expanded.append(fullRef);
-                tagCursor = hashPos;
-            }
-
-            hashPos = tagDirective.indexOf("#",hashPos+1);
-        }
-        if (expanded != null) {
-            expanded.append(tagDirective.substring(tagCursor));
-            String expandedTag = expanded.toString();
-            template.replace(cursor+2,tagEnd,expandedTag);
-            // update tagEnd to reflect added chars
-            tagEnd += (expandedTag.length() - tagDirective.length());
-        }
-        cursor = tagEnd+1;
-
-        return cursor;
-    }
-
-    private static int expandFnArgs(StringBuilder template, String fullRef, int cursor, String fnCall, int tagEnd)
-    {
-        int tagCursor = 0;
-        StringBuilder expanded = null;
-
-        int hashPos = fnCall.indexOf("#");
-
-        // Just assume that all hashes after a delimiter
-        // are hashrefs that need to be expanded (lame but works).
-        while (hashPos > 1) {
-            char preH = fnCall.charAt(hashPos-1);
-            if (preH == '"' || preH == ',' || preH == ' ' || preH == '(' || preH == '=') {
-                if (expanded == null) expanded = new StringBuilder();
-                // everything new up to now is certified "clean"
-                expanded.append(fnCall.substring(tagCursor,hashPos));
-                // pop in the base template ref
-                expanded.append(fullRef);
-                tagCursor = hashPos;
-            }
-
-            hashPos = fnCall.indexOf("#",hashPos+1);
-
-        }
-
-        if (expanded != null) {
-            // grab the tail
-            expanded.append(fnCall.substring(tagCursor));
-            String expandedTag = expanded.toString();
-            // insert tag, now with fully-qualified refs back into template
-            template.replace(cursor+2,tagEnd,expandedTag);
-            // update tagEnd to reflect added chars
-            tagEnd += (expandedTag.length() - fnCall.length());
-        }
-        cursor = tagEnd+1;
-
-        return cursor;
     }
 
     private static int skipLiterals(StringBuilder template, int cursor)

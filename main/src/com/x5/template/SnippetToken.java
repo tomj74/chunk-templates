@@ -20,7 +20,7 @@ public class SnippetToken extends SnippetPart
         this.token = token;
     }
 
-    public void render(Writer out, Chunk context, int depth)
+    public void render(Writer out, Chunk context, String origin, int depth)
     throws java.io.IOException
     {
         ChunkLocale locale = context.getLocale();
