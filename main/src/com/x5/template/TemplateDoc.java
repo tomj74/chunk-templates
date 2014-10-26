@@ -20,7 +20,6 @@ public class TemplateDoc implements Iterator<TemplateDoc.Doclet>, Iterable<Templ
     public static final String LITERAL_START2 = "{.literal}";
     public static final String LITERAL_SHORTHAND = "{^^}"; // this was a dumb idea
     public static final String LITERAL_END = "{^}";
-    public static final String LITERAL_END_EXPANDED = "{~.}";
     public static final String LITERAL_END_LONGHAND = "{/literal}";
 
     private static final String SUB_START = "{#";
@@ -243,20 +242,11 @@ public class TemplateDoc implements Iterator<TemplateDoc.Doclet>, Iterable<Templ
     private String getLiteralLines(int litBegin, String firstLine, BufferedReader brTemp, StringBuilder sbTemp)
         throws IOException
     {
-        int litEnd = firstLine.indexOf(LITERAL_END,litBegin+2);
-        int endMarkerLen = LITERAL_END.length();
-
-        // {^} ends a literal block, OR {/literal} -- whichever comes first.
-        int litEndLong = firstLine.indexOf(LITERAL_END_LONGHAND,litBegin+2);
-        if (litEndLong > -1 && (litEnd < 0 || litEndLong < litEnd)) {
-            litEnd = litEndLong;
-            endMarkerLen = LITERAL_END_LONGHAND.length();
-        }
-
-        if (litEnd > -1) {
+        Matcher m = LITERAL_CLOSE.matcher(firstLine);
+        if (m.find(litBegin+2)) {
             // easy case -- literal does not span lines
-            litEnd += endMarkerLen;
-            sbTemp.append(firstLine.substring(0,litEnd));
+            int litEnd = m.end();
+            sbTemp.append(firstLine.substring(0, litEnd));
             return firstLine.substring(litEnd);
         } else {
             sbTemp.append(firstLine);
@@ -267,16 +257,9 @@ public class TemplateDoc implements Iterator<TemplateDoc.Doclet>, Iterable<Templ
                 line = brTemp.readLine();
                 if (line == null) break;
 
-                litEnd = line.indexOf(LITERAL_END);
-                // {^} ends a literal block, OR {/literal} -- whichever comes first.
-                litEndLong = line.indexOf(LITERAL_END_LONGHAND);
-                if (litEndLong > -1 && (litEnd < 0 || litEndLong < litEnd)) {
-                    litEnd = litEndLong;
-                    endMarkerLen = LITERAL_END_LONGHAND.length();
-                }
-
-                if (litEnd > -1) {
-                    litEnd += endMarkerLen;
+                m.reset(line);
+                if (m.find()) {
+                    int litEnd = m.end();
                     sbTemp.append(line.substring(0,litEnd));
                     return line.substring(litEnd);
                 }
@@ -362,22 +345,12 @@ public class TemplateDoc implements Iterator<TemplateDoc.Doclet>, Iterable<Templ
 
     public static int findLiteralMarker(String text, int startAt)
     {
-        int literalPos  = text.indexOf(LITERAL_START, startAt);
-        int literal2Pos = text.indexOf(LITERAL_START2, startAt);
-        int litPos      = text.indexOf(LITERAL_SHORTHAND, startAt);
-        int[] pos = new int[]{literalPos,literal2Pos,litPos};
-        int firstEncounter = -1;
-        for (int i=0; i<3; i++) {
-            int p = pos[i];
-            if (p > -1) {
-                if (firstEncounter < 0) {
-                    firstEncounter = p;
-                } else {
-                    firstEncounter = Math.min(firstEncounter, p);
-                }
-            }
+        Matcher m = LITERAL_OPEN_ANYWHERE.matcher(text);
+        if (m.find(startAt)) {
+            return m.start();
+        } else {
+            return -1;
         }
-        return firstEncounter;
     }
 
     private ArrayList<String> lineStack = new ArrayList<String>();
@@ -595,69 +568,42 @@ public class TemplateDoc implements Iterator<TemplateDoc.Doclet>, Iterable<Templ
         Matcher m = SUPER_TAG.matcher(template);
         if (m.find()) return null;
 
-        // to allow shorthand intra-template references, must pre-process the template
-        // at this point and expand any intra-template references, eg:
-        //  {~.includeIf(...).#xxx} => {~.includeIf(...).template_name#xxx}
-        //
-        // Hmm, refs that start with a hash should always be toplevel!
-        //  so {#subtemplate}...{~.includeIf(...).#xxx} ...{#}
-        //  is a reference to template_name#xxx NOT a nested sub like template_name#subtemplate#xxx
-        //
-        // might not be worth it, would have to track down refs inside onmatch and ondefined filters
-        // although it could be more efficient to expand shorthand syntax at this stage:
-        //  {+#sub} => {~.include.template_name#sub}
-        //  {+(cond)#sub} => {~.includeIf(cond).template_name#sub}
-        //
-        // and you'd have to catch stuff like this...
-        // {~asdf|onmatch(/xyz/,+#xyz,/abc/,+#abc)nomatch(+#def)}
-        //  => {~asdf|onmatch(/xyz/,~.include.template_name#xyz,/abc/,~.include.template_name#abc)nomatch(~.include.template_name#def)}
-        //
-        // or even just default values a la (I don't even remember, is this supported?)
-        //  {~asdf:+#def} => {~asdf:+template_name#def} => {~asdf:~.include.template_name#def}
-
-        // determine what shorthand refs should expand into
-        // (template filename is everything up to the first dot)
-        String fullRef = name;
-        if (fullRef != null) {
-            int dotPos = fullRef.indexOf('.');
-            if (dotPos > 0) fullRef = name.substring(0,dotPos);
-        }
-
         // restrict search to inside tags
         int cursor = template.indexOf("{");
 
         while (cursor > -1) {
             if (template.length() == cursor+1) return template; // kick out at first sign of trouble
             char afterBrace = template.charAt(cursor+1);
-            if (afterBrace == '%') {
-                // skip over whitespace, assume '.' directive unless other magic char is found
-                cursor++;
-                while (cursor+1 < template.length() && Character.isWhitespace(template.charAt(cursor+1))) {
-                    cursor++;
-                }
-                afterBrace = template.charAt(cursor+1);
-                if (Snippet.MAGIC_CHARS.indexOf(afterBrace) < 0) {
-                    template.replace(cursor+1,cursor+1,"~.");
-                    afterBrace = '~';
-                }
-            }
-            if (afterBrace == '^' || afterBrace == '.') {
+            if (afterBrace == '^' || afterBrace == '.' || afterBrace == '%') {
                 // check for literal block, and do not perform expansions
                 // inside any literal blocks.
                 int afterLiteralBlock = skipLiterals(template,cursor);
-                if (afterLiteralBlock == cursor) {
-                    // . is shorthand for ~. eg {.include #xyz} or {.wiki.External_Content}
-                    template.replace(cursor+1,cursor+2,"~.");
-                    // re-process, do not advance cursor.
-                } else {
+                if (afterLiteralBlock != cursor) {
+                    // ooh, skipped a literal
                     cursor = afterLiteralBlock;
+                } else {
+                    if (afterBrace != '%') {
+                        // . is shorthand for ~. eg {.include #xyz} or {.wiki.External_Content}
+                        template.replace(cursor+1,cursor+2,"~.");
+                    } else {
+                        // skip over whitespace
+                        int exprStart = cursor + 2;
+                        while (exprStart < template.length() && Character.isWhitespace(template.charAt(exprStart))) {
+                            exprStart++;
+                        }
+                        afterBrace = template.charAt(exprStart);
+                        if (Snippet.MAGIC_CHARS.indexOf(afterBrace) < 0) {
+                            // assume '.' directive, no magic char was found
+                            template.replace(exprStart,exprStart,"~.");
+                            afterBrace = '~';
+                        }
+                    }
+                    cursor += 2;
                 }
             } else if (afterBrace == '/') {
                 // {/ is short for {./ which is short for {~./
                 template.replace(cursor+1,cursor+2,"~./");
                 // re-process, do not advance cursor.
-            } else if (afterBrace == '*') {
-                cursor = expandShorthandMacro(template,fullRef,cursor);
             } else {
                 cursor += 2;
             }
@@ -668,54 +614,33 @@ public class TemplateDoc implements Iterator<TemplateDoc.Doclet>, Iterable<Templ
         return template;
     }
 
+    private static final String LITERAL_OPEN = "(\\{\\^\\^\\}|\\{[\\.\\^]literal\\}|\\{\\% *literal *\\%?\\})";
+    private static final java.util.regex.Pattern LITERAL_OPEN_HERE =
+            java.util.regex.Pattern.compile("\\G" + LITERAL_OPEN);
+    private static final java.util.regex.Pattern LITERAL_OPEN_ANYWHERE =
+            java.util.regex.Pattern.compile(LITERAL_OPEN);
+    private static final java.util.regex.Pattern LITERAL_CLOSE =
+            java.util.regex.Pattern.compile("(\\{\\^\\}|\\{/literal\\}|\\{\\% *endliteral *\\%?\\})");
+
     private static int skipLiterals(StringBuilder template, int cursor)
     {
-        int wall = template.length();
-        int shortLen = LITERAL_SHORTHAND.length();
         int scanStart = cursor;
-        if (cursor + shortLen <= wall && template.substring(cursor,cursor+shortLen).equals(LITERAL_SHORTHAND)) {
-            scanStart = cursor + shortLen;
-        } else {
-            int longLen = LITERAL_START2.length();
-            if (cursor + longLen <= wall && template.substring(cursor,cursor+longLen).equals(LITERAL_START2)) {
-                scanStart = cursor + longLen;
-            } else {
-                longLen = LITERAL_START.length();
-                if (cursor + longLen <= wall && template.substring(cursor,cursor+longLen).equals(LITERAL_START)) {
-                    scanStart = cursor + longLen;
-                }
-            }
+        Matcher m = LITERAL_OPEN_HERE.matcher(template);
+        if (m.find(scanStart)) {
+            scanStart = m.end();
         }
 
         if (scanStart > cursor) {
-            // found a literal-block start marker.  scan for the matching end-marker.
-            int tail = template.indexOf(LITERAL_END, scanStart);
-            int longTail = template.indexOf(LITERAL_END_LONGHAND, scanStart);
-            tail = (tail < 0) ? longTail : (longTail < 0) ? tail : Math.min(tail, longTail);
-            if (tail < 0) {
-                return wall;
+            // scan for closing tag
+            m = LITERAL_CLOSE.matcher(template);
+            if (m.find(scanStart)) {
+                return m.end();
             } else {
-                return tail + (tail == longTail ? LITERAL_END_LONGHAND.length() : LITERAL_END.length());
+                return template.length();
             }
         } else {
             return cursor;
         }
-    }
-
-    private static int expandShorthandMacro(StringBuilder template, String fullRef, int cursor)
-    {
-        int offset = 2;
-        while (template.charAt(cursor+offset) == ' ') offset++;
-
-        if (template.charAt(cursor+offset) == '#') {
-            template.insert(cursor+offset,fullRef);
-            int macroMarkerEnd = template.indexOf(MACRO_NAME_END,cursor+offset+fullRef.length()+1);
-            if (macroMarkerEnd < 0) return cursor+1;
-            return macroMarkerEnd + MACRO_NAME_END.length();
-        }
-        int macroMarkerEnd = template.indexOf(MACRO_NAME_END,cursor+offset);
-        if (macroMarkerEnd < 0) return cursor+1;
-        return macroMarkerEnd + MACRO_NAME_END.length();
     }
 
     public static int nextUnescapedDelim(String delim, StringBuilder sb, int searchFrom)

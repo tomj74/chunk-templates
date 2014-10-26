@@ -84,6 +84,7 @@ public class ObjectDataMap implements Map
         return boxedBean;
     }
 
+    @SuppressWarnings("unused")
     private Map<String,Object> mapify(Object pojo)
     {
         if (pojo instanceof DataCapsule) {
@@ -270,6 +271,7 @@ public class ObjectDataMap implements Map
 
     private static class IntrospectionException extends Exception
     {
+        private static final long serialVersionUID = 8890979383599687484L;
     }
 
     private static class StandardIntrospector

@@ -48,7 +48,7 @@ public class SnippetTag extends SnippetPart
             // needs additional processing
             ((Snippet)tagValue).render(out, rules, depth);
         } else if (tagValue instanceof String) {
-            Snippet compiled = Snippet.getSnippet((String)tagValue);
+            Snippet compiled = Snippet.getSnippet((String)tagValue, origin);
             compiled.render(out,rules,depth+1);
         } else {
             rules.explodeToPrinter(out, tagValue, depth+1);

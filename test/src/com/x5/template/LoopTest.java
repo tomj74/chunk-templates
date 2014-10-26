@@ -1,6 +1,7 @@
 package com.x5.template;
 
 import org.junit.Test;
+
 import static org.junit.Assert.*;
 
 public class LoopTest
@@ -277,7 +278,16 @@ public class LoopTest
         assertEquals("<ul>\n\n<li>thingamabob</li>\n<li>doodad</li>\n\n</ul>\n<ol>\n\n<li>thingamabob</li>\n<li>doodad</li>\n\n</ol>\n",
                 c.toString());
     }
-    
+
+    @Test
+    public void testDataOptionWithTemplateRef()
+    {
+        Theme theme = new Theme("test/base");
+        Chunk c = theme.makeChunk("chunk_test#looptest_dataref");
+        String targetOutput = theme.fetch("chunk_test#looptest_dataref_expected");
+        assertEquals(targetOutput, c.toString());
+    }
+
     @Test
     public void testLoopOverSplit()
     {

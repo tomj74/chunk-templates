@@ -13,6 +13,7 @@ public class SortFilter extends ListFilter
         return "sort";
     }
 
+    @SuppressWarnings({ "rawtypes", "unchecked" })
     public Object transformList(Chunk chunk, List list, String[] args)
     {
         if (list == null || list.size() < 2) return list;
@@ -30,6 +31,7 @@ public class SortFilter extends ListFilter
         return sorted;
     }
 
+    @SuppressWarnings({ "rawtypes", "unchecked" })
     private boolean isInOrder(List list)
     throws ClassCastException
     {

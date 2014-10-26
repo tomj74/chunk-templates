@@ -395,7 +395,17 @@ public class Snippet
 
     private boolean isLiteralClose(String template, char magicChar, int tagStart, int i)
     {
-        if (magicChar == '^') {
+        if (magicChar == '.' && i-tagStart > 8) {
+            if (template.charAt(tagStart+1) == '%') {
+                int exprEnd = i - 1;
+                if (template.charAt(exprEnd) == '%') exprEnd--;
+                String expr = template.substring(tagStart+2, exprEnd).trim();
+                if (expr.equals("endliteral") || expr.equals("/literal")) {
+                    // {% endliteral %}
+                    return true;
+                }
+            }
+        } else if (magicChar == '^') {
             if (tagStart == i-2) {
                 // {^}
                 return true;

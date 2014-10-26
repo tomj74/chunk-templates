@@ -365,7 +365,7 @@ public class ChunkTest
         Chunk c = new Chunk();
         c.append("Pass through! {~gronk:bubbles!} <!-- {^literal} --> passing through {~gronk:} Pass on!");
 
-        assertEquals(c.toString(), "Pass through! bubbles! <!-- {^literal} --> passing through {~gronk:} Pass on!");
+        assertEquals("Pass through! bubbles! <!-- {^literal} --> passing through {~gronk:} Pass on!", c.toString());
     }
 
     @Test
@@ -374,7 +374,7 @@ public class ChunkTest
         Theme theme = new Theme("test/base");
         Chunk c = theme.makeChunk("chunk_test#uncapped_literal");
 
-        assertEquals(c.toString(), "Scooby Doo says ruff ruff!\n{^literal}\n{#}\n");
+        assertEquals("Scooby Doo says ruff ruff!\n{% literal %}\n{#}\n", c.toString());
     }
 
     @Test
@@ -383,7 +383,16 @@ public class ChunkTest
         Theme theme = new Theme("test/base");
         Chunk c = theme.makeChunk("chunk_test#literal_test");
 
-        assertEquals(c.toString(), "bye\n<!-- {.literal} -->\n{$tags:hello}\n{#confuser}I am the CONFUSER{#}\n<!-- {/literal} -->\nbye\n");
+        assertEquals("bye\n<!-- {.literal} -->\n{$tags:hello}\n{#confuser}I am the CONFUSER{#}\n<!-- {/literal} -->\nbye\n", c.toString());
+    }
+
+    @Test
+    public void testNewLiteralInFile()
+    {
+        Theme theme = new Theme("test/base");
+        Chunk c = theme.makeChunk("chunk_test#new_literal_test");
+
+        assertEquals("bye\n<!-- {% literal %} -->\n{$tags:hello}\n{#confuser}I am the CONFUSER{#}\n<!-- {% endliteral %} -->\nbye\n", c.toString());
     }
 
     @Test
@@ -423,12 +432,20 @@ public class ChunkTest
     }
 
     @Test
+    public void testDefaultIsInclude()
+    {
+        Theme theme = new Theme("test/base");
+        Chunk c = theme.makeChunk("chunk_test#default_include");
+        assertEquals("Hello Include!\n\n", c.toString());
+    }
+
+    @Test
     public void testIncludeShorthand()
     {
         Theme theme = new Theme("test/base");
         Chunk c = theme.makeChunk();
         c.append("{+chunk_test#no_widgets}");
-        assertEquals("<i>No widgets!</i>\n",c.toString());
+        assertEquals("<i>No widgets!</i>\n", c.toString());
     }
 
     @Test
@@ -437,7 +454,7 @@ public class ChunkTest
         Theme theme = new Theme("test/base");
         Chunk c = theme.makeChunk();
         c.append("{+(!widgets)chunk_test#no_widgets}");
-        assertEquals("<i>No widgets!</i>\n",c.toString());
+        assertEquals("<i>No widgets!</i>\n", c.toString());
     }
 
     @Test
@@ -446,7 +463,7 @@ public class ChunkTest
         String tpl = "xyz {~xyz:} {!-- old macro syntax: --} {* MACRO *} {*} {^loop} {/loop} _[token] {_[token %s %s],~arg1,~arg2}";
         Snippet testSnippet = Snippet.getSnippet(tpl);
         String recombobulated = testSnippet.toString();
-        assertEquals(tpl,recombobulated);
+        assertEquals(tpl, recombobulated);
     }
 
     @Test

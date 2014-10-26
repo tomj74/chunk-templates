@@ -11,6 +11,7 @@ public class ReverseFilter extends SliceFilter
         return "reverse";
     }
 
+    @SuppressWarnings("rawtypes")
     public Object transformList(Chunk chunk, List list, String[] args)
     {
         return super.transformList(chunk,list,new String[]{"::-1"});

@@ -12,7 +12,9 @@ public class ExecFilter extends BasicFilter
         String templateName;
         if (args != null && args.length > 0) {
             templateName = args[0];
-            templateName = BlockTag.qualifyTemplateRef(chunk.getTemplateOrigin(), templateName);
+            if (chunk != null) {
+                templateName = BlockTag.qualifyTemplateRef(chunk.getTemplateOrigin(), templateName);
+            }
         } else {
             return null;
         }

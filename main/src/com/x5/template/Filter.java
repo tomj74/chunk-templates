@@ -9,7 +9,6 @@ import java.util.Map;
 
 import com.x5.template.filters.ChunkFilter;
 import com.x5.template.filters.BasicFilter;
-import com.x5.template.filters.ListFilter;
 import com.x5.template.filters.RegexFilter;
 import com.x5.util.TableData;
 

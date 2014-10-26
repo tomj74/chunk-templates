@@ -2,10 +2,8 @@ package com.x5.template.filters;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.StringTokenizer;
 
 import com.x5.template.Chunk;
-import com.x5.template.Filter;
 
 public class SliceFilter extends ListFilter
 {
@@ -33,6 +31,7 @@ public class SliceFilter extends ListFilter
         return x;
     }
 
+    @SuppressWarnings("rawtypes")
     public Object transformList(Chunk chunk, List list, String[] args)
     {
         if (list == null) return list;

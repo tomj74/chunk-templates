@@ -11,6 +11,7 @@ public class ListIndexFilter extends ListFilter
         return "get";
     }
 
+    @SuppressWarnings("rawtypes")
     public Object transformList(Chunk chunk, List list, String[] args)
     {
         if (list == null || args.length < 1) return null;

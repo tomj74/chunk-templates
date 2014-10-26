@@ -1,9 +1,7 @@
 package com.x5.template.filters;
 
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import com.x5.template.Chunk;
 
@@ -21,6 +19,7 @@ public abstract class ListFilter implements ChunkFilter
         return null;
     }
 
+    @SuppressWarnings("unchecked")
     public Object applyFilter(Chunk chunk, Object object, String[] args)
     {
         List<Object> list = null;
@@ -37,6 +36,7 @@ public abstract class ListFilter implements ChunkFilter
         return transformList(chunk, list, args);
     }
 
+    @SuppressWarnings("rawtypes")
     public abstract Object transformList(Chunk chunk, List list, String[] args);
 
     public ListFilter() {}

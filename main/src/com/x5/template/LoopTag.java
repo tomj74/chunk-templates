@@ -113,7 +113,6 @@ public class LoopTag extends BlockTag
         String[] params = paramString.split(" +");
 
         String dataVar = params[2];
-        fetchData(dataVar);
 
         this.options = _parseAttributes(paramString);
         if (options == null) options = new HashMap<String,Object>();
@@ -146,11 +145,12 @@ public class LoopTag extends BlockTag
     {
         int endOfParams = params.length();
         if (params.endsWith(")")) endOfParams--;
-        params = params.substring(".loop(".length(),endOfParams);
+        params = params.substring(".loop(".length(), endOfParams);
         String[] args = params.split(",");
         if (args != null && args.length >= 2) {
             String dataVar = args[0];
-            fetchData(dataVar);
+            if (options == null) options = new HashMap<String,Object>();
+            options.put("data", dataVar);
 
             this.rowTemplate = args[1];
             if (args.length > 2) {
@@ -198,42 +198,13 @@ public class LoopTag extends BlockTag
         if (opts == null) return;
         this.options = opts;
 
-        String dataVar = (String)opts.get("data");
-        fetchData(dataVar);
-
         this.rowTemplate = (String)opts.get("template");
         this.emptyTemplate = (String)opts.get("no_data");
-
-        /*
-        String dataVar = getAttribute("data", params);
-        fetchData(dataVar);
-        this.rowTemplate = getAttribute("template", params);
-        this.emptyTemplate = getAttribute("no_data", params);
-
-        // okay, this is heinously inefficient, scanning the whole thing every time for each param
-        // esp. optional params which probably won't even be there
-        String[] optional = new String[]{"range","divider","trim"}; //... what else?
-        for (int i=0; i<optional.length; i++) {
-            String param = optional[i];
-            String val = getAttribute(param, params);
-            if (val != null) registerOption(param, val);
-
-            // really?
-            if (param.equals("range") && val == null) {
-                // alternate range specification via optional params page and per_page
-                String perPage = getAttribute("per_page", params);
-                String page = getAttribute("page", params);
-                if (perPage != null && page != null) {
-                    registerOption("range", page + "*" + perPage);
-                }
-            }
-        }*/
     }
 
     @SuppressWarnings("rawtypes")
-    private TableData fetchData(String dataVar)
+    private TableData fetchData(String dataVar, String origin)
     {
-        //this.data = null;
         TableData data = null;
 
         if (dataVar != null) {
@@ -266,7 +237,6 @@ public class LoopTag extends BlockTag
                             data = (TableData)dataStore;
                         } else if (dataStore instanceof String) {
                             data = InlineTable.parseTable((String)dataStore);
-                            ////registerOption("array_index_tags","FALSE");
                         } else if (dataStore instanceof Snippet) {
                             // simple strings are now encased in Snippet obj's
                             Snippet snippetData = (Snippet)dataStore;
@@ -300,7 +270,6 @@ public class LoopTag extends BlockTag
                                 // last-ditch effort to extract data, treat as POJOs
                                 data = TableOfMaps.boxObjectArray((Object[])dataStore);
                             }
-                            ////registerOption("array_index_tags","FALSE");
                         } else if (dataStore instanceof Map) {
                             Map object = (Map)dataStore;
                             data = new ObjectTable(object);
@@ -313,6 +282,7 @@ public class LoopTag extends BlockTag
             } else {
                 // template reference
                 if (chunk != null) {
+                    dataVar = qualifyTemplateRef(origin, dataVar);
                     String tableAsString = chunk.getTemplateSet().fetch(dataVar);
                     if (tableAsString != null) {
                         data = InlineTable.parseTable(tableAsString);
@@ -845,7 +815,7 @@ public class LoopTag extends BlockTag
         TableData data = null;
 
         if (options != null) {
-            data = fetchData((String)options.get("data"));
+            data = fetchData((String)options.get("data"), origin);
         }
 
         cookLoopToPrinter(out, context, origin, true, depth, data);
