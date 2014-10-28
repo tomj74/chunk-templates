@@ -700,6 +700,9 @@ public class Chunk implements Map<String,Object>
         if (template == null) {
             explodeToPrinter(out, templateRoot, 1);
         } else {
+        	// If template was constructed incrementally, with several .append(...) calls,
+        	// some block-open tags might not be grouped with the matching block-closed tag.
+        	// Merge templates together into a single Snippet if possible.
             if (template.size() > 1) {
                 template = mergeTemplateParts();
             }
@@ -712,7 +715,12 @@ public class Chunk implements Map<String,Object>
 
     private Vector<Snippet> mergeTemplateParts()
     {
-        Snippet merged = Snippet.consolidateSnippets(template);
+    	Snippet merged;
+    	try {
+            merged = Snippet.consolidateSnippets(template);
+    	} catch (EndOfSnippetException e) {
+    		return template;
+    	}
         Vector<Snippet> newTemplate = new Vector<Snippet>();
         newTemplate.add(merged);
         return newTemplate;

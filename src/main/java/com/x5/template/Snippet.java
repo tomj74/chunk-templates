@@ -895,10 +895,22 @@ public class Snippet
     }
 
     static Snippet consolidateSnippets(Vector<Snippet> template)
+    throws EndOfSnippetException
     {
         if (template == null) return null;
         if (template.size() == 1) return template.get(0);
-        // can't just slap all parts together,
+        for (int i=1; i<template.size(); i++) {
+        	Snippet a = template.get(i-1);
+        	Snippet b = template.get(i);
+        	if (a.origin == null && b.origin == null) continue;
+        	if (a.origin != null && b.origin != null) {
+        		if (a.origin.equals(b.origin)) {
+        			continue;
+        		}
+        	}
+        	throw new EndOfSnippetException("Can't merge snippets, incompatible origins.");
+        }
+        // Merge will work -- but, can't just slap all parts together,
         // since block tag might start in one snippet and end in another.
         // so, first FLATTEN all the pieces, then run through groupBlocks
         List<SnippetPart> merged = new ArrayList<SnippetPart>();
@@ -911,6 +923,7 @@ public class Snippet
         }
 
         Snippet voltron = new Snippet(merged);
+        voltron.origin = template.get(0).origin;
         voltron.groupBlocks(voltron.parts);
 
         return voltron;
