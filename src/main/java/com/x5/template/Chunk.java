@@ -244,7 +244,7 @@ import com.x5.util.TableData;
  * Updates: <A href="http://www.x5software.com/chunk/">Chunk Documentation</A><BR>
  *
  * @author Tom McClure
- * @version 2.4
+ * @version 2.5
  */
 
 public class Chunk implements Map<String,Object>
@@ -252,7 +252,7 @@ public class Chunk implements Map<String,Object>
     public static final int HASH_THRESH = 8;
     public static final int DEPTH_LIMIT = 17;
 
-    public static final String VERSION = "2.4";
+    public static final String VERSION = "2.5";
 
     private static final String TRUE = "TRUE";
 
@@ -755,17 +755,17 @@ public class Chunk implements Map<String,Object>
 
             // auto-expand?
             DataCapsuleReader reader = DataCapsuleReader.getReader((DataCapsule[])obj);
-            String err = handleError("[LIST("+reader.getDataClassName()+") - Use a loop construct such as .loop to display list data.]");
+            String err = handleError("[LIST("+reader.getDataClassName()+") - Use a loop construct to display list data.]");
             if (err != null) out.append(err);
 
         } else if (obj instanceof String[]) {
 
-            String err = handleError("[LIST(java.lang.String) - Use a loop construct such as .loop to display list data, or pipe to join().]");
+            String err = handleError("[LIST(java.lang.String) - Use a loop construct to display list data, or pipe to join().]");
             if (err != null) out.append(err);
 
         } else if (obj instanceof List) {
 
-            String err = handleError("[LIST - Use a loop construct such as .loop to display list data, or pipe to join().]");
+            String err = handleError("[LIST - Use a loop construct to display list data, or pipe to join().]");
             if (err != null) out.append(err);
         }
     }
