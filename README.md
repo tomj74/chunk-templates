@@ -14,7 +14,7 @@ Quick Start
 
 Browse the [fabulous documentation][5] chock full of examples and recipes.
 
-[Download the latest chunk-template jar][2]. Works with Java 1.5 and up.
+[Download the latest chunk-template jar][6]. Works with Java 1.5 and up.
 
 Available from Maven Central:
 
@@ -65,3 +65,4 @@ Or download madrobotbeans-0.1.jar from the [Downloads][2] area.  Thanks to Elton
   [3]: http://www.x5software.com/chunk/wiki/index.php/Eclipse_Template_Editor_plugin
   [4]: https://code.google.com/p/mad-robot/
   [5]: http://www.x5software.com/chunk/
+  [6]: https://sourceforge.net/projects/chunk-templates/files/
