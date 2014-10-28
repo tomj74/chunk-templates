@@ -60,6 +60,8 @@ Note: on Android (optional) - to make use of chunk.setToBean("tag",bean) binding
 
 Or download madrobotbeans-0.1.jar from the [Downloads][2] area.  Thanks to Elton Kent and the [Mad Robot][4] project.
 
+![Analytics](https://ga-beacon.appspot.com/UA-18933152-2/tomj74/chunk-templates)
+
   [1]: http://www.x5software.com/chunk/wiki/Chunk_Tag_Filters
   [2]: http://code.google.com/p/chunk-templates/downloads/list
   [3]: http://www.x5software.com/chunk/wiki/index.php/Eclipse_Template_Editor_plugin
