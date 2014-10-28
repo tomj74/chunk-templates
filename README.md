@@ -28,18 +28,18 @@ Available from Maven Central:
 
 Features
 ========
-  * Nestable loops and simple conditionals (if/elseIf/else).
-  * Macros, Includes and Conditional Includes.
+  * Nestable looping and branching (if/elseIf/else).
+  * Macros, includes and conditional includes.
   * Speedy rendering engine that pre-parses templates.
   * Curly-brace {$tags} pop nicely in a backdrop full of ```<AngleBrackets>``` (and your xml/html can still validate).
-  * Flexible null-handling; template designer may specify default tag values.
-  * Library of powerful chainable [filters][1] a la {$tag|trim}, including regex (regular expressions), sprintf.
+  * Flexible null-handling; template designer may easily specify default tag values.
+  * Swiss army knife of chainable [filters][1] a la {$tag|trim}, including regex (regular expressions), sprintf.
   * Localization framework.
   * Rapid MVC: Glue a "model" object (or objects) to a "view" template with a single line of controller code.
-  * Define multiple snippets per template file.
+  * Define multiple composable snippets per template file.
   * Stateless tags - encourages cleaner code via separation of concerns.
   * Support for theme layers with layered inheritance.
-  * Hooks for extending.
+  * Hooks for extending - add your own filters, template loader, or tag protocol.
   * Eclipse Template Editor plugin available with syntax highlighting & more.
 
 An [Eclipse plugin][2] with syntax highlighting, outline navigation of snippets, and auto-linking of snippet references is available on the [Chunk project downloads page][2].  Requires Eclipse Helios (3.6) or better.  [Plugin installation instructions][3].
