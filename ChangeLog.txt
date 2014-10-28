@@ -1,9 +1,19 @@
 Release History
 
+v2.5 - 2014-10-28 tmcclure
+
+  Now, with whitespace:
+    New less-cramped tag syntax {% expr %} is easier on the eyes.
+    Old {.cramped} syntax is still supported.
+  New |default(<output>) filter (syntactic sugar for {$tag:<output>} ).
+  Cleans up brittle/slow template pre-parsing routines.
+  Deprecates @inline keyword for {% exec %} - now both arguments are
+    optional and format (eg @json, @xml) is always marked with leading "@"
+
 v2.4 - Android helper classes.
 
   New template provider for Android is now included out-of-the-box:
-  com.x5.template.providers.AndroidTemplates.  See docs for usage notes.
+    com.x5.template.providers.AndroidTemplates.  See docs for usage notes.
 
 v2.3.2 - Minor fixes/enhancements.
 
@@ -13,7 +23,7 @@ v2.3.2 - Minor fixes/enhancements.
   Loop tag option values no longer require quotes.
   Renamed counter_tag loop option to counter and added optional params
     counter=$tag[,offset[,step]].
-    eg {.loop in $list as $x counter=$i,1}
+    eg {% loop in $list as $x counter=$i,1 %}
     Note: counter options just affect $i values -
     use $list|slice(a:b:step) to subset the actual list being looped over.
   Fixed bug in template parser, wasn't catching new-style literal blocks.
@@ -30,7 +40,7 @@ v2.2 - Theme objects can now be created with custom template provider.
        Full details with examples:
          http://x5software.com/chunk/examples/ChunkExample?example=net
 
-v2.1.2 - Fixed bug in addData(capsule,"x")
+v2.1.2 - Fixed bug in addData(capsule, "x")
 
 v2.1.1 - Fixed bug with boxed primitive wrapper objects
          like Double, Character, Integer etc.
@@ -38,13 +48,13 @@ v2.1.1 - Fixed bug with boxed primitive wrapper objects
 v2.1 - New {$tag|filter(#x_template)} runs the #x_template snippet as
          a macro, binding {$x} to the value of {$tag}
        Easier access to POJO attributes and bean properties:
-         * chunk.setToBean('my_thing',someObject)
+         * chunk.setToBean('my_thing', someObject)
              copies someObject's public accessor properties to a Map
 	     so the template can do this:
                 {$my_thing.price}
              to get the value of
                 someObject.getPrice()
-         * chunk.set('item',somePOJO)
+         * chunk.set('item', somePOJO)
              copies somePOJO's non-private attributes to a Map
 	     so the template can do this:
                 {$item.price}
@@ -57,20 +67,20 @@ v2.0 - Refactored for 20% speed gain.
        New |type filter {$what_am_i|type} outputs one of the following:
          STRING LIST OBJECT CHUNK NULL
        Improved support for objects (ie associative arrays)
-         {.exec #template json} now preserves JSON object key order.
-         {.loop in $obj as $key:$val} now loops through the attributes
+         {% exec #template @json %} now preserves JSON object key order.
+         {% loop in $obj as $key:$val %} now loops through the attributes
            of an associative array (aka Map/Object)
          {$obj} now visible from inside loops/chunks, not just {$obj.attr}
          Loop can now resolve object/list references like $x = "{$y}"
        Theme can now be configured to not route errors to output,
        and/or print errors to STDERR or another PrintWriter.
-         theme.setErrorHandling(false,System.err);
+         theme.setErrorHandling(false, System.err);
        Fixed bug with backticks and new {$syntax`$num`}
        The |escapexml filter has been refactored to be more efficient,
          now handles upper-page unicode escapes.
        Fixed bug in translate filter.
 
-v1.9 - Minor enhancements to {.loop} tag, several minor bugfixes.
+v1.9 - Minor enhancements to {% loop %} tag, several minor bugfixes.
         Updating to the latest version is strongly recommended.
 
 v1.8 - Major syntax change: new {$tag} and {.command} syntax
@@ -78,11 +88,11 @@ v1.8 - Major syntax change: new {$tag} and {.command} syntax
         Not to worry, library remains back-compatible.
 
        Other changes:
-         * {.exec} Macro enhancements
+         * {% exec %} Macro enhancements
            - xml attributes now avail as {$elt_name@attr_name}
-           - introduced @inline keyword in {.exec} syntax
-               eg: {.exec @inline xml} means, check {.body}...{/body} block
-               for template, and args will be in xml format.
+           - introduced @inline keyword in {% exec %} syntax
+               eg: {% exec @inline xml %} means, check {% body %}...{% endbody %}
+               block for template, and args will be in xml format.
          * Some new text filters
            - {$tag|onempty(N/A)} outputs N/A in null *and* empty-string case
            - {$tag|unescape} unescapes xml-entities.
@@ -90,18 +100,18 @@ v1.8 - Major syntax change: new {$tag} and {.command} syntax
 v1.7 - New features:
          * New built-in filters |get(x) and |alternate(even_output,odd_output)
          * Better support for lists and trees (ie nested maps) of data.
-         * New {.loop} options counter_tags="true" and array_index_tags="true"
+         * New {% loop %} options counter_tags="true" and array_index_tags="true"
             default for both options is now false.
          * Macro invocation overhaul.  New syntax:
-              {.exec MACRO} ... params ... {/exec}
+              {% exec MACRO %} ... params ... {% endexec %}
            With option to provide params json-formatted** or xml-formatted:
-              {.exec MACRO json}
+              {% exec MACRO @json %}
                { x : 3,
                  a : 'some-string',
                  list : ['a','b','c'] }
-              {/exec}
+              {% endexec %}
            And an inline template body marker a la:
-              {.exec} ...params... {.body} ... {/exec}
+              {% exec %} ...params... {% body %} ... {% endexec %}
             ** json-smart library is required for parsing json.
          * Several minor bugfixes.
 
@@ -129,18 +139,17 @@ v1.5 - New features:
            Use system property -Dchunk.template.charset=... to override.
          * Improved examples to better demonstrate features.
 
-v1.4 - Simplified block-tag syntax, got tired of typing {./if}
-         * {.if} ... {/if} and {.loop} ... {/loop} is the new standard.
-         * Fixed glaring if-else block conditional bug.
+v1.4 -   * Fixed glaring if-else block conditional bug.
          * Now easier to instantiate Theme object.  Just put your themes
            in src/themes/*.chtml and use the no-arg Theme() constructor
            and you're good to go.  Deploying in a jar?  Just include the
            themes folder in your jar and the template engine will find them.
 
 v1.3 - New features:
-         * Nestable {.if}...{/if} and {.loop}...{/loop} constructs
-         * Cleaner {.include file} {.include #snippet} include syntax
-         * Cleaner {.loop in $data as $d} loop syntax
+         * Nestable {% if %}...{% endif %} and {% loop %}...{% endloop %}
+             constructs
+         * Cleaner {% include file %} {% include #snippet %} include syntax
+         * Cleaner {% loop in $data as $d %} loop syntax
          * Better comment-stripping (removes any whitespace-only lines left
              after stripping the comment).
          * Even smarter about finding theme files.  Just put a folder named
@@ -152,13 +161,13 @@ v1.3 - New features:
          * New HEX filter -- shorthand for {$x|hex|uc}
 
 v1.2 - New features:
-         * Literal blocks w/ {.literal} no interpolation
+         * Literal blocks w/ {% literal %} no interpolation
          * Dynamic tags with backticks {$pkg_`$pkg_id`}
          * getSnippet(templateRef) now returns Snippet obj
              - use fetch(templateRef) to get tpl as string.
          * Chunk can now find and use templates that are packaged
            inside a jar on the classpath.
-         * nodata="" now supported by {.loop} tag.
+         * nodata="" now supported by {% loop %} tag.
          * xml,xmlesc,xmlescape now synonyms for htmlescape filter.
          * implemented perl case-conv regex directives via hack:
               s/.*/\U$0/ now working (but {$tag|uc} is still quicker)
