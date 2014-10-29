@@ -1,7 +1,7 @@
 Chunk Templates for Java
 ========================
 
-Full documentation at http://www.x5software.com/chunk/
+[<img align="left" src= "http://www.x5software.com/chunk/docs/img/chunk_logo_500x500.png" width="250" />][5] Full documentation at http://www.x5software.com/chunk/
 
 Chunk is a Java Template Engine for applications that serve HTML or XML.  It's the little engine that can handle any templating job, plain text, markup, markdown, whatever, wherever.
 
