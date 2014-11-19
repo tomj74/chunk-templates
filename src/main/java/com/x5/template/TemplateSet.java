@@ -234,8 +234,6 @@ public class TemplateSet implements ContentSource, ChunkFactory
 
     private Snippet _get(String name, String extension, boolean prettyFail)
     {
-        //long now = System.currentTimeMillis();
-
         Snippet template = getFromCache(name, extension);
         String filename = null;
 
@@ -253,13 +251,6 @@ public class TemplateSet implements ContentSource, ChunkFactory
                     FileInputStream in = new FileInputStream(templateFile);
                     importTemplates(in, stub, extension);
                     template = getFromCache(name, extension);
-                    /*
-                    InputStreamReader reader = new InputStreamReader(in,expectedEncoding );
-                    BufferedReader brTemp = new BufferedReader(reader);
-                    readAndCacheTemplate(stub,extension,brTemp);
-                    in.close();
-                    template = getFromCache(name, extension);
-                    */
                 } else {
                     // file does not exist, check around in classpath/jars
                     String resourcePath = getResourcePath(name,extension);
@@ -431,12 +422,6 @@ public class TemplateSet implements ContentSource, ChunkFactory
                     }
                 }
             }
-
-            //Set<java.net.URL> urls = new java.util.HashSet<java.net.URL>();
-            //for (Object urlString : ctx.getResourcePaths("/WEB-INF/lib")) {
-            //    try { urls.add(ctx.getResource((String) urlString)); }
-            //    catch (MalformedURLException e) { /* silent-fail */ }
-            //}
 
         } catch (SecurityException e) {
         } catch (NoSuchMethodException e) {

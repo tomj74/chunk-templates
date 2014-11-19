@@ -42,7 +42,7 @@ public abstract class TemplateProvider implements com.x5.template.ContentSource
         try {
             rawTemplate = loadItemDoc(templateName);
         } catch (IOException e) {
-        	e.printStackTrace(System.err);
+            e.printStackTrace(System.err);
         }
         if (rawTemplate == null) {
             snippetCache.put(templateName, null);
@@ -77,7 +77,7 @@ public abstract class TemplateProvider implements com.x5.template.ContentSource
     public String loadItemDoc(String itemName)
     throws IOException
     {
-    	return loadContainerDoc(resourceName(itemName));    	
+        return loadContainerDoc(resourceName(itemName));            
     }
 
     public abstract String loadContainerDoc(String docName)
@@ -85,16 +85,33 @@ public abstract class TemplateProvider implements com.x5.template.ContentSource
 
     private String resourceName(String itemName)
     {
-        if (extension == null || extension.length() < 1) {
+        // Theme encodes extension as a ;prefix;
+        // So, test for leading semicolon and override extension here.
+        String ext = extension;
+        String embeddedExtension = parseEmbeddedExtension(itemName);
+        if (embeddedExtension != null) {
+            itemName = itemName.substring(embeddedExtension.length() + 2);
+            ext = embeddedExtension;
+        }
+
+        if (ext == null || ext.length() < 1) {
             return itemName;
         }
         int hashPos = itemName.indexOf('#');
         if (hashPos < 0) {
-            return itemName + '.' + extension;
+            return itemName + '.' + ext;
         } else {
-            String filename = itemName.substring(0,hashPos) + '.' + extension;
+            String filename = itemName.substring(0,hashPos) + '.' + ext;
             return filename; // + itemName.substring(hashPos);
         }
+    }
+
+    private String parseEmbeddedExtension(String itemName)
+    {
+        if (itemName.charAt(0) != ';') return null;
+        int endColonPos = itemName.indexOf(';', 1);
+        if (endColonPos < 0) return null;
+        return itemName.substring(1, endColonPos);
     }
 
     public void clearCache()

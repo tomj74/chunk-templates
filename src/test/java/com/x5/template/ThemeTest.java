@@ -3,6 +3,8 @@ package com.x5.template;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
+import com.x5.template.providers.TemplateProvider;
+
 public class ThemeTest
 {
     @Test
@@ -44,5 +46,28 @@ public class ThemeTest
         
         Chunk c = theme.makeChunk("layer_test");
         assertEquals("Base Layer", c.toString().trim());
+    }
+
+    @Test
+    public void testNonDefaultExtension()
+    {
+        DummyLoader loader = new DummyLoader();
+        Theme theme = new Theme(loader);
+        Chunk chunk = theme.makeChunk("order", "chunk");
+        assertEquals("order.chunk\n", chunk.toString());
+    }
+
+
+    public static class DummyLoader extends TemplateProvider
+    {
+        public String loadContainerDoc(String docName)
+        {
+            return docName;
+        }
+
+        public String getProtocol()
+        {
+            return "dummy";
+        }
     }
 }
