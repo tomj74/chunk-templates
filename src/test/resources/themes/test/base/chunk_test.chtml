@@ -359,6 +359,21 @@ Base Layer
 
 
 {!---------------------------------------------}
+{#ltrim_test}
+{% exec #ltrim_body %}
+ {$name=}  
+Bob  {=}
+{% endexec %}
+{#}
+
+
+{!---------------------------------------------}
+{#ltrim_body}
+xxx{$name|ltrim}xxx{$name|trim}xxx
+{#}
+
+
+{!---------------------------------------------}
 {#literal_test}
 {$tags:bye}
 <!-- {.literal} -->

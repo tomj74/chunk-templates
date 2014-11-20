@@ -726,6 +726,15 @@ public class FilterTest
         assertEquals("xxxBob  xxxBobxxx",c.toString());
     }
 
+    @Test
+    public void testUserFilterLoadFromFile()
+    {
+        Theme theme = new Theme("test/base");
+        theme.registerFilter(new LeftTrimFilter());
+        Chunk c = theme.makeChunk("chunk_test#ltrim_test");
+        assertEquals("xxxBob  xxxBobxxx\n",c.toString());
+    }
+
     public class LeftTrimFilter extends BasicFilter
     {
 

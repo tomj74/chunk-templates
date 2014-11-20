@@ -21,7 +21,15 @@ public abstract class BasicFilter implements ChunkFilter
 
     public Object applyFilter(Chunk chunk, Object object, String[] args)
     {
-        String stringifiedObject = (object == null) ? null : object.toString();
+        String stringifiedObject = null;
+        if (object != null) {
+            if (object instanceof com.x5.template.Snippet) {
+                // lose leading comment with origin
+                stringifiedObject = ((com.x5.template.Snippet)object).toSimpleString();
+            } else {
+                stringifiedObject = object.toString();
+            }
+        }
         return transformText(chunk, stringifiedObject, args);
     }
 

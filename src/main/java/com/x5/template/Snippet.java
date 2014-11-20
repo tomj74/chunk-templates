@@ -802,13 +802,18 @@ public class Snippet
 
     public String toString()
     {
+        return _toString(true);
+    }
+
+    private String _toString(boolean withOrigin)
+    {
         if (simpleText != null) return simpleText;
         if (parts == null) return null;
 
         // reassemble parts back into original template
         StringBuilder sb = new StringBuilder();
 
-        if (origin != null) {
+        if (withOrigin && origin != null) {
             sb.append("{!--@ORIGIN:");
             sb.append(origin);
             sb.append("@--}");
@@ -818,6 +823,14 @@ public class Snippet
             sb.append(part.toString());
         }
         return sb.toString();
+    }
+
+    /**
+     * Do not prepend comment with template origin.
+     */
+    public String toSimpleString()
+    {
+        return _toString(false);
     }
 
     public void render(Writer out, Chunk rules, int depth)
