@@ -2,9 +2,9 @@
 Line
     {!--comment
         multiline--}
-    {.if ($x) }
+    {% if ($x) %}
     asdf
-    {/if}
+    {% endif %}
     {!--comment--}
     {.if ($y) }
     Line
@@ -18,14 +18,14 @@ Line
     Line
 
 {#comment_after_if}
+    {% if (!$x) %}{!-- comment --}
+    LineA
+    {% endif %}
     {.if (!$x)}{!-- comment --}
-    Line
-    {/if}
-    {.if (!$x)}{!-- comment --}
-    Line
+    LineB
     {/if}
     {!--comment--}
-    {.if (!$x)}{!-- comment --}
-    Line
-    {/if}
+    {% if (!$x) %}{!-- comment --}
+    LineC
+    {% endif %}
 {#}

@@ -1,0 +1,6 @@
+<?xml version="1.0"?>
+<SomeElement>Boo!</SomeElement>
+
+{#sub_snippet}
+<SubElement>Far!</SubElement>
+{#}

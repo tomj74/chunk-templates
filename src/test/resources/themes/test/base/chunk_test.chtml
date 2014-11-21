@@ -352,6 +352,7 @@ NOT A TOASTER
 </dd>
 {#}
 
+
 {!---------------------------------------------}
 {#layer_test}
 Base Layer
@@ -361,8 +362,8 @@ Base Layer
 {!---------------------------------------------}
 {#ltrim_test}
 {% exec #ltrim_body %}
- {$name=}  
-Bob  {=}
+ {$name=}
+  Bob  {=}
 {% endexec %}
 {#}
 

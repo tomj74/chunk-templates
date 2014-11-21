@@ -219,6 +219,14 @@ public class MacroTest
         Chunk c = theme.makeChunk("macro_test#bug55");
         assertEquals("  a\n  b\n  c\n  d\n\n", c.toString());
     }
+
+    @Test
+    public void execScopeTest()
+    {
+        Theme theme = new Theme("test/base");
+        Chunk c = theme.makeChunk("macro_test#scope_test");
+        assertEquals("<div class=\"yum\">apple fruit</div>\n<div class=\"yum\">banana fruit</div>\n<div class=\"yum\">carrot vegetable</div>\n<div class=\"huh\">durian wat</div>\n", c.toString());
+    }
     
     @Test
     public void execFilterTest()
@@ -226,10 +234,10 @@ public class MacroTest
         Theme theme = new Theme("test/base");
         Chunk c = theme.makeChunk("macro_test#filter_exec");
 
-        c.set("some_tag","Rumpelstiltskin");
-        c.set("some_num","24999");
+        c.set("some_tag", "Rumpelstiltskin");
+        c.set("some_num", "24999");
 
-        assertEquals("Rmesitkn\n$24,999.00\n",c.toString());
+        assertEquals("Rmesitkn\n$24,999.00\n", c.toString());
     }
 
     @Test
@@ -238,6 +246,6 @@ public class MacroTest
         Theme theme = new Theme("test/base");
         Chunk c = theme.makeChunk("macro_test#filter_exec");
 
-        assertEquals("\n\n",c.toString());
+        assertEquals("\n\n", c.toString());
     }
 }

@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import com.x5.template.Chunk;
+import com.x5.template.Snippet;
 
 public abstract class BasicFilter implements ChunkFilter
 {
@@ -21,16 +22,20 @@ public abstract class BasicFilter implements ChunkFilter
 
     public Object applyFilter(Chunk chunk, Object object, String[] args)
     {
-        String stringifiedObject = null;
-        if (object != null) {
-            if (object instanceof com.x5.template.Snippet) {
-                // lose leading comment with origin
-                stringifiedObject = ((com.x5.template.Snippet)object).toSimpleString();
-            } else {
-                stringifiedObject = object.toString();
-            }
-        }
+        String stringifiedObject = object == null ? null : BasicFilter.stringify(object);
         return transformText(chunk, stringifiedObject, args);
+    }
+
+    public static String stringify(Snippet snippet)
+    {
+        // lose leading comment with origin
+        return snippet.toSimpleString();
+    }
+
+    public static String stringify(Object object)
+    {
+        if (object instanceof Snippet) return stringify((Snippet)object);
+        return object.toString();
     }
 
     public BasicFilter() {}
@@ -44,6 +49,7 @@ public abstract class BasicFilter implements ChunkFilter
         new CheckedFilter(),
         new DefangFilter(),
         new DefaultFilter(),
+        new EscapeQuotesFilter(),
         new EscapeXMLFilter(),
         new UnescapeXMLFilter(),
         new ExecFilter(),

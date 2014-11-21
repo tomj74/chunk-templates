@@ -13,8 +13,8 @@ public class LoopTest
         String[] list = new String[]{"Frodo","Bilbo","Sam"};
         c.set("list", list);
         // smart trim is the default (strip first line if all whitespace)
-        c.append("{^loop data=\"~list\" array_tags=\"true\"}  \n {~DATA[0]}<br/>\n{/loop}");
-        assertEquals(" Frodo<br/>\n Bilbo<br/>\n Sam<br/>\n",c.toString());
+        c.append("{% loop in $list array_tags=\"true\" %}  \n {$DATA[0]}<br/>\n{% endloop %}");
+        assertEquals(" Frodo<br/>\n Bilbo<br/>\n Sam<br/>\n", c.toString());
     }
 
     @Test
@@ -25,8 +25,8 @@ public class LoopTest
         c.set("list", list);
         // smart trim is the default (strip first line if all whitespace)
         // note, this template has no final newline.
-        c.append("{^loop data=\"~list\" array_tags=\"true\"}\n{~DATA[0]}<br/>{/loop}");
-        assertEquals("Frodo<br/>Bilbo<br/>Sam<br/>",c.toString());
+        c.append("{% loop in $list array_tags=\"true\" %}\n{~DATA[0]}<br/>{% endloop %}");
+        assertEquals("Frodo<br/>Bilbo<br/>Sam<br/>", c.toString());
     }
 
     @Test
@@ -36,7 +36,17 @@ public class LoopTest
         String[] list = new String[]{"Frodo","Bilbo","Sam"};
         c.set("list", list);
         c.append("{^loop data=\"~list\" trim=\"all\" array_tags=\"true\"}\n {~DATA[0]}<br/>\n{/loop}");
-        assertEquals("Frodo<br/>Bilbo<br/>Sam<br/>",c.toString());
+        assertEquals("Frodo<br/>Bilbo<br/>Sam<br/>", c.toString());
+    }
+
+    @Test
+    public void testSimpleLoopNoThemeTrimAllFromFile()
+    {
+        Theme theme = new Theme("themes", "test/base");
+        Chunk c = theme.makeChunk("loop_test#whitespace_test");
+        String[] list = new String[]{"Frodo","Bilbo","Sam"};
+        c.set("list", list);
+        assertEquals("Frodo<br/>Bilbo<br/>Sam<br/>", c.toString());
     }
 
     @Test

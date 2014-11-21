@@ -380,6 +380,29 @@ Hello
 {#}
 
 
+
+{!---------------------------------------------}
+{#scope_test}
+{% exec %}
+  {$foods=}[[name,type],[apple,fruit],[banana,fruit],[carrot,vegetable],[durian,wat]]{=}
+{% body %}
+  {% loop in $foods as $food %}
+    {% exec %}
+      {$class=}
+        {% if ($food.type =~ /fruit|vegetable/) trim="true" %}
+          yum
+        {% else %}
+          huh
+        {% endif %}
+      {=}
+    {% body %}
+<div class="{$class|trim}">{$food.name} {$food.type}</div>
+    {% endexec %}
+  {% endloop %}
+{% endexec %}
+{#}
+
+
 {!---------------------------------------------}
 {#bug29}
 It doesn't matter what I put here, it gets overridden in the override layer.

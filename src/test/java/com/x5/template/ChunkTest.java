@@ -561,7 +561,7 @@ public class ChunkTest
         Theme theme = new Theme("test/base");
         Chunk c = theme.makeChunk("whitespace_test#comment_after_if");
 
-        String targetOutput = "    Line\n    Line\n    Line\n";
+        String targetOutput = "    LineA\n    LineB\n    LineC\n";
 
         assertEquals(targetOutput, c.toString());
     }

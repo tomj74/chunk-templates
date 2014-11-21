@@ -586,7 +586,7 @@ public class TemplateDoc implements Iterator<TemplateDoc.Doclet>, Iterable<Templ
                         // . is shorthand for ~. eg {.include #xyz} or {.wiki.External_Content}
                         template.replace(cursor+1,cursor+2,"~.");
                     } else {
-                        // skip over whitespace
+                        // trim whitespace from expression eg: {%    $tag    %}
                         int exprStart = cursor + 2;
                         while (exprStart < template.length() && Character.isWhitespace(template.charAt(exprStart))) {
                             exprStart++;

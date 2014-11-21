@@ -1,0 +1,6 @@
+{!----------------------------------------}
+{#whitespace_test}
+  {% loop in $list as $item trim="all" array_tags="true" %}
+ {$item}<br/>
+  {% endloop %}
+{#}

@@ -508,8 +508,8 @@ public class TemplateSet implements ContentSource, ChunkFactory
     {
         // this regex: s/^\s*({^\/?(...)[^}]*})\s*/$1/g removes leading and trailing whitespace
         // from lines that only contain {^loop} ...
-        // NB: this regex will not catch {^if (~cond =~ /\/x{1,3}/)} but it's already nigh-unreadable...
-        return RegexFilter.applyRegex(template, "s/^[ \\t]*(\\{(\\^|\\~\\.)\\/?(loop|if|else|elseIf|divider|onEmpty|body)([^\\}]*|[^\\}]*\\/[^\\/]*\\/[^\\}]*)\\})[ \\t]*$/$1/gm");
+        // NB: this regex will not catch {^if (~tag =~ /\/x{1,3}/)} but it's already nigh-unreadable...
+        return RegexFilter.applyRegex(template, "s/^[ \\t]*(\\{(\\% *(\\~\\.)?(end)?|(\\^|\\~\\.)\\/?)(loop|exec|if|else|elseIf|divider|onEmpty|body)([^\\}]*|[^\\}]*\\/[^\\/]*\\/[^\\}]*)\\})[ \\t]*$/$1/gmi");
     }
 
     protected Snippet getFromCache(String name, String extension)

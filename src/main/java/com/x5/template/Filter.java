@@ -85,19 +85,11 @@ public class Filter
         }
 
         if (input instanceof String || input instanceof Snippet) {
-            // provide a few basic filters without making a whole class for each one.
-            String text = input.toString();
+            // provide a few core filters without making a whole class for each one.
+            String text = BasicFilter.stringify(input);
             if (filter.equals("trim")) {
                 // trim leading and trailing whitespace
                 return text == null ? null : text.trim(); //text.replaceAll("^\\s+","").replaceAll("\\s+$","");
-            } else if (filter.equals("qs") || filter.equals("quoted") || filter.equals("quotedstring") || filter.equals("escapequotes")) {
-                // qs is a quoted string - escape " and ' with backslashes
-                if (text != null) {
-                    text = Chunk.findAndReplace(text,"\\","\\\\");
-                    text = Chunk.findAndReplace(text,"\"","\\\"");
-                    text = Chunk.findAndReplace(text,"'","\\'");
-                }
-                return text;
             } else if (filter.startsWith("join(")) {
                 if (text != null) {
                     TableData array = InlineTable.parseTable(text);

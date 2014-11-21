@@ -397,6 +397,10 @@ public class IfTag extends BlockTag
             }
         } else if (b > a) {
             if (isTrimAll()) {
+                // skip leading comments for a proper trim
+                while (parts.get(a) instanceof SnippetComment && a < b-1) {
+                    a++;
+                }
                 // trim front and back
                 if (a + 1 == b) {
                     // only one part, easy to trim
