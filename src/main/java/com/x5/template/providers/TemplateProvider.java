@@ -73,11 +73,11 @@ public abstract class TemplateProvider implements com.x5.template.ContentSource
         }
         return r;
     }
-    
+
     public String loadItemDoc(String itemName)
     throws IOException
     {
-        return loadContainerDoc(resourceName(itemName));            
+        return loadContainerDoc(resourceName(itemName));
     }
 
     public abstract String loadContainerDoc(String docName)
