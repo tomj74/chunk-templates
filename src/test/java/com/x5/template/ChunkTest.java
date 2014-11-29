@@ -4,6 +4,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.junit.Test;
+
+import com.x5.util.ObjectDataMap;
+
 import static org.junit.Assert.*;
 
 public class ChunkTest
@@ -664,6 +667,23 @@ public class ChunkTest
     }
 
     @Test
+    public void beanInBeanTest()
+    {
+        Theme theme = new Theme();
+        Chunk c = theme.makeChunk();
+        c.append("{$x.name} {$x.boss.name} {$x.children|type} {% loop in $x.children as $child %}{$child.name|s/ /-/}{% divider %} {% endloop %}");
+
+        ThingBean bean = new ThingBean();
+        bean.setAge(28);
+        bean.setName("Bob");
+        bean.setActive(true);
+
+        c.setToBean("x", bean);
+
+        assertEquals("Bob Bob LIST copy-A copy-B", c.toString());
+    }
+
+    @Test
     public void arrayOfPOJOTest()
     {
         Theme theme = new Theme();
@@ -693,7 +713,7 @@ public class ChunkTest
         Theme theme = new Theme();
         Chunk c = theme.makeChunk();
         c.append("{$x.name} {$x.age} {$x.pi|sprintf(%.02f)} {$x.is_active:FALSE} {$x.hidden:invisible} {$x.hiddentwo:invisible}");
-        c.set("x", new Thing("Bob",28,true));
+        c.set("x", new Thing("Bob", 28, true));
 
         assertEquals("Bob 28 3.14 TRUE invisible invisible", c.toString());
     }
@@ -705,9 +725,69 @@ public class ChunkTest
         Chunk c = theme.makeChunk();
         c.append("{$x.name} {$x.age} {$x.pi|sprintf(%.02f)} {$x.is_active:FALSE} {$x.boss.name}\n");
         c.append("{.loop in $x.children as $child}{$child.name} {/loop}");
-        c.set("x", new CircularThing("Bob",28,false));
+        c.set("x", new CircularThing("Bob", 28, false));
 
         assertEquals("Bob 28 3.14 FALSE Bob\nBob Bob ", c.toString());
+    }
+
+    @Test
+    public void POJOLoopTest()
+    {
+        Theme theme = new Theme();
+        Chunk c = theme.makeChunk();
+        c.append("{% loop in $things as $x %}{$x.name}{% divider %} {% endloop %}");
+        Thing x = new Thing("Alice", 28, true);
+        Thing y = new Thing("Bob", 28, true);
+        Thing z = new Thing("Carol", 28, true);
+        List<Thing> things = new ArrayList<Thing>();
+        things.add(x);
+        things.add(y);
+        things.add(z);
+        c.set("things", things);
+
+        assertEquals("Alice Bob Carol", c.toString());
+    }
+
+    @Test
+    public void BeanLoopTest()
+    {
+        Theme theme = new Theme();
+        Chunk c = theme.makeChunk();
+        c.append("{% loop in $things as $x %}{$x.name}{% divider %} {% endloop %}");
+        ThingBean x = new ThingBean();
+        ThingBean y = new ThingBean();
+        ThingBean z = new ThingBean();
+        x.setName("Alice");
+        y.setName("Bob");
+        z.setName("Carol");
+        List<ThingBean> things = new ArrayList<ThingBean>();
+        things.add(x);
+        things.add(y);
+        things.add(z);
+        c.set("things", things);
+
+        assertEquals("Alice Bob Carol", c.toString());
+    }
+
+    @Test
+    public void BeanLoopWorkaroundTest()
+    {
+        Theme theme = new Theme();
+        Chunk c = theme.makeChunk();
+        c.append("{% loop in $things as $x %}{$x.name}{% divider %} {% endloop %}");
+        ThingBean x = new ThingBean();
+        ThingBean y = new ThingBean();
+        ThingBean z = new ThingBean();
+        x.setName("Alice");
+        y.setName("Bob");
+        z.setName("Carol");
+        List<java.util.Map> things = new ArrayList<java.util.Map>();
+        things.add(ObjectDataMap.wrapBean(x));
+        things.add(ObjectDataMap.wrapBean(y));
+        things.add(ObjectDataMap.wrapBean(z));
+        c.set("things", things);
+
+        assertEquals("Alice Bob Carol", c.toString());
     }
 
     /**
@@ -825,7 +905,7 @@ public class ChunkTest
     /**
      * for bean tests
      */
-    public static class ThingBean implements java.io.Serializable
+    public static class ThingBean implements java.io.Serializable, Cloneable
     {
         private String name;
         private int age;
@@ -840,7 +920,16 @@ public class ChunkTest
         public ThingBean()
         {
             this.boss = this;
-            this.children = new ThingBean[]{this,this};
+            ThingBean childA = this;
+            ThingBean childB = this;
+            try {
+                childA = (ThingBean)this.clone();
+                childB = (ThingBean)this.clone();
+                childA.setName(getName() == null ? "copy A" : getName() + " copy A");
+                childB.setName(getName() == null ? "copy B" : getName() + " copy B");
+            } catch (CloneNotSupportedException e) {
+            }
+            this.children = new ThingBean[]{childA,childB};
         }
 
         public String getName()

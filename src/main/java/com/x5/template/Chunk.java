@@ -244,7 +244,7 @@ import com.x5.util.TableData;
  * Updates: <A href="http://www.x5software.com/chunk/">Chunk Documentation</A><BR>
  *
  * @author Tom McClure
- * @version 2.5.1
+ * @version 2.6
  */
 
 public class Chunk implements Map<String,Object>
@@ -252,7 +252,7 @@ public class Chunk implements Map<String,Object>
     public static final int HASH_THRESH = 8;
     public static final int DEPTH_LIMIT = 17;
 
-    public static final String VERSION = "2.5.1";
+    public static final String VERSION = "2.6";
 
     private static final String TRUE = "TRUE";
 
@@ -700,9 +700,9 @@ public class Chunk implements Map<String,Object>
         if (template == null) {
             explodeToPrinter(out, templateRoot, 1);
         } else {
-        	// If template was constructed incrementally, with several .append(...) calls,
-        	// some block-open tags might not be grouped with the matching block-closed tag.
-        	// Merge templates together into a single Snippet if possible.
+            // If template was constructed incrementally, with several .append(...) calls,
+            // some block-open tags might not be grouped with the matching block-closed tag.
+            // Merge templates together into a single Snippet if possible.
             if (template.size() > 1) {
                 template = mergeTemplateParts();
             }
@@ -715,12 +715,12 @@ public class Chunk implements Map<String,Object>
 
     private Vector<Snippet> mergeTemplateParts()
     {
-    	Snippet merged;
-    	try {
+        Snippet merged;
+        try {
             merged = Snippet.consolidateSnippets(template);
-    	} catch (EndOfSnippetException e) {
-    		return template;
-    	}
+        } catch (EndOfSnippetException e) {
+            return template;
+        }
         Vector<Snippet> newTemplate = new Vector<Snippet>();
         newTemplate.add(merged);
         return newTemplate;

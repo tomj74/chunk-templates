@@ -250,6 +250,7 @@ public class TemplateSet implements ContentSource, ChunkFactory
                 if (templateFile.exists()) {
                     FileInputStream in = new FileInputStream(templateFile);
                     importTemplates(in, stub, extension);
+                    in.close();
                     template = getFromCache(name, extension);
                 } else {
                     // file does not exist, check around in classpath/jars
@@ -274,6 +275,7 @@ public class TemplateSet implements ContentSource, ChunkFactory
                     if (inJar != null) {
                         importTemplates(inJar, stub, extension);
                         template = getFromCache(name, extension);
+                        inJar.close();
                     }
                 }
             } catch (java.io.IOException e) {

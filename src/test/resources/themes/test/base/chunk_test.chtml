@@ -65,13 +65,13 @@
 
 {!---------------------------------------------}
 {#looptest_counter_i}
-{.loop in $widgets counter_tag="$i"}
+{% loop in $widgets counter_tag="$i" %}
  {$i} {$widget_id} {$widget_name}<br/>
-{.divider}
+{% divider %}
  <hr/>
-{.onEmpty}
+{% onEmpty %}
  <i>No widgets!</i>
-{/loop}
+{% endloop %}
 {#}
 
 {!---------------------------------------------}

@@ -7,7 +7,6 @@ import java.util.HashMap;
 import org.junit.Test;
 
 import com.x5.template.filters.BasicFilter;
-import com.x5.template.filters.ChunkFilter;
 
 import static org.junit.Assert.*;
 

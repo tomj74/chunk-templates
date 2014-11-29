@@ -87,9 +87,20 @@ public class ObjectDataMap implements Map
     @SuppressWarnings("unused")
     private Map<String,Object> mapify(Object pojo)
     {
+        Map<String,Object> data = null;
         if (pojo instanceof DataCapsule) {
             return mapifyCapsule((DataCapsule)pojo);
-        } else if (isBean) {
+        }
+        if (!isBean) {
+            data = mapifyPOJO(pojo);
+            if (data == null || data.isEmpty()) {
+                // hmmm, maybe it's a bean?
+                isBean = true;
+            } else {
+                return data;
+            }
+        }
+        if (isBean) {
             try {
                 // java.beans.* is missing on android.
                 // Test for existence before use...
@@ -108,7 +119,11 @@ public class ObjectDataMap implements Map
                 // hmm, not a bean after all...
             }
         }
+        return data;
+    }
 
+    public Map<String,Object> mapifyPOJO(Object pojo)
+    {
         Field[] fields = pojo.getClass().getDeclaredFields();
         Map<String,Object> pickle = null;
 
