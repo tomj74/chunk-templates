@@ -14,7 +14,7 @@ public class NetTemplates extends TemplateProvider
     {
         this.baseURL = baseURL;
     }
-    
+
     public String loadContainerDoc(String docName)
     throws IOException
     {

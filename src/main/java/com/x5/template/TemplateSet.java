@@ -644,17 +644,26 @@ public class TemplateSet implements ContentSource, ChunkFactory
     public String getTemplatePath(String templateName, String ext)
     {
         String stub = TemplateDoc.truncateNameToStub(templateName);
-        return templatePath + stub + '.' + ext;
+        String path = templatePath + stub;
+        if (ext != null && ext.length() > 0) {
+            path += '.' + ext;
+        }
+        return path;
     }
 
     public String getResourcePath(String templateName, String ext)
     {
         String stub = TemplateDoc.truncateNameToStub(templateName);
+        String path;
         if (layerName == null) {
-            return "/themes/" + stub + '.' + ext;
+            path = "/themes/" + stub;
         } else {
-            return "/themes/" + layerName + stub + '.' + ext;
+            path = "/themes/" + layerName + stub;
         }
+        if (ext != null && ext.length() > 0) {
+            path += '.' + ext;
+        }
+        return path;
     }
 
 

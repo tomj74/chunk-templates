@@ -25,7 +25,7 @@ public class AndroidTemplates extends TemplateProvider
     }
 
     /**
-     * Place templates in assets/themes/[themeFolder]/*.chtml and this
+     * Place templates in assets/[themeFolder]/*.chtml and this
      * template loader will be able to find them.
      *
      * Provide a context to the constructor, eg:

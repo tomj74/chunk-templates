@@ -31,7 +31,7 @@ public class Theme implements ContentSource, ChunkFactory
     {
         themeLayers.add(templates);
     }
-    
+
     public Theme(String themeLayerNames)
     {
         this(null, themeLayerNames, null);
@@ -108,12 +108,12 @@ public class Theme implements ContentSource, ChunkFactory
             }
         }
     }
-    
+
     public void addLayer(ContentSource templates)
     {
         themeLayers.add(templates);
     }
-    
+
     private ArrayList<ContentSource> getThemeLayers()
     {
         // funneling all access through here to enable lazy init.

@@ -94,15 +94,21 @@ public abstract class TemplateProvider implements com.x5.template.ContentSource
             ext = embeddedExtension;
         }
 
-        if (ext == null || ext.length() < 1) {
-            return itemName;
-        }
         int hashPos = itemName.indexOf('#');
+        if (ext == null || ext.length() < 1) {
+            // strip hashref
+            if (hashPos < 0) {
+                return itemName;
+            } else {
+                return itemName.substring(0,hashPos);
+            }
+        }
+        // strip hashref, transpose ext and filename
         if (hashPos < 0) {
             return itemName + '.' + ext;
         } else {
             String filename = itemName.substring(0,hashPos) + '.' + ext;
-            return filename; // + itemName.substring(hashPos);
+            return filename;
         }
     }
 
@@ -122,6 +128,11 @@ public abstract class TemplateProvider implements com.x5.template.ContentSource
     public void clearCache(String itemName)
     {
         snippetCache.remove(itemName);
+    }
+
+    public void setDefaultExtension(String ext)
+    {
+        this.extension = ext;
     }
 
 }

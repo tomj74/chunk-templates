@@ -106,13 +106,13 @@ public class TemplateDoc implements Iterator<TemplateDoc.Doclet>, Iterable<Templ
         String stub;
         if (slashPos > -1) {
             folder = name.substring(0,slashPos+1);
-            stub = name.substring(slashPos+1).replace('#','.');
+            stub = name.substring(slashPos+1);
         } else {
-            stub = name.replace('#','.');
+            stub = name;
         }
 
-        int dotPos = stub.indexOf(".");
-        if (dotPos > -1) stub = stub.substring(0,dotPos);
+        int hashPos = stub.indexOf("#");
+        if (hashPos > -1) stub = stub.substring(0, hashPos);
 
         if (slashPos > -1) {
             char fs = System.getProperty("file.separator").charAt(0);
