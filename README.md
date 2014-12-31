@@ -29,6 +29,7 @@ Available from Maven Central:
 
 Features
 ========
+  * Compatible with Android, GAE (Google App Engine).
   * Nestable looping and branching (if/elseIf/else).
   * Macros, includes and conditional includes.
   * Speedy rendering engine that pre-parses templates.
