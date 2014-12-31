@@ -366,7 +366,7 @@ public class Theme implements ContentSource, ChunkFactory
     private ArrayList<TemplateSet> getTemplateSets()
     {
         ArrayList<TemplateSet> sets = null;
-        for (ContentSource x : themeLayers) {
+        for (ContentSource x : getThemeLayers()) {
             if (x instanceof TemplateSet) {
                 if (sets == null) sets = new ArrayList<TemplateSet>();
                 sets.add((TemplateSet)x);

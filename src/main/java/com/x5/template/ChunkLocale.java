@@ -4,19 +4,16 @@ import java.util.HashMap;
 import java.util.IllegalFormatException;
 import java.util.Locale;
 import java.util.MissingResourceException;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipFile;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.nio.charset.Charset;
 import java.nio.charset.IllegalCharsetNameException;
 import java.nio.charset.UnsupportedCharsetException;
 
 import com.csvreader.CsvReader;
+import com.x5.util.JarResource;
 
 public class ChunkLocale
 {
@@ -160,39 +157,12 @@ public class ChunkLocale
 
         for (String jar : jars) {
             if (jar.endsWith(".jar")) {
-                in = peekInsideJar("jar:file:"+jar, path);
+                in = JarResource.peekInsideJar("jar:file:"+jar, path);
                 if (in != null) return in;
             }
         }
 
         // (4) give up!
-        return null;
-    }
-
-    private InputStream peekInsideJar(String jar, String resourcePath)
-    {
-        String resourceURL = jar + "!" + resourcePath;
-        try {
-            URL url = new URL(resourceURL);
-            InputStream in = url.openStream();
-            if (in != null) return in;
-        } catch (MalformedURLException e) {
-        } catch (IOException e) {
-        }
-
-        try {
-            // strip URL nonsense to get valid local path
-            String zipPath = jar.replaceFirst("^jar:file:", "");
-            // strip leading slash from resource path
-            String zipResourcePath = resourcePath.replaceFirst("^/","");
-            ZipFile zipFile = new ZipFile(zipPath);
-            ZipEntry entry = zipFile.getEntry(zipResourcePath);
-            if (entry != null) {
-                return zipFile.getInputStream(entry);
-            }
-        } catch (java.io.IOException e) {
-        }
-
         return null;
     }
 

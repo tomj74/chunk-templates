@@ -8,17 +8,15 @@ import java.io.StringWriter;
 import java.io.File;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Hashtable;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipFile;
 
 import com.x5.template.filters.ChunkFilter;
 import com.x5.template.filters.RegexFilter;
+import com.x5.util.JarResource;
 
 // Project Title: Chunk
 // Description: Template Util
@@ -354,36 +352,9 @@ public class TemplateSet implements ContentSource, ChunkFactory
 
         for (String jar : jars) {
             if (jar.endsWith(".jar")) {
-                InputStream in = peekInsideJar("jar:file:"+jar, resourcePath);
+                InputStream in = JarResource.peekInsideJar("jar:file:"+jar, resourcePath);
                 if (in != null) return in;
             }
-        }
-
-        return null;
-    }
-
-    private InputStream peekInsideJar(String jar, String resourcePath)
-    {
-        String resourceURL = jar + "!" + resourcePath;
-        try {
-            URL url = new URL(resourceURL);
-            InputStream in = url.openStream();
-            if (in != null) return in;
-        } catch (MalformedURLException e) {
-        } catch (IOException e) {
-        }
-
-        try {
-            // strip URL nonsense to get valid local path
-            String zipPath = jar.replaceFirst("^jar:file:", "");
-            // strip leading slash from resource path
-            String zipResourcePath = resourcePath.replaceFirst("^/","");
-            ZipFile zipFile = new ZipFile(zipPath);
-            ZipEntry entry = zipFile.getEntry(zipResourcePath);
-            if (entry != null) {
-                return zipFile.getInputStream(entry);
-            }
-        } catch (java.io.IOException e) {
         }
 
         return null;
@@ -418,7 +389,7 @@ public class TemplateSet implements ContentSource, ChunkFactory
                         if (jar.endsWith(".jar")) {
                             m = ctxClass.getMethod("getResource", oneString);
                             URL jarURL = (URL)m.invoke(resourceContext, new Object[]{jar});
-                            InputStream in = peekInsideJar("jar:"+jarURL.toString(), resourcePath);
+                            InputStream in = JarResource.peekInsideJar("jar:"+jarURL.toString(), resourcePath);
                             if (in != null) return in;
                         }
                     }

@@ -1,5 +1,12 @@
 Release History
 
+v2.6.2 - 2014-12-30 tmcclure
+
+  Compatibility fixes for Google App Engine.
+  Goodies for custom TemplateProvider:
+    can now .setDefaultExtension(null)
+    and then theme.makeChunk('anyfile.prn')
+
 v2.6 - 2014-11-29 tmcclure
 
   Now attempts to treat object as bean if class has no public attributes.
