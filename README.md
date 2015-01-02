@@ -44,7 +44,7 @@ Features
   * Hooks for extending - add your own filters, template loader, or tag protocol.
   * Eclipse Template Editor plugin available with syntax highlighting & more.
 
-An [Eclipse plugin][2] with syntax highlighting, outline navigation of snippets, and auto-linking of snippet references is available on the [Chunk project downloads page][2].  Requires Eclipse Helios (3.6) or better.  [Plugin installation instructions][3].
+An [Eclipse plugin][3] provides syntax highlighting, outline navigation pane for snippets in .chtml files, and auto-hyperlinks of snippet references.  Requires Eclipse Helios (3.6) or better.  [Get the plugin][3].
 
 ----
 
