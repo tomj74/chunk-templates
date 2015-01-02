@@ -1,11 +1,18 @@
 Release History
 
+v2.6.3 - 2015-01-01 tmcclure
+
+  New {% data %}...{% enddata %} section markers for {% exec %}
+    Makes exec calls more clean/consistent with other block calls.
+    Provides greater flexibility in formulating exec calls.
+
 v2.6.2 - 2014-12-30 tmcclure
 
   Compatibility fixes for Google App Engine.
   Goodies for custom TemplateProvider:
     can now .setDefaultExtension(null)
-    and then theme.makeChunk('anyfile.prn')
+    and then theme.makeChunk("anyfile.prn")
+    ie, no need to separate/omit file extension from filename.
 
 v2.6 - 2014-11-29 tmcclure
 

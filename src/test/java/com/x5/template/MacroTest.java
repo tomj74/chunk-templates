@@ -248,4 +248,76 @@ public class MacroTest
 
         assertEquals("\n\n", c.toString());
     }
+
+    @Test
+    public void execDataBlockFormal()
+    {
+        Theme theme = new Theme("test/base");
+        Chunk c = theme.makeChunk("macro_test#xml_datablock_formal");
+
+        assertEquals("I said hello.\n", c.toString());
+    }
+
+    @Test
+    public void execDataBlockFormalUnquoted()
+    {
+        Theme theme = new Theme("test/base");
+        Chunk c = theme.makeChunk("macro_test#xml_datablock_formal_unquoted");
+
+        assertEquals("I said hello.\n", c.toString());
+    }
+
+    @Test
+    public void execDataBlockInformal()
+    {
+        Theme theme = new Theme("test/base");
+        Chunk c = theme.makeChunk("macro_test#xml_datablock_informal");
+
+        assertEquals("I said hello.\n", c.toString());
+    }
+
+    @Test
+    public void execDataBlockShorthand()
+    {
+        Theme theme = new Theme("test/base");
+        Chunk c = theme.makeChunk("macro_test#xml_datablock_shorthand");
+
+        assertEquals("I said hello.\n", c.toString());
+    }
+
+    @Test
+    public void execDataBlockBodyFirst()
+    {
+        Theme theme = new Theme("test/base");
+        Chunk c = theme.makeChunk("macro_test#xml_datablock_body_first");
+
+        assertEquals("I said hello.\n", c.toString());
+    }
+
+    @Test
+    public void execDataBlockBodyFirstOptionalEndMarker()
+    {
+        Theme theme = new Theme("test/base");
+        Chunk c = theme.makeChunk("macro_test#xml_datablock_body_first_optional_endmarker");
+
+        assertEquals("I said hello.\n", c.toString());
+    }
+
+    @Test
+    public void execDataBlockUnmarkedBody()
+    {
+        Theme theme = new Theme("test/base");
+        Chunk c = theme.makeChunk("macro_test#xml_datablock_unmarked_body");
+
+        assertEquals("I said hello.\n", c.toString());
+    }
+
+    @Test
+    public void execDataBlockUnmarkedBodyFirst()
+    {
+        Theme theme = new Theme("test/base");
+        Chunk c = theme.makeChunk("macro_test#xml_datablock_unmarked_body_first");
+
+        assertEquals("I said hello.\n", c.toString());
+    }
 }

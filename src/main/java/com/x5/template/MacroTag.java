@@ -18,23 +18,23 @@ import static net.minidev.json.parser.JSONParser.MODE_RFC4627;
 
 public class MacroTag extends BlockTag
 {
-    private String templateRef;
-    private Snippet template;
-    private Map<String,Object> macroDefs;
-
-    private List<String> inputErrs = null;
-
     public static final String MACRO_MARKER = "exec";
     public static final String MACRO_END_MARKER = "/exec";
 
     private static final int ARG_START = MACRO_MARKER.length()+2;
 
     // macro can take args in many formats
-    private static final String FMT_CHUNK       = "chunk";
     private static final String FMT_XML         = "xml";
     private static final String FMT_JSON_LAX    = "json";
     private static final String FMT_JSON_STRICT = "json-strict";
     private static final String FMT_ORIGINAL    = "original";
+
+    private String templateRef;
+    private Snippet template;
+    private Map<String,Object> macroDefs;
+    private String dataFormat = FMT_ORIGINAL;
+
+    private List<String> inputErrs = null;
 
     public MacroTag()
     {
@@ -42,16 +42,14 @@ public class MacroTag extends BlockTag
 
     public MacroTag(String tagName, Snippet body)
     {
-        String defFormat = FMT_ORIGINAL; // chunk is the standard format
-
         if (tagName.length() > ARG_START) {
             templateRef = tagName.substring(ARG_START).trim();
 
             // check for nonstandard requested format
             int spacePos = templateRef.indexOf(' ');
             if (spacePos > 0) {
-                defFormat = templateRef.substring(spacePos+1).toLowerCase();
-                if (defFormat.charAt(0) == '@') defFormat = defFormat.substring(1);
+                dataFormat = templateRef.substring(spacePos+1).toLowerCase();
+                if (dataFormat.charAt(0) == '@') dataFormat = dataFormat.substring(1);
                 templateRef = templateRef.substring(0, spacePos);
             }
 
@@ -59,7 +57,7 @@ public class MacroTag extends BlockTag
             // 1st arg can also be inline exec args format eg @json
             if (templateRef.charAt(0) == '@') {
                 if (!templateRef.startsWith("@inline") && spacePos < 0) {
-                    defFormat = templateRef.substring(1).toLowerCase();
+                    dataFormat = templateRef.substring(1).toLowerCase();
                 }
                 templateRef = null;
             }
@@ -73,7 +71,7 @@ public class MacroTag extends BlockTag
         if (templateRef == null) {
             parseInlineTemplate(bodyDouble);
         }
-        parseDefs(bodyDouble, defFormat);
+        parseDefs(bodyDouble);
     }
 
     private void parseInlineTemplate(Snippet body)
@@ -85,6 +83,8 @@ public class MacroTag extends BlockTag
             if (part.isTag()) {
                 SnippetTag tag = (SnippetTag)part;
                 if (tag.getTag().equals("./body")) {
+                    bodyEnd = i;
+                } else if (tag.getTag().startsWith(".data")) {
                     bodyEnd = i;
                 } else if (tag.getTag().equals(".body")) {
                     // everything after this marker is the template
@@ -98,7 +98,7 @@ public class MacroTag extends BlockTag
                     this.template = inlineSnippet;
 
                     // strip inline template away, no need to parse for args
-                    for (int j=parts.size()-1; j>=i; j--) {
+                    for (int j=bodyEnd-1; j>=i; j--) {
                         parts.remove(j);
                     }
                     return;
@@ -107,19 +107,80 @@ public class MacroTag extends BlockTag
         }
     }
 
-    private void parseDefs(Snippet body, String defFormat)
+    private void parseDefs(Snippet body)
     {
-        if (defFormat.equals(FMT_ORIGINAL)) {
+        body = stripCasing(body);
+
+        if (dataFormat.equals(FMT_ORIGINAL)) {
             parseDefsOriginal(body);
-        } else if (defFormat.equals(FMT_CHUNK)) {
-            parseDefsSimplified(body);
-        } else if (defFormat.equals(FMT_JSON_STRICT)) {
+        } else if (dataFormat.equals(FMT_JSON_STRICT)) {
             parseDefsJsonStrict(body);
-        } else if (defFormat.equals(FMT_JSON_LAX)) {
+        } else if (dataFormat.equals(FMT_JSON_LAX)) {
             parseDefsJsonLax(body);
-        } else if (defFormat.equals(FMT_XML)) {
+        } else if (dataFormat.equals(FMT_XML)) {
             parseDefsXML(body);
         }
+    }
+
+    private Snippet stripCasing(Snippet body)
+    {
+        List<SnippetPart> parts = body.getParts();
+        if (parts == null) return body;
+
+        int dataStart = -1;
+        int dataEnd = parts.size();
+        for (int i=0; i<dataEnd; i++) {
+            SnippetPart part = parts.get(i);
+            if (part.isTag()) {
+                SnippetTag tag = (SnippetTag)part;
+                String tagMeat = tag.getTag();
+                if (tagMeat.startsWith(".data")) {
+                    parseDataFormat(tagMeat);
+                    dataStart = i;
+                } else if (tagMeat.equals("./data")) {
+                    dataEnd = i;
+                }
+            }
+        }
+
+        // never found {% data %} tag?
+        if (dataStart == -1) return body;
+
+        Snippet dataSnippet = new Snippet(parts, dataStart+1, dataEnd);
+        if (this.templateRef == null && this.template == null) {
+            // no {% body %} block, so inline template is
+            // everything minus the {% data %} block
+            List<SnippetPart> preData = parts.subList(0, dataStart);
+            LoopTag.smartTrimSnippetParts(preData, false);
+            if (dataEnd < parts.size()) {
+                List<SnippetPart> postData = parts.subList(dataEnd+1, parts.size());
+                LoopTag.smartTrimSnippetParts(postData, false);
+                parts.remove(dataEnd);
+            }
+            for (int i=dataEnd-1; i>=dataStart; i--) {
+                parts.remove(i);
+            }
+            this.template = body;
+        }
+        return dataSnippet;
+    }
+
+    private void parseDataFormat(String dataTag)
+    {
+        if (dataTag.length() < 6) return;
+
+        String params = dataTag.substring(5);
+        String format = params;
+
+        Map<String,Object> opts = Attributes.parse(params);
+        if (opts != null && opts.containsKey("format")) {
+            format = (String)opts.get("format");
+        }
+
+        format = format.trim();
+        if (format.startsWith("@")) format = format.substring(1);
+
+        this.dataFormat = format;
     }
 
     @SuppressWarnings("unchecked")
@@ -198,11 +259,6 @@ public class MacroTag extends BlockTag
         this.macroDefs = defs;
     }
 
-    private void parseDefsSimplified(Snippet body)
-    {
-        // TODO
-    }
-
     private void parseDefsXML(Snippet body)
     {
         body.setOrigin(null); // don't render ORIGIN comment
@@ -248,7 +304,7 @@ public class MacroTag extends BlockTag
         if (parts == null) return;
 
         for (int i=0; i<parts.size(); i++) {
-            // seek until a tag definition {~tag_def=} is found
+            // seek until a tag definition {$tag_def=} is found
             SnippetPart part = parts.get(i);
             if (part.isTag()) {
                 String tagText = ((SnippetTag)part).getTag();
@@ -269,7 +325,7 @@ public class MacroTag extends BlockTag
                         }
                     }
                 } else {
-                    // some vars are defined simply, like so {~name=Bob} or {~name = Bob}
+                    // some vars are defined simply, like so {$name=Bob} or {$name = Bob}
                     String[] simpleDef = getSimpleDef(tagText);
                     if (simpleDef != null) {
                         saveDef(simpleDef[0],simpleDef[1],body.getOrigin());
@@ -396,12 +452,12 @@ public class MacroTag extends BlockTag
         }
         macro.render(out, context);
     }
-    
+
     private Object resolvePointers(Chunk context, String origin, Object o, int depth)
     {
         // don't recurse forever...
         if (depth > 10) return o;
-        
+
         if (o instanceof String) o = Snippet.getSnippet((String)o, origin);
         if (o instanceof Snippet) {
             Snippet s = (Snippet)o;

@@ -58,56 +58,6 @@ Once I ate a burrito and drank some sangria at Harry's house and I had awful ind
 
 
 {!---------------------------------------------}
-{#simplified_syntax_test_loser}
-{!-- Macro arg-formatting is very flexible.  "chunk" is the default.
-
-     The default arg-passing format is designed for maximum readability
-     and minimum typing/escaping of <html values="xxx">.
-     
-   * Lines that begin with ~ (after trimming any leading whitespace)
-     mark a new label.
-     
-   * Values begin after a single colon (:).
-     * Leading and trailing whitespace are trimmed from the value.
-     * Trailing newlines are not trimmed from a multi-line value.
-
-   * Where leading or trailing whitespace needs to be precisely preserved,
-     three quote-styles are available:
-       'single quote' (may contain unescaped single quotes)
-       "double quote" (may contain unescaped double quotes)
-       {{curly-brace quote}} (may contain unescaped single/double quotes)
-
-   * Lines that begin with tilde (~) within {{curly-brace quotes}} will not
-     be interpreted as a value label.
-     
-   * Later repetitions of a label will overwrite the value for that macro call.
-   
-  DECIDED NOT TO IMPLEMENT THIS FORMAT - "chunk" is now synonymous with "original"
-   
-  --}
-{% exec #SIMPLE_TEST_MACRO %}
- $kind_of_food  : burrito
- $kind_of_drink : sangria
- $host          : {$host_name}
- $quoted_value  : ' gherkin : schmerkin '
- $quoted_value2 : " gherkin : schmerkin "
- $four_colons   : ::::
- 
- $multiline_value :
-This value spans<br/>
-multiple lines!<br/>
-
- $multiline_value_preserve_whitespace : {{
-This value spans<br/>
-multiple lines!<br/>
-}}
-
- $some_data     : [[item,price],[spoon,.2],[fork,.3],[knife,1.03]]
-{% endexec %}
-{#}
-
-
-{!---------------------------------------------}
 {#simplified_syntax_test_json_strict}
 {!-- Strict json is also available as a macro-arg format.
 
@@ -313,6 +263,129 @@ All:
 {% loop in $items %}
 {$id} - {$name} {% $price|sprintf($%,.2f) %}<br/>
 {% endloop %}
+{#}
+
+
+{!---------------------------------------------}
+{#xml_datablock_formal}
+{!-- xml in data block, formal style. --}
+{% exec %}
+  {% data format="xml" %}
+<values>
+ <elt greeting="hello" />
+</values>
+  {% enddata %}
+  {% body %}
+I said {$elt@greeting}.
+  {% endbody %}
+{% endexec %}
+{#}
+
+
+{!---------------------------------------------}
+{#xml_datablock_formal_unquoted}
+{!-- xml in data block, formal style no quotes. --}
+{% exec %}
+  {% data format=xml %}
+<values>
+ <elt greeting="hello" />
+</values>
+  {% enddata %}
+  {% body %}
+I said {$elt@greeting}.
+  {% endbody %}
+{% endexec %}
+{#}
+
+
+{!---------------------------------------------}
+{#xml_datablock_informal}
+{!-- xml in data block, informal style. --}
+{% exec %}
+  {% data @xml %}
+<values>
+ <elt greeting="hello" />
+</values>
+  {% enddata %}
+  {% body %}
+I said {$elt@greeting}.
+  {% endbody %}
+{% endexec %}
+{#}
+
+
+{!---------------------------------------------}
+{#xml_datablock_shorthand}
+{!-- xml in data block, shorthand style. --}
+{% exec %}
+  {% data xml %}
+<values>
+ <elt greeting="hello" />
+</values>
+  {% enddata %}
+  {% body %}
+I said {$elt@greeting}.
+  {% endbody %}
+{% endexec %}
+{#}
+
+
+{!---------------------------------------------}
+{#xml_datablock_body_first}
+{!-- xml in data block, body first. --}
+{% exec %}
+  {% body %}
+I said {$elt@greeting}.
+  {% endbody %}
+  {% data xml %}
+<values>
+ <elt greeting="hello" />
+</values>
+  {% enddata %}
+{% endexec %}
+{#}
+
+
+{!---------------------------------------------}
+{#xml_datablock_body_first_optional_endmarker}
+{!-- xml in data block, omit optional endmarker. --}
+{% exec %}
+  {% body %}
+I said {$elt@greeting}.
+  {% data xml %}
+<values>
+ <elt greeting="hello" />
+</values>
+  {% enddata %}
+{% endexec %}
+{#}
+
+
+{!---------------------------------------------}
+{#xml_datablock_unmarked_body}
+{!-- xml in data block, unmarked body. --}
+{% exec %}
+  {% data xml %}
+<values>
+ <elt greeting="hello" />
+</values>
+  {% enddata %}
+I said {$elt@greeting}.
+{% endexec %}
+{#}
+
+
+{!---------------------------------------------}
+{#xml_datablock_unmarked_body_first}
+{!-- xml in data block, unmarked body first. --}
+{% exec %}
+I said {$elt@greeting}.
+  {% data xml %}
+<values>
+ <elt greeting="hello" />
+</values>
+  {% enddata %}
+{% endexec %}
 {#}
 
 

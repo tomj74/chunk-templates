@@ -114,9 +114,14 @@ public class LoopTag extends BlockTag
 
         String dataVar = params[2];
 
-        this.options = _parseAttributes(paramString);
+        this.options = Attributes.parse(paramString);
         if (options == null) options = new HashMap<String,Object>();
         options.put("data",dataVar);
+
+        // counter is an alias for counter_tag
+        if (options.containsKey("counter")) {
+            options.put("counter_tag", options.get("counter"));
+        }
 
         if (params.length > 3) {
             if (params[3].equals("as")) {
@@ -161,41 +166,18 @@ public class LoopTag extends BlockTag
         }
     }
 
-    private static final Pattern PARAM_AND_VALUE =
-        Pattern.compile(" ([a-zA-Z0-9_-]+)=(\"([^\"]*)\"|'([^\']*)'|([^ \"\']+))");
-
-    private Map<String,Object> _parseAttributes(String params)
-    {
-        // find and save all xyz="abc" style attributes
-        Matcher m = PARAM_AND_VALUE.matcher(params);
-        HashMap<String,Object> opts = null;
-        while (m.find()) {
-            m.group(0); // need to do this for subsequent number to be correct?
-            String paramName = m.group(1);
-            if (paramName != null) {
-                if (opts == null) opts = new HashMap<String,Object>();
-                String doubleQuoted = m.group(3);
-                String singleQuoted = m.group(4);
-                String unQuoted = m.group(5);
-                String paramValue = doubleQuoted;
-                if (paramValue == null) paramValue = singleQuoted;
-                if (paramValue == null) paramValue = unQuoted;
-                opts.put(paramName, paramValue);
-                // counter is an alias for counter_tag
-                if (paramName.equals("counter")) {
-                    opts.put("counter_tag", paramValue);
-                }
-            }
-        }
-        return opts;
-    }
-
-    // ^loop data="~data" template="#..." no_data="#..." range="..." per_page="x" page="x"
+    // {% loop data="~data" template="#..." no_data="#..." range="..." per_page="x" page="x" %}
     private void parseAttributes(String params)
     {
-        Map<String,Object> opts = _parseAttributes(params);
+        Map<String,Object> opts = Attributes.parse(params);
 
         if (opts == null) return;
+
+        // counter is an alias for counter_tag
+        if (opts.containsKey("counter")) {
+            opts.put("counter_tag", opts.get("counter"));
+        }
+
         this.options = opts;
 
         this.rowTemplate = (String)opts.get("template");
