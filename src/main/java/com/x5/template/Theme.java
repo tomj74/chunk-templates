@@ -15,6 +15,7 @@ public class Theme implements ContentSource, ChunkFactory
     private String themesFolder;
     private String themeLayerNames;
     private String fileExtension;
+    private int cacheMins = 0;
 
     private static final String DEFAULT_THEMES_FOLDER = "themes";
 
@@ -25,6 +26,28 @@ public class Theme implements ContentSource, ChunkFactory
     public Theme()
     {
         this(null, null, null);
+    }
+
+    public Theme(ThemeConfig config)
+    {
+        this(config.getThemeFolder(), config.getLayerNames(), config.getDefaultExtension());
+        this.setDirtyInterval(config.getCacheMinutes());
+        this.localeCode = config.getLocaleCode();
+        if (config.hideErrors()) {
+            this.setErrorHandling(false, config.getErrorLog());
+        }
+
+        ChunkFilter[] filters = config.getFilters();
+        if (filters != null) {
+            for (ChunkFilter filter : filters) {
+                this.registerFilter(filter);
+            }
+        }
+
+        String encoding = config.getEncoding();
+        if (encoding != null) {
+            this.setEncoding(encoding);
+        }
     }
 
     public Theme(ContentSource templates)
@@ -94,15 +117,17 @@ public class Theme implements ContentSource, ChunkFactory
 
         String[] layerNames = parseLayerNames(themeLayerNames);
         if (layerNames == null) {
-            TemplateSet simple = new TemplateSet(themesFolder,fileExtension,0);
+            TemplateSet simple = new TemplateSet(themesFolder, fileExtension, cacheMins);
             if (!renderErrs) simple.signalFailureWithNull();
             themeLayers.add(simple);
         } else {
             for (int i=0; i<layerNames.length; i++) {
-                TemplateSet x = new TemplateSet(this.themesFolder + layerNames[i],fileExtension,0);
+                TemplateSet x = new TemplateSet(this.themesFolder + layerNames[i], fileExtension, cacheMins);
                 x.setLayerName(layerNames[i]);
-                // important: do not return pretty HTML-formatted error strings
-                // when template can not be located.
+                // do not return pretty HTML-formatted error strings
+                // when template can not be located -- with multiple
+                // layers, a null response is required to search the
+                // next layer in the stack for the missing template.
                 x.signalFailureWithNull();
                 themeLayers.add(x);
             }
@@ -123,18 +148,25 @@ public class Theme implements ContentSource, ChunkFactory
 
     private String[] parseLayerNames(String themeLayerNames)
     {
-        if (themeLayerNames == null) return null;
+        if (themeLayerNames == null || themeLayerNames.trim().length() == 0) {
+            return null;
+        }
 
         return themeLayerNames.split(" *, *");
     }
 
     public void setDirtyInterval(int minutes)
     {
-        // propagate setting down to each layer
-        ArrayList<TemplateSet> templateSets = getTemplateSets();
-        if (templateSets != null) {
-            for (TemplateSet layer : templateSets) {
-                layer.setDirtyInterval(minutes);
+        if (this.themeLayers.size() == 0) {
+            // lazy init has not happened yet
+            this.cacheMins = minutes;
+        } else {
+            // propagate setting down to each layer
+            ArrayList<TemplateSet> templateSets = getTemplateSets();
+            if (templateSets != null) {
+                for (TemplateSet layer : templateSets) {
+                    layer.setDirtyInterval(minutes);
+                }
             }
         }
     }
@@ -259,7 +291,8 @@ public class Theme implements ContentSource, ChunkFactory
     public Chunk makeChunk()
     {
         Chunk c = new Chunk();
-        c.setMacroLibrary(this,this);
+        // provide theme path context and user-provided filters
+        c.setMacroLibrary(this, this);
         // make sure chunk inherits theme settings
         shareContentSources(c);
         c.setLocale(localeCode);

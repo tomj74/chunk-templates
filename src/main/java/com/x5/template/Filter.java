@@ -57,6 +57,8 @@ public class Filter
             filterName = filter.substring(0,parenPos);
             filterArgs = parseArgs(filter.substring(parenPos+1));
         } else {
+            // this is awful, need to change ChunkFilter interface to
+            // give filterName a dedicated argument in the apply call.
             filterArgs = new String[]{filterName};
         }
 

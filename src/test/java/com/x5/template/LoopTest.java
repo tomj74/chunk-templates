@@ -56,7 +56,7 @@ public class LoopTest
         String[] list = new String[]{"Frodo","Bilbo","Sam"};
         c.set("list", list);
         c.append("{^loop data=\"~list\" trim=\"false\" array_tags=\"true\"}\n{~DATA[0]}<br/>\n{/loop}");
-        assertEquals("\nFrodo<br/>\n\nBilbo<br/>\n\nSam<br/>\n",c.toString());
+        assertEquals("\nFrodo<br/>\n\nBilbo<br/>\n\nSam<br/>\n", c.toString());
     }
 
     @Test
@@ -78,7 +78,7 @@ public class LoopTest
         Chunk c = theme.makeChunk("chunk_test#looptest_less_simple_block_loop");
         String widgets = "[[widget_id,widget_name],[1,thingamabob],[2,doodad]]";
         c.set("widgets",widgets);
-        assertEquals(" 1 thingamabob<br/>\n <hr/>\n 2 doodad<br/>\n",c.toString());
+        assertEquals(" 1 thingamabob<br/>\n <hr/>\n 2 doodad<br/>\n", c.toString());
     }
 
     @Test
@@ -87,7 +87,7 @@ public class LoopTest
         Theme theme = new Theme("themes","test/base,test/override");
 
         Chunk c = theme.makeChunk("chunk_test#looptest_less_simple_block_loop");
-        assertEquals(" <i>No widgets!</i>\n",c.toString());
+        assertEquals(" <i>No widgets!</i>\n", c.toString());
     }
 
     @Test
@@ -99,7 +99,7 @@ public class LoopTest
         String widgets = "[[widget_id,widget_name],[1,thingamabob],[2,doodad]]";
         c.set("widgets",widgets);
 
-        assertEquals("1 thingamabob<br/>\n<hr/>2 doodad<br/>\n\n",c.toString());
+        assertEquals("1 thingamabob<br/>\n<hr/>2 doodad<br/>\n\n", c.toString());
     }
 
     @Test
@@ -111,7 +111,7 @@ public class LoopTest
         String widgets = "[[widget_id,widget_name],[1,thingamabob],[2,doodad]]";
         c.set("widgets",widgets);
 
-        assertEquals("1 thingamabob<br/>\n<hr/>\n2 doodad<br/>\n\n",c.toString());
+        assertEquals("1 thingamabob<br/>\n<hr/>\n2 doodad<br/>\n\n", c.toString());
     }
 
     @Test
@@ -123,7 +123,7 @@ public class LoopTest
         String widgets = "[[widget_id,widget_name],[1,thingamabob],[2,doodad]]";
         c.set("widgets",widgets);
 
-        assertEquals("1 thingamabob<br/>\nchunk_test#not_exist2 doodad<br/>\n\n",c.toString());
+        assertEquals("1 thingamabob<br/>\nchunk_test#not_exist2 doodad<br/>\n\n", c.toString());
     }
 
     @Test
@@ -164,7 +164,7 @@ public class LoopTest
         Chunk c = theme.makeChunk("chunk_test#inline_if_nocollapse");
         c.set("abc",new String[]{"a","b","c"});
 
-        assertEquals("Content\na\nb\nc\nContent\na\nb\nc\n",c.toString());
+        assertEquals("Content\na\nb\nc\nContent\na\nb\nc\n", c.toString());
     }
 
     @Test
@@ -189,7 +189,8 @@ public class LoopTest
         String widgets = "[[widget_id,widget_name],[1,thingamabob],[2,doodad]]";
         c.set("widgets",widgets);
 
-        assertEquals(c.toString()," 1 thingamabob<br/>\n <hr/>\n 2 doodad<br/>\n");
+        String target = " 1 thingamabob<br/>\n <hr/>\n 2 doodad<br/>\n";
+        assertEquals(target, c.toString());
     }
 
     @Test
@@ -201,7 +202,8 @@ public class LoopTest
         String widgets = "[[widget_id,widget_name],[1,thingamabob],[2,doodad],[3,gadget]]";
         c.set("widgets",widgets);
 
-        assertEquals(c.toString(),"<div class=\"first\">1</div>\n<div class=\"\">2</div>\n<div class=\"last\">3</div>\n");
+        String target = "<div class=\"first\">1</div>\n<div class=\"\">2</div>\n<div class=\"last\">3</div>\n";
+        assertEquals(target, c.toString());
     }
 
     @Test
@@ -213,7 +215,60 @@ public class LoopTest
         String widgets = "[[widget_id,widget_name],[1,thingamabob],[2,doodad],[3,gadget]]";
         c.set("widgets",widgets);
 
-        assertEquals(c.toString(),"<div class=\"first\">1</div>\n<div class=\"\">2</div>\n<div class=\"last\">3</div>\n");
+        String target = "<div class=\"first\">1</div>\n<div class=\"\">2</div>\n<div class=\"last\">3</div>\n";
+        assertEquals(target, c.toString());
+    }
+
+    @Test
+    public void testFirstLastEdge()
+    {
+        Theme theme = new Theme("themes","test/base,test/override");
+
+        Chunk c = theme.makeChunk("chunk_test#looptest_first_last_edge");
+        String widgets = "[[widget_id,widget_name],[1,thingamabob],[2,doodad],[3,gadget]]";
+        c.set("widgets",widgets);
+
+        String target = "<div class=\"first\">1</div>\n<div class=\"\">2</div>\n<div class=\"last\">3</div>\n";
+        assertEquals(target, c.toString());
+    }
+
+    @Test
+    public void testFirstLastEdgeOnlyOne()
+    {
+        Theme theme = new Theme("themes","test/base,test/override");
+
+        Chunk c = theme.makeChunk("chunk_test#looptest_first_last_edge");
+        String widgets = "[[widget_id,widget_name],[1,thingamabob]]";
+        c.set("widgets",widgets);
+
+        String target = "<div class=\"first last\">1</div>\n";
+        assertEquals(target, c.toString());
+    }
+
+    @Test
+    public void testFirstLastNamedEdge()
+    {
+        Theme theme = new Theme("themes","test/base,test/override");
+
+        Chunk c = theme.makeChunk("chunk_test#looptest_first_last_named_edge");
+        String widgets = "[[widget_id,widget_name],[1,thingamabob],[2,doodad],[3,gadget]]";
+        c.set("widgets",widgets);
+
+        String target = "<div class=\"first\">1</div>\n<div class=\"\">2</div>\n<div class=\"last\">3</div>\n";
+        assertEquals(target, c.toString());
+    }
+
+    @Test
+    public void testFirstLastNamedEdgeOnlyOne()
+    {
+        Theme theme = new Theme("themes","test/base,test/override");
+
+        Chunk c = theme.makeChunk("chunk_test#looptest_first_last_named_edge");
+        String widgets = "[[widget_id,widget_name],[1,thingamabob]]";
+        c.set("widgets",widgets);
+
+        String target = "<div class=\"first last\">1</div>\n";
+        assertEquals(target, c.toString());
     }
 
     @Test
@@ -225,7 +280,8 @@ public class LoopTest
         String widgets = "[[widget_id,widget_name],[1,thingamabob],[2,doodad],[3,gadget]]";
         c.set("widgets",widgets);
 
-        assertEquals(c.toString(),"<div class=\"first\">1</div>\n<div class=\"\">2</div>\n<div class=\"last\">3</div>\n");
+        String target = "<div class=\"first\">1</div>\n<div class=\"\">2</div>\n<div class=\"last\">3</div>\n";
+        assertEquals(target, c.toString());
     }
 
     @Test
@@ -237,7 +293,8 @@ public class LoopTest
         String widgets = "[[widget_id,widget_name],[1,thingamabob],[2,doodad]]";
         c.set("widgets",widgets);
 
-        assertEquals(c.toString()," 0 1 1 thingamabob<br/>\n <hr/>\n 1 2 2 doodad<br/>\n");
+        String target = " 0 1 1 thingamabob<br/>\n <hr/>\n 1 2 2 doodad<br/>\n";
+        assertEquals(target, c.toString());
     }
 
     @Test
@@ -249,7 +306,8 @@ public class LoopTest
         String widgets = "[[widget_id,widget_name],[1,thingamabob],[2,doodad]]";
         c.set("widgets",widgets);
 
-        assertEquals(c.toString()," 0 1 thingamabob<br/>\n <hr/>\n 1 2 doodad<br/>\n");
+        String target = " 0 1 thingamabob<br/>\n <hr/>\n 1 2 doodad<br/>\n";
+        assertEquals(target, c.toString());
     }
 
     @Test
@@ -261,7 +319,8 @@ public class LoopTest
         String widgets = "[[widget_id,widget_name],[1,thingamabob],[2,doodad]]";
         c.set("widgets",widgets);
 
-        assertEquals(c.toString()," 0 1 5 thingamabob<br/>\n <hr/>\n 1 2 6 doodad<br/>\n");
+        String target = " 0 1 5 thingamabob<br/>\n <hr/>\n 1 2 6 doodad<br/>\n";
+        assertEquals(target, c.toString());
     }
 
     @Test
@@ -273,7 +332,8 @@ public class LoopTest
         String widgets = "[[widget_id,widget_name],[1,thingamabob],[2,doodad]]";
         c.set("widgets",widgets);
 
-        assertEquals(c.toString()," 5 thingamabob<br/>\n <hr/>\n 3 doodad<br/>\n");
+        String target = " 5 thingamabob<br/>\n <hr/>\n 3 doodad<br/>\n";
+        assertEquals(target, c.toString());
     }
 
     @Test
@@ -332,7 +392,7 @@ public class LoopTest
         c.set("widgets", widgets);
 
         String output = c.toString();
-        assertEquals(output,"WEBATDPLUS\n");
+        assertEquals("WEBATDPLUS\n", output);
     }
 
     @Test
@@ -347,7 +407,7 @@ public class LoopTest
         c.set("widgets", widgets);
 
         String output = c.toString();
-        assertEquals(output,"WEBATDPLUS\n");
+        assertEquals("WEBATDPLUS\n", output);
     }
 
     @Test
@@ -362,7 +422,7 @@ public class LoopTest
         c.set("widgets", widgets);
 
         String output = c.toString();
-        assertEquals(output,"WEBATDPLUS\n");
+        assertEquals("WEBATDPLUS\n", output);
     }
 
     @Test
@@ -373,7 +433,7 @@ public class LoopTest
         Chunk c = theme.makeChunk("chunk_test#tree_test");
 
         String output = theme.fetch("chunk_test#tree_test_target_output");
-        assertEquals(output,c.toString());
+        assertEquals(output, c.toString());
     }
 
     @Test
@@ -412,12 +472,12 @@ public class LoopTest
         c.set("widgets", widgets);
 
         String outputA = c.toString();
-        assertEquals("12",outputA);
+        assertEquals("12", outputA);
 
         c.unset("widgets");
 
         String outputB = c.toString();
-        assertEquals("EMPTY",outputB);
+        assertEquals("EMPTY", outputB);
     }
 
     @Test
@@ -433,11 +493,11 @@ public class LoopTest
         c.set("widgets", widgets);
 
         String outputA = c.toString();
-        assertEquals("12",outputA);
+        assertEquals("12", outputA);
 
         c.unset("widgets");
 
         String outputB = c.toString();
-        assertEquals("EMPTY",outputB);
+        assertEquals("EMPTY", outputB);
     }
 }

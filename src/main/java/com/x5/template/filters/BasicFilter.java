@@ -64,6 +64,8 @@ public abstract class BasicFilter implements ChunkFilter
         new OnDefinedFilter(),
         new OnMatchFilter(),
         new OrdinalSuffixFilter(),
+        new PadLeftFilter(),
+        new PadRightFilter(),
         new QuickCalcFilter(),
         new RegexFilter(),
         new SelectedFilter(),

@@ -1,5 +1,11 @@
 Release History
 
+v2.6.4 - 2015-06-17 tmcclure
+
+  Improves loop option for place tags: first_last="first,last,place"
+  Adds ThemeConfig class to make Spring MVC integration easier.
+  Adds new filters rpad and lpad.
+
 v2.6.3 - 2015-01-01 tmcclure
 
   New {% data %}...{% enddata %} section markers for {% exec %}

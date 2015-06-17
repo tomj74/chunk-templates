@@ -1,0 +1,1 @@
+{#invalid_utf8}ÀÁÂÃ {$x|sprintf(%.2f)}{#}

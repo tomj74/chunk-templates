@@ -461,6 +461,47 @@ public class FilterTest
     }
 
     @Test
+    public void testPadRight()
+    {
+        Chunk c = new Chunk();
+        c.set("blank", "");
+        c.set("not_blank", "glowing");
+        c.append("+{$blank|rpad}+ +{$not_blank|rpad}{$not_blank}+ +{$undefined|rpad|ondefined(oops):pass}+");
+        c.append(" +{$undefined|rpad}+");
+        assertEquals("++ +glowing glowing+ +pass+ +{$undefined|rpad}+", c.toString());
+    }
+
+    @Test
+    public void testPadLeft()
+    {
+        Chunk c = new Chunk();
+        c.set("blank", "");
+        c.set("not_blank", "glowing");
+        c.append("+{$blank|lpad}+ +{$not_blank}{$not_blank|lpad}+ +{$undefined|lpad|ondefined(oops):pass}+");
+        assertEquals("++ +glowing glowing+ +pass+", c.toString());
+    }
+
+    @Test
+    public void testPadRightArgs()
+    {
+        Chunk c = new Chunk();
+        c.set("blank", "");
+        c.set("not_blank", "glowing");
+        c.append("+{$blank|rpad(HOT,3)}+ +{$not_blank|rpad(HOT)}+ +{$not_blank|rpad(HOT,3)}+");
+        assertEquals("++ +glowingHOT+ +glowingHOTHOTHOT+", c.toString());
+    }
+
+    @Test
+    public void testPadLeftArgs()
+    {
+        Chunk c = new Chunk();
+        c.set("blank", "");
+        c.set("not_blank", "glowing");
+        c.append("+{$blank|lpad(HOT,3)}+ +{$not_blank|lpad(HOT)}+ +{$not_blank|lpad(HOT,3)}+");
+        assertEquals("++ +HOTglowing+ +HOTHOTHOTglowing+", c.toString());
+    }
+
+    @Test
     public void testUC()
     {
         Chunk c = new Chunk();

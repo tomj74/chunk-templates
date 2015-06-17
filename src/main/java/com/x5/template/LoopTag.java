@@ -28,10 +28,9 @@ public class LoopTag extends BlockTag
     // for speed
     private Chunk rowX;
 
-    //private static final String ON_EMPTY_MARKER = "{~.onEmpty}";
-    //private static final String DIVIDER_MARKER = "{~.divider}";
-    private static final String FIRST_MARKER = "is_first";
-    private static final String LAST_MARKER = "is_last";
+    private static final String FIRST_MARKER = "first";
+    private static final String LAST_MARKER = "last";
+    private static final String PLACE_TAG = "place";
 
     public static void main(String[] args)
     {
@@ -66,7 +65,7 @@ public class LoopTag extends BlockTag
         parseParams(params);
 
         // this constructor is only called when the loop tag has no body
-        // eg {^loop data="~mydata" template="#test_row" no_data="#test_empty" divider="<hr/>"}
+        // eg {% loop data="$mydata" template="#test_row" no_data="#test_empty" divider="<hr/>" %}
         initWithoutBlock(origin);
     }
 
@@ -310,6 +309,7 @@ public class LoopTag extends BlockTag
         String counterTag = null;
         String firstRunTag = null;
         String lastRunTag = null;
+        String placeTag = null;
         String objectKeyLabel = null;
         String objectValueLabel = null;
 
@@ -356,12 +356,18 @@ public class LoopTag extends BlockTag
                     String[] userFirstLast = tagNames.split(",");
                     firstRunTag = eatTagSymbol(userFirstLast[0]);
                     lastRunTag  = eatTagSymbol(userFirstLast[1]);
+                    if (userFirstLast.length > 2) {
+                        placeTag = eatTagSymbol(userFirstLast[2]);
+                    }
                 }
                 if (firstRunTag == null || firstRunTag.length() == 0) {
                     firstRunTag = FIRST_MARKER;
                 }
                 if (lastRunTag == null || lastRunTag.length() == 0) {
                     lastRunTag = LAST_MARKER;
+                }
+                if (placeTag == null || placeTag.length() == 0) {
+                    placeTag = PLACE_TAG;
                 }
             }
             if (options.containsKey("valname")) {
@@ -379,13 +385,7 @@ public class LoopTag extends BlockTag
             this.rowX.append( rowSnippet );
         }
         // make sure cached rowX chunk matches context locale
-        if (context.getLocale() == null) {
-            if (rowX.getLocale() != null) rowX.setLocale(null);
-        } else {
-            if (rowX.getLocale() == null || rowX.getLocale() != context.getLocale()) {
-                rowX.setLocale(context.getLocale().toString());
-            }
-        }
+        rowX.setLocale(context.getLocale());
 
         String prefix = null;
         if (options != null && options.containsKey("name")) {
@@ -499,16 +499,29 @@ public class LoopTag extends BlockTag
             if (firstRunTag != null) {
                 if (counter == 0) {
                     rowX.set(firstRunTag, "TRUE");
-                    if (prefix != null) rowX.set(prefix + "." + firstRunTag, "TRUE");
+                    rowX.set(placeTag, firstRunTag);
+                    if (prefix != null) {
+                        rowX.set(prefix + "." + firstRunTag, "TRUE");
+                        rowX.set(prefix + "." + placeTag, firstRunTag);
+                    }
                 } else if (counter == 1) {
                     rowX.unset(firstRunTag);
-                    if (prefix != null) rowX.unset(prefix + "." + firstRunTag);
+                    rowX.set(placeTag, "");
+                    if (prefix != null) {
+                        rowX.unset(prefix + "." + firstRunTag);
+                        rowX.set(prefix + "." + placeTag, "");
+                    }
                 }
             }
             if (lastRunTag != null) {
                 if (!data.hasNext()) {
+                    String place = counter == 0 ? (firstRunTag + " " + lastRunTag) : lastRunTag;
                     rowX.set(lastRunTag, "TRUE");
-                    if (prefix != null) rowX.set(prefix + "." + lastRunTag, "TRUE");
+                    rowX.set(placeTag, place);
+                    if (prefix != null) {
+                        rowX.set(prefix + "." + lastRunTag, "TRUE");
+                        rowX.set(prefix + "." + placeTag, place);
+                    }
                 }
             }
 

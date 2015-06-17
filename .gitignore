@@ -1,0 +1,5 @@
+/bin/
+/target/
+pom.xml.asc
+self-release.sh
+/.settings/

@@ -34,21 +34,35 @@
 {!---------------------------------------------}
 {#looptest_first_last}
 {.loop in $widgets first_last=true}
-<div class="{$is_first|ondefined(first):}{$is_last|ondefined(last):}">{$widget_id}</div>
+<div class="{$first|ondefined(first):}{$last|ondefined(last):}">{$widget_id}</div>
+{/loop}
+{#}
+
+{!---------------------------------------------}
+{#looptest_first_last_edge}
+{.loop in $widgets first_last=true}
+<div class="{$place}">{$widget_id}</div>
 {/loop}
 {#}
 
 {!---------------------------------------------}
 {#looptest_first_last_named}
-{.loop in $widgets first_last="first,last"}
-<div class="{$first|ondefined(first):}{$last|ondefined(last):}">{$widget_id}</div>
+{.loop in $widgets first_last="is_first,is_last"}
+<div class="{$is_first|ondefined(first):}{$is_last|ondefined(last):}">{$widget_id}</div>
+{/loop}
+{#}
+
+{!---------------------------------------------}
+{#looptest_first_last_named_edge}
+{.loop in $widgets first_last="first,last,bookend"}
+<div class="{$bookend}">{$widget_id}</div>
 {/loop}
 {#}
 
 {!---------------------------------------------}
 {#looptest_first_last_prefixed}
 {.loop in $widgets as $w first_last="true"}
-<div class="{$w.is_first|ondefined(first):}{$w.is_last|ondefined(last):}">{$w.widget_id}</div>
+<div class="{$w.first|ondefined(first):}{$w.last|ondefined(last):}">{$w.widget_id}</div>
 {/loop}
 {#}
 
