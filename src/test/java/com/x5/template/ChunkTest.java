@@ -1,5 +1,6 @@
 package com.x5.template;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -591,6 +592,23 @@ public class ChunkTest
     }
 
     @Test
+    public void objectRendersAsStringPojoTest()
+    {
+        Theme theme = new Theme();
+        Chunk c = theme.makeChunk();
+        c.append("{$x}::{$x.big:}");
+        c.set("x", new BigDecimal("9999999999999999999999999999999999999999"));
+
+        assertEquals("9999999999999999999999999999999999999999::", c.toString());
+
+        c.set("x", new Thing("Bob", 28, true));
+        assertEquals("OBJECT:com.x5.template.ChunkTest$Thing::", c.toString());
+
+        c.set("x", new BigThing("Bob", 28, true));
+        assertEquals("Thing-Bob::9999999999999999999999999999999999999999", c.toString());
+    }
+
+    @Test
     public void doubleCapsuleTest()
     {
         Theme theme = new Theme();
@@ -875,6 +893,21 @@ public class ChunkTest
             // these fields should not be visible to the template
             this.hidden = "hidden";
             this.hiddentwo = "hidden";
+        }
+    }
+
+    public static class BigThing extends Thing
+    {
+        BigDecimal big = new BigDecimal("9999999999999999999999999999999999999999");
+
+        public BigThing(String name, int age, boolean isActive)
+        {
+            super(name, age, isActive);
+        }
+
+        public String toString()
+        {
+            return "Thing-" + name;
         }
     }
 

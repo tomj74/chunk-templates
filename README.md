@@ -23,7 +23,7 @@ Available from Maven Central:
     <dependency>
       <groupId>com.x5dev</groupId>
       <artifactId>chunk-templates</artifactId>
-      <version>2.6.4</version>
+      <version>2.6.5</version>
     </dependency>
 ```
 

@@ -5,6 +5,7 @@ import java.util.Map;
 
 import com.x5.template.Chunk;
 import com.x5.template.Snippet;
+import com.x5.util.ObjectDataMap;
 
 public abstract class BasicFilter implements ChunkFilter
 {
@@ -35,7 +36,7 @@ public abstract class BasicFilter implements ChunkFilter
     public static String stringify(Object object)
     {
         if (object instanceof Snippet) return stringify((Snippet)object);
-        return object.toString();
+        return ObjectDataMap.getAsString(object);
     }
 
     public BasicFilter() {}
@@ -71,6 +72,7 @@ public abstract class BasicFilter implements ChunkFilter
         new SelectedFilter(),
         new SHA1HexFilter(),
         new SHA1Base64Filter(),
+        new StringFilter(),
         new TranslateFilter(),
         new URLDecodeFilter(),
         new URLEncodeFilter(),

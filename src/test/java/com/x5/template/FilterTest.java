@@ -2,6 +2,7 @@ package com.x5.template;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
+import java.util.ArrayList;
 import java.util.HashMap;
 
 import org.junit.Test;
@@ -69,7 +70,7 @@ public class FilterTest
     public void testIndentMacCR()
     {
         Chunk c = new Chunk();
-        c.append("{~hello|indent(3)}");
+        c.append("{$hello|indent(3)}");
         c.set("hello","String\r\rWith\r\rMany\r\rLines\r\r");
         assertEquals("   String\r\r   With\r\r   Many\r\r   Lines\r\r", c.toString());
     }
@@ -78,25 +79,25 @@ public class FilterTest
     public void testSimpleOndefined()
     {
         Chunk c = new Chunk();
-        c.append("Output: {~hello|ondefined(greetings!)}");
+        c.append("Output: {$hello|ondefined(greetings!)}");
         c.set("hello", "hello");
-        assertEquals("Output: greetings!",c.toString());
+        assertEquals("Output: greetings!", c.toString());
     }
 
     @Test
     public void testPassThruOndefined()
     {
         Chunk c = new Chunk();
-        c.append("Output: {~hello|ondefined(greetings!)}");
-        assertEquals("Output: {~hello|ondefined(greetings!)}",c.toString());
+        c.append("Output: {$hello|ondefined(greetings!)}");
+        assertEquals("Output: {$hello|ondefined(greetings!)}", c.toString());
     }
 
     @Test
     public void testVaporizingOndefined()
     {
         Chunk c = new Chunk();
-        c.append("Output: {~hello|ondefined(greetings!):}");
-        assertEquals("Output: ",c.toString());
+        c.append("Output: {$hello|ondefined(greetings!):}");
+        assertEquals("Output: ", c.toString());
     }
 
     @Test
@@ -109,8 +110,8 @@ public class FilterTest
         p.set("child", c);
         p.set("hello", "hello"); // defined in parent, still counts as defined in child
 
-        c.append("Output: {~hello|ondefined(greetings!)}");
-        assertEquals("Output: greetings!",p.toString());
+        c.append("Output: {$hello|ondefined(greetings!)}");
+        assertEquals("Output: greetings!", p.toString());
     }
 
     @Test
@@ -118,18 +119,18 @@ public class FilterTest
     {
         Chunk c = new Chunk();
         // ok, so this onmatch is not all that simple...
-        c.append("Output: {~hello|onmatch(/E.*O/i,greetings!)nomatch(darn!)}");
+        c.append("Output: {$hello|onmatch(/E.*O/i,greetings!)nomatch(darn!)}");
         c.set("hello", "hello");
-        assertEquals("Output: greetings!",c.toString());
+        assertEquals("Output: greetings!", c.toString());
     }
 
     @Test
     public void testOnMatchNoMatch()
     {
         Chunk c = new Chunk();
-        c.append("Output: {~hello|onmatch(/E.*O/i,greetings!)nomatch(yay!)}");
+        c.append("Output: {$hello|onmatch(/E.*O/i,greetings!)nomatch(yay!)}");
         c.set("hello", "hella");
-        assertEquals("Output: yay!",c.toString());
+        assertEquals("Output: yay!", c.toString());
     }
 
     @Test
@@ -139,12 +140,12 @@ public class FilterTest
         Chunk c = new Chunk();
         Chunk p = new Chunk();
 
-        p.append("P: {~child}");
+        p.append("P: {$child}");
         p.set("child", c);
         p.set("hello", "hello");
 
-        c.append("Output: {~hello|onmatch(/E.*O/i,greetings!)nomatch(darn!)}");
-        assertEquals("P: Output: greetings!",p.toString());
+        c.append("Output: {$hello|onmatch(/E.*O/i,greetings!)nomatch(darn!)}");
+        assertEquals("P: Output: greetings!", p.toString());
     }
 
     @Test
@@ -154,9 +155,9 @@ public class FilterTest
 
         c.set("hello", "catch");
 
-        c.append("Output: {~hello|onmatch(/dog/,MatchOne,/cat/,MatchTwo,/catch/,MatchThree)nomatch(darn!)}");
+        c.append("Output: {$hello|onmatch(/dog/,MatchOne,/cat/,MatchTwo,/catch/,MatchThree)nomatch(darn!)}");
 
-        assertEquals("Output: MatchTwo",c.toString());
+        assertEquals("Output: MatchTwo", c.toString());
     }
 
     @Test
@@ -164,17 +165,17 @@ public class FilterTest
     {
         Chunk c = new Chunk();
 
-        c.append("{~xyz:XYZ|md5}");
+        c.append("{$xyz:XYZ|md5}");
 
-        assertEquals("e65075d550f9b5bf9992fa1d71a131be",c.toString());
+        assertEquals("e65075d550f9b5bf9992fa1d71a131be", c.toString());
     }
 
     @Test
     public void testSHA1()
     {
         Chunk c = new Chunk();
-        c.append("{~xyz:XYZ|sha1}");
-        assertEquals("717c4ecc723910edc13dd2491b0fae91442619da",c.toString());
+        c.append("{$xyz:XYZ|sha1}");
+        assertEquals("717c4ecc723910edc13dd2491b0fae91442619da", c.toString());
     }
 
     @Test
@@ -182,8 +183,8 @@ public class FilterTest
     {
         Chunk c = new Chunk();
         c.set("xyz","Some very long string with Crazy Characters\u00EE!");
-        c.append("{~xyz|base64}");
-        assertEquals("U29tZSB2ZXJ5IGxvbmcgc3RyaW5nIHdpdGggQ3JhenkgQ2hhcmFjdGVyc8OuIQ==",c.toString());
+        c.append("{$xyz|base64}");
+        assertEquals("U29tZSB2ZXJ5IGxvbmcgc3RyaW5nIHdpdGggQ3JhenkgQ2hhcmFjdGVyc8OuIQ==", c.toString());
     }
 
     @Test
@@ -192,8 +193,8 @@ public class FilterTest
         Chunk c = new Chunk();
         String src = "Some very long string with Crazy Characters\u00EE!";
         c.set("xyz",src);
-        c.append("{~xyz|base64|base64decode}");
-        assertEquals(src,c.toString());
+        c.append("{$xyz|base64|base64decode}");
+        assertEquals(src, c.toString());
     }
 
     @Test
@@ -201,8 +202,8 @@ public class FilterTest
     {
         Chunk c = new Chunk();
         c.set("xyz", "Lemon Lion Liar Loon Lenore Forlorn");
-        c.append("{~xyz|s/L[^ ]*?n/Chunky/g}");
-        assertEquals("Chunky Chunky Liar Chunky Chunkyore Forlorn",c.toString());
+        c.append("{$xyz|s/L[^ ]*?n/Chunky/g}");
+        assertEquals("Chunky Chunky Liar Chunky Chunkyore Forlorn", c.toString());
     }
 
     @Test
@@ -210,8 +211,8 @@ public class FilterTest
     {
         Chunk c = new Chunk();
         c.set("howmuch","300020.4151233");
-        c.append("{~howmuch|sprintf($%,.2f)}");
-        assertEquals("$300,020.41",c.toString());
+        c.append("{$howmuch|sprintf($%,.2f)}");
+        assertEquals("$300,020.41", c.toString());
     }
 
     @Test
@@ -219,11 +220,11 @@ public class FilterTest
     {
         Chunk c = new Chunk();
         c.set("howmuch","30");
-        c.append("{~howmuch|calc(*10+4)|sprintf(%.0f)}");
+        c.append("{$howmuch|calc(*10+4)|sprintf(%.0f)}");
         assertEquals("304",c.toString());
 
-        c.append(" {~howmuch|calc(\"*10+4\",\"%.0f\")}");
-        assertEquals("304 304",c.toString());
+        c.append(" {$howmuch|calc(\"*10+4\",\"%.0f\")}");
+        assertEquals("304 304", c.toString());
     }
 
     @Test
@@ -675,6 +676,23 @@ public class FilterTest
         c.set("c",c);
 
         assertEquals("STRING LIST OBJECT CHUNK NULL",c.toString());
+    }
+
+    @Test
+    public void testStringFilter()
+    {
+        Theme theme = new Theme();
+        Chunk c = theme.makeChunk();
+
+        ArrayList<String> z = new ArrayList<String>();
+        z.add("rice");
+        z.add("spam");
+        z.add("seaweed");
+        c.set("z", z);
+
+        c.append("{$z|get(0)} {$z|str} {$z|str|get(0)}");
+
+        assertEquals("rice [rice, spam, seaweed] [rice, spam, seaweed]", c.toString());
     }
 
     @Test

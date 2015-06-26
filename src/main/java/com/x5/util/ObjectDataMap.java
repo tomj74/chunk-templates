@@ -84,6 +84,26 @@ public class ObjectDataMap implements Map
         return boxedBean;
     }
 
+    private static final Class[] NO_ARGS = new Class[]{};
+
+    public static String getAsString(Object obj)
+    {
+        Method toString = null;
+        try {
+            toString = obj.getClass().getMethod("toString", NO_ARGS);
+        } catch (NoSuchMethodException e) {
+        } catch (SecurityException e) {
+        }
+
+        // If this class has its own toString() method, use it.
+        if (toString.getDeclaringClass().equals(Object.class)) {
+            // don't expose the default toString() info.
+            return "OBJECT:" + obj.getClass().getName();
+        } else {
+            return obj.toString();
+        }
+    }
+
     @SuppressWarnings("unused")
     private Map<String,Object> mapify(Object pojo)
     {
@@ -380,6 +400,11 @@ public class ObjectDataMap implements Map
 
             return pickle;
         }
+    }
+
+    public String toString()
+    {
+        return getAsString(this.object);
     }
 
 }

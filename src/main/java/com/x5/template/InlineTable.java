@@ -106,7 +106,7 @@ public class InlineTable
             if (marker > 0) marker = data.indexOf(",",marker+1);
         }
 
-        return new SimpleTable(labels, records);
+        return labels == null ? null : new SimpleTable(labels, records);
     }
 
     private static int nextUnescapedDelim(Pattern delim, String input, int searchFrom)

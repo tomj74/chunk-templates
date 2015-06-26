@@ -17,12 +17,15 @@ public class LetterCaseFilter extends BasicFilter implements ChunkFilter
         if (text == null) return null;
 
         int op = OP_UPPER;
-        if (args != null && (args[0].equals("lower") || args[0].equals("lc"))) {
-            op = OP_LOWER;
-        } else if (args != null && (args[0].equals("capitalize") || args[0].equals("cap"))) {
-            op = OP_CAPITALIZE;
-        } else if (args != null && (args[0].equals("title"))) {
-            op = OP_TITLE;
+        if (args != null) {
+            String filterName = args[0];
+            if (filterName.equals("lower") || filterName.equals("lc")) {
+                op = OP_LOWER;
+            } else if (filterName.equals("capitalize") || filterName.equals("cap")) {
+                op = OP_CAPITALIZE;
+            } else if (filterName.equals("title")) {
+                op = OP_TITLE;
+            }
         }
 
         ChunkLocale locale = (chunk == null ? null : chunk.getLocale());

@@ -1,5 +1,10 @@
 Release History
 
+v2.6.5 - 2015-06-26 tmcclure
+
+  Leverages POJO toString method for default display.
+  Adds |str filter to explicitly coerce objects to strings.
+
 v2.6.4 - 2015-06-17 tmcclure
 
   Improves loop option for place tags: first_last="first,last,place"
@@ -11,6 +16,8 @@ v2.6.3 - 2015-01-01 tmcclure
   New {% data %}...{% enddata %} section markers for {% exec %}
     Makes exec calls more clean/consistent with other block calls.
     Provides greater flexibility in formulating exec calls.
+    Optional, for convenience and back-compatibility.
+    {% body %} tags are now optional if {% data %} tags are present.
 
 v2.6.2 - 2014-12-30 tmcclure
 
