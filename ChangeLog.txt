@@ -1,5 +1,11 @@
 Release History
 
+v3.0.0 - 2015-06-27 tmcclure
+
+  Overhaul of ChunkFilter for improved argument handling.
+  Not backward-compatible, user-contrib filters will need to be updated.
+  New ObjectFilter base class to ease specialized formatting in filters.
+
 v2.6.5 - 2015-06-26 tmcclure
 
   Leverages POJO toString method for default display.
