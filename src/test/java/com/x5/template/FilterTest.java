@@ -820,7 +820,7 @@ public class FilterTest
         Chunk c = theme.makeChunk();
         Date d = new Date(1435350295866L);
         c.set("x", d);
-        c.append("{$x|date(YYYY-MM-dd)} {$x|date} {$x|date(,America/Los_Angeles)} {$x|date(,EST)} {$x|date(,UTC)}");
+        c.append("{$x|date(yyyy-MM-dd)} {$x|date} {$x|date(,America/Los_Angeles)} {$x|date(,EST)} {$x|date(,UTC)}");
 
         assertEquals("2015-06-26 2015-06-26T20:24:55+0000 2015-06-26T13:24:55-0700 2015-06-26T15:24:55-0500 2015-06-26T20:24:55+0000",
             c.toString());
