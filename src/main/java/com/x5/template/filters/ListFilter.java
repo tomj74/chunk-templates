@@ -7,7 +7,7 @@ import com.x5.template.Chunk;
 
 public abstract class ListFilter implements ChunkFilter
 {
-    public Object applyFilter(Chunk chunk, String text, String[] args)
+    public Object applyFilter(Chunk chunk, String text, FilterArgs args)
     {
         // transform text input into a list of length one
         return applyFilter(chunk, new String[]{text}, args);
@@ -20,7 +20,7 @@ public abstract class ListFilter implements ChunkFilter
     }
 
     @SuppressWarnings("unchecked")
-    public Object applyFilter(Chunk chunk, Object object, String[] args)
+    public Object applyFilter(Chunk chunk, Object object, FilterArgs args)
     {
         List<Object> list = null;
         if (object instanceof List) {
@@ -37,7 +37,7 @@ public abstract class ListFilter implements ChunkFilter
     }
 
     @SuppressWarnings("rawtypes")
-    public abstract Object transformList(Chunk chunk, List list, String[] args);
+    public abstract Object transformList(Chunk chunk, List list, FilterArgs args);
 
     public ListFilter() {}
 

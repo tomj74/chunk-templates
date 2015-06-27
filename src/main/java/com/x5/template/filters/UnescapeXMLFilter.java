@@ -6,7 +6,7 @@ import com.x5.util.LiteXml;
 public class UnescapeXMLFilter extends BasicFilter implements ChunkFilter
 {
 
-    public String transformText(Chunk chunk, String text, String[] args)
+    public String transformText(Chunk chunk, String text, FilterArgs args)
     {
         if (text == null) return null;
 

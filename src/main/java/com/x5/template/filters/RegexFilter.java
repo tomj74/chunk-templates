@@ -8,12 +8,11 @@ import com.x5.template.Filter;
 
 public class RegexFilter extends BasicFilter implements ChunkFilter
 {
-    public String transformText(Chunk chunk, String text, String[] args)
+    public String transformText(Chunk chunk, String text, FilterArgs args)
     {
         if (text == null) return text;
 
-        String regex = null;
-        if (args != null && args.length > 0) regex = args[0];
+        String regex = args.getUnparsedArgs();
 
         if (regex == null) return text;
 
@@ -27,7 +26,7 @@ public class RegexFilter extends BasicFilter implements ChunkFilter
 
     public static int nextRegexDelim(String regex, int searchFrom)
     {
-        return Filter.nextUnescapedDelim("/",regex,searchFrom);
+        return FilterArgs.nextUnescapedDelim("/",regex,searchFrom);
     }
 
     public static String applyRegex(String text, String regex)

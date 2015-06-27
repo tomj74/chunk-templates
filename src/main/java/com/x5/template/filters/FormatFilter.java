@@ -7,13 +7,11 @@ import com.x5.template.ChunkLocale;
 
 public class FormatFilter extends BasicFilter
 {
-    public String transformText(Chunk chunk, String text, String[] args)
+    public String transformText(Chunk chunk, String text, FilterArgs arg)
     {
         if (text == null) return null;
 
-        String fmtString = null;
-        // get the entire, unparsed string from inside the parens
-        if (args != null && args.length > 0) fmtString = args[0];
+        String fmtString = arg.getUnparsedArgs();
 
         if (fmtString == null) return "";
 

@@ -12,13 +12,13 @@ public class LetterCaseFilter extends BasicFilter implements ChunkFilter
     int OP_CAPITALIZE = 2;
     int OP_TITLE = 4;
 
-    public String transformText(Chunk chunk, String text, String[] args)
+    public String transformText(Chunk chunk, String text, FilterArgs args)
     {
         if (text == null) return null;
 
         int op = OP_UPPER;
         if (args != null) {
-            String filterName = args[0];
+            String filterName = args.getFilterName();
             if (filterName.equals("lower") || filterName.equals("lc")) {
                 op = OP_LOWER;
             } else if (filterName.equals("capitalize") || filterName.equals("cap")) {

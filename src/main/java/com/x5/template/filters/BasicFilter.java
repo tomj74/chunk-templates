@@ -9,19 +9,19 @@ import com.x5.util.ObjectDataMap;
 
 public abstract class BasicFilter implements ChunkFilter
 {
-    public Object applyFilter(Chunk chunk, String text, String[] args)
+    public Object applyFilter(Chunk chunk, String text, FilterArgs args)
     {
         return transformText(chunk, text, args);
     }
 
-    public abstract String transformText(Chunk chunk, String text, String[] args);
+    public abstract String transformText(Chunk chunk, String text, FilterArgs args);
     public abstract String getFilterName();
     public String[] getFilterAliases()
     {
         return null;
     }
 
-    public Object applyFilter(Chunk chunk, Object object, String[] args)
+    public Object applyFilter(Chunk chunk, Object object, FilterArgs args)
     {
         String stringifiedObject = object == null ? null : BasicFilter.stringify(object);
         return transformText(chunk, stringifiedObject, args);

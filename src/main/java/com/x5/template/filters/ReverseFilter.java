@@ -12,9 +12,9 @@ public class ReverseFilter extends SliceFilter
     }
 
     @SuppressWarnings("rawtypes")
-    public Object transformList(Chunk chunk, List list, String[] args)
+    public Object transformList(Chunk chunk, List list, FilterArgs args)
     {
-        return super.transformList(chunk,list,new String[]{"::-1"});
+        return super.transformList(chunk, list, new FilterArgs("slice(::-1)"));
     }
 
 }

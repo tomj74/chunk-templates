@@ -9,38 +9,41 @@ public class SplitFilter implements ChunkFilter
 {
     public static final String DEFAULT_DELIM = "/\\s+/";
 
-    public Object applyFilter(Chunk chunk, String text, String[] args)
+    public Object applyFilter(Chunk chunk, String text, FilterArgs arg)
     {
         if (text == null) return text;
 
         String delim = null;
         int limit = -1;
 
-        if (args == null || args.length < 1 || args[0].length() < 1 || args[0].equals("split")) {
+        String[] args = arg.getFilterArgs();
+
+        if (args == null || args.length < 1 || arg.getUnparsedArgs().length() < 1) {
             delim = DEFAULT_DELIM;
         } else {
             if (args.length == 1) {
                 delim = args[0];
-            } else if (args.length > 2) {
+            } else if (args.length > 1) {
                 // edge case -- split(,) is not supposed to be split("","")
-                if (args[0].equals(",")) {
+                if (arg.getUnparsedArgs().equals(",")) {
                     delim = ",";
                 } else {
-                    delim = args[1];
+                    delim = args[0];
                     if (delim.length() == 0) delim = DEFAULT_DELIM;
                     try {
-                        limit = Integer.parseInt(args[2]);
+                        limit = Integer.parseInt(args[1]);
                     } catch (NumberFormatException e) {}
                 }
             }
         }
+
         if (delim.length() > 1 && delim.charAt(0) == '/' && delim.charAt(delim.length()-1) == '/') {
-            String regexDelim = delim.substring(1,delim.length()-1);
+            String regexDelim = delim.substring(1, delim.length()-1);
             if (limit > 0) {
-                String[] parts = text.split(regexDelim,limit+1);
+                String[] parts = text.split(regexDelim, limit+1);
                 if (parts.length > limit) {
                     String[] limited = new String[limit];
-                    System.arraycopy(parts,0,limited,0,limit);
+                    System.arraycopy(parts, 0, limited, 0, limit);
                     return limited;
                 } else {
                     return parts;
@@ -49,11 +52,11 @@ public class SplitFilter implements ChunkFilter
                 return text.split(regexDelim);
             }
         } else {
-            return splitNonRegex(text,delim,limit);
+            return splitNonRegex(text, delim, limit);
         }
     }
 
-    public Object applyFilter(Chunk chunk, Object obj, String[] args)
+    public Object applyFilter(Chunk chunk, Object obj, FilterArgs args)
     {
         if (obj == null) return null;
         return applyFilter(chunk, obj.toString(), args);

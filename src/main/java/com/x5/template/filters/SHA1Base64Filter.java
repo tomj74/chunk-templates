@@ -5,7 +5,7 @@ import com.x5.template.Chunk;
 public class SHA1Base64Filter extends BasicFilter implements ChunkFilter
 {
 
-    public String transformText(Chunk chunk, String text, String[] args)
+    public String transformText(Chunk chunk, String text, FilterArgs args)
     {
         return text == null ? null : SHA1HexFilter.sha1Base64(text);
     }

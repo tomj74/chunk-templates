@@ -4,7 +4,7 @@ import com.x5.template.Chunk;
 
 public class HexUpperFilter extends HexFilter implements ChunkFilter
 {
-    public String transformText(Chunk chunk, String text, String[] args)
+    public String transformText(Chunk chunk, String text, FilterArgs args)
     {
         String hex = super.transformText(chunk, text, args);
         return hex == null ? null : hex.toUpperCase();

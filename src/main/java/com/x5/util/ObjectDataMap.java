@@ -407,4 +407,8 @@ public class ObjectDataMap implements Map
         return getAsString(this.object);
     }
 
+    public Object unwrap()
+    {
+        return this.object;
+    }
 }

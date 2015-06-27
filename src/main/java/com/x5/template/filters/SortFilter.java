@@ -14,7 +14,7 @@ public class SortFilter extends ListFilter
     }
 
     @SuppressWarnings({ "rawtypes", "unchecked" })
-    public Object transformList(Chunk chunk, List list, String[] args)
+    public Object transformList(Chunk chunk, List list, FilterArgs args)
     {
         if (list == null || list.size() < 2) return list;
         try {

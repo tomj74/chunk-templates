@@ -2,12 +2,19 @@ package com.x5.template;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
+import java.math.BigDecimal;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
+import java.util.Locale;
+import java.util.TimeZone;
 
 import org.junit.Test;
 
 import com.x5.template.filters.BasicFilter;
+import com.x5.template.filters.FilterArgs;
+import com.x5.template.filters.ObjectFilter;
 
 import static org.junit.Assert.*;
 
@@ -793,10 +800,36 @@ public class FilterTest
         assertEquals("xxxBob  xxxBobxxx\n",c.toString());
     }
 
+    @Test
+    public void testUserBigDecimalFilter()
+    {
+        Theme theme = new Theme("test/base");
+        theme.registerFilter(new BigDecimalFilter());
+        Chunk c = theme.makeChunk();
+        c.set("x", new BigDecimal("3e40"));
+        c.append("{$x|bignum}");
+
+        assertEquals("30000000000000000000000000000000000000000", c.toString());
+    }
+
+    @Test
+    public void testUserDateTimeFilter()
+    {
+        Theme theme = new Theme("test/base");
+        theme.registerFilter(new DateTimeFilter());
+        Chunk c = theme.makeChunk();
+        Date d = new Date(1435350295866L);
+        c.set("x", d);
+        c.append("{$x|date(YYYY-MM-dd)} {$x|date} {$x|date(,America/Los_Angeles)} {$x|date(,EST)} {$x|date(,UTC)}");
+
+        assertEquals("2015-06-26 2015-06-26T20:24:55+0000 2015-06-26T13:24:55-0700 2015-06-26T15:24:55-0500 2015-06-26T20:24:55+0000",
+            c.toString());
+    }
+
     public class LeftTrimFilter extends BasicFilter
     {
 
-        public String transformText(Chunk chunk, String text, String[] args)
+        public String transformText(Chunk chunk, String text, FilterArgs args)
         {
             ///if (text == null) return null;
 
@@ -811,6 +844,70 @@ public class FilterTest
             return "ltrim";
         }
 
+    }
+
+    public class BigDecimalFilter extends ObjectFilter
+    {
+        public String getFilterName()
+        {
+            return "bignum";
+        }
+
+        public Object transformObject(Chunk chunk, Object object, FilterArgs args)
+        {
+            if (object instanceof BigDecimal) {
+                BigDecimal big = (BigDecimal)object;
+                return big.toPlainString();
+            } else {
+                return "ERR: NOT A BIG DECIMAL";
+            }
+        }
+    }
+
+    public class DateTimeFilter extends ObjectFilter
+    {
+        private static final String DEFAULT_FORMAT = "yyyy-MM-dd'T'HH:mm:ssZ";
+
+        public Object transformObject(Chunk chunk, Object obj, FilterArgs arg)
+        {
+            if (!(obj instanceof Date)) {
+                return "ERR: Not a java.util.Date";
+            }
+
+            Date date = (Date)obj;
+
+            String format = null;
+            String timezone = "UTC";
+
+            String[] args = arg.getFilterArgs();
+            if (args != null) {
+                if (args.length == 1) {
+                    format = args[0];
+                } else if (args.length > 1) {
+                    format = args[0];
+                    timezone = args[1];
+                }
+            }
+
+            if (format == null || format.trim().length() == 0) format = DEFAULT_FORMAT;
+
+            try {
+                ChunkLocale chunkLocale = chunk.getLocale();
+                Locale javaLocale = chunkLocale == null ? null : chunkLocale.getJavaLocale();
+                SimpleDateFormat formatter = javaLocale == null
+                    ? new SimpleDateFormat(format)
+                    : new SimpleDateFormat(format, javaLocale);
+                formatter.setTimeZone(TimeZone.getTimeZone(timezone));
+                return formatter.format(date);
+            } catch (IllegalArgumentException e) {
+                return e.getMessage();
+            }
+        }
+
+        public String getFilterName()
+        {
+            return "date";
+        }
     }
 
     //TODO add tests for |hex and |HEX

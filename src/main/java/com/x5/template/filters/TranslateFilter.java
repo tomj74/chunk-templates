@@ -7,7 +7,7 @@ public class TranslateFilter extends BasicFilter implements ChunkFilter
 {
 
     @Override
-    public String transformText(Chunk context, String text, String[] args)
+    public String transformText(Chunk context, String text, FilterArgs args)
     {
         if (text == null) return null;
         if (context == null) return text;

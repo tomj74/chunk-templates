@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.Writer;
 import java.util.StringTokenizer;
 
+import com.x5.template.filters.FilterArgs;
 import com.x5.template.filters.RegexFilter;
 
 public class SnippetTag extends SnippetPart
@@ -149,7 +150,7 @@ public class SnippetTag extends SnippetPart
                 // lucked out, colon was fake-out, embedded in earlier filter
                 filter = tagName.substring(pipePos+1);
             } else {
-                int startScan = Filter.grokValidColonScanPoint(tagName,finalPipe+1);
+                int startScan = FilterArgs.grokValidColonScanPoint(tagName, finalPipe+1);
                 nextColon = tagName.indexOf(":",startScan);
                 if (nextColon < 0) {
                     // colon was fake-out

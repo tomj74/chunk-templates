@@ -32,7 +32,7 @@ public class SliceFilter extends ListFilter
     }
 
     @SuppressWarnings("rawtypes")
-    public Object transformList(Chunk chunk, List list, String[] args)
+    public Object transformList(Chunk chunk, List list, FilterArgs arg)
     {
         if (list == null) return list;
 
@@ -41,13 +41,9 @@ public class SliceFilter extends ListFilter
         String fromArg = null, endArg = null, stepArg = null;
 
         String firstArg = null;
-        if (args.length == 1) {
-            // no commas
-            firstArg = args[0];
-        } else if (args.length > 1) {
-            // commas
-            firstArg = args[1];
-        }
+
+        String[] args = arg.getFilterArgs();
+        firstArg = args[0];
 
         if (args.length > 0) {
             String[] sliceArgs = SplitFilter.splitNonRegex(firstArg,":");
@@ -59,10 +55,10 @@ public class SliceFilter extends ListFilter
                     stepArg = sliceArgs[2];
                 }
             } else {
-                if (args.length > 2) {
-                    endArg = args[2];
-                    if (args.length > 3) {
-                        stepArg = args[3];
+                if (args.length > 1) {
+                    endArg = args[1];
+                    if (args.length > 2) {
+                        stepArg = args[2];
                     }
                 }
             }

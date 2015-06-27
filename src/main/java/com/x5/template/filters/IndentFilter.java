@@ -9,7 +9,7 @@ public class IndentFilter extends BasicFilter implements ChunkFilter
 {
 
     @Override
-    public String transformText(Chunk chunk, String text, String[] args)
+    public String transformText(Chunk chunk, String text, FilterArgs args)
     {
         return text == null ? null : applyIndent(text, args);
     }
@@ -21,15 +21,16 @@ public class IndentFilter extends BasicFilter implements ChunkFilter
 
     private static final Pattern EOL = Pattern.compile("(\\r\\n|\\r\\r|\\n)");
 
-    public static String applyIndent(String text, String[] args)
+    public static String applyIndent(String text, FilterArgs arg)
     {
+        String[] args = arg.getFilterArgs();
         if (args == null) return text;
 
-        String indent = args.length > 1 ? args[1] : args[0];
+        String indent = args[0];
         String padChip = " ";
 
-        if (args.length > 2) {
-            padChip = args[2];
+        if (args.length > 1) {
+            padChip = args[1];
         }
 
         try {

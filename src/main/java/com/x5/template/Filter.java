@@ -9,6 +9,7 @@ import java.util.Map;
 
 import com.x5.template.filters.ChunkFilter;
 import com.x5.template.filters.BasicFilter;
+import com.x5.template.filters.FilterArgs;
 import com.x5.template.filters.RegexFilter;
 import com.x5.util.TableData;
 
@@ -43,24 +44,8 @@ public class Filter
             return applyFilter(context, nextFilters, output);
         }
 
-        String filterName = filter;
-        String[] filterArgs = null;
-
-        int parenPos = filter.indexOf('(');
-        int slashPos = filter.indexOf('/');
-        if (slashPos > -1 && (parenPos < 0 || parenPos > slashPos)) {
-            // regex special case
-            filterName = filter.substring(0,slashPos);
-            filterArgs = new String[]{filter.substring(slashPos)};
-        } else if (parenPos > -1) {
-            // standard args(x,y,z) case
-            filterName = filter.substring(0,parenPos);
-            filterArgs = parseArgs(filter.substring(parenPos+1));
-        } else {
-            // this is awful, need to change ChunkFilter interface to
-            // give filterName a dedicated argument in the apply call.
-            filterArgs = new String[]{filterName};
-        }
+        FilterArgs filterArgs = new FilterArgs(filter);
+        String filterName = filterArgs.getFilterName();
 
         // if custom filter is registered with this name, it takes precedence
         Map<String,ChunkFilter> customFilters = null;
@@ -96,14 +81,14 @@ public class Filter
                 if (text != null) {
                     TableData array = InlineTable.parseTable(text);
                     if (array != null) {
-                        return joinInlineTable(array,filter);
+                        return joinInlineTable(array, filterArgs);
                     }
                 }
             } else if (filter.startsWith("get(")) {
                 if (text != null) {
                     TableData array = InlineTable.parseTable(text);
                     if (array != null) {
-                        return accessArrayIndex(array,filter);
+                        return accessArrayIndex(array, filterArgs);
                     }
                 }
             } else if (filter.equals("type")) {
@@ -119,207 +104,6 @@ public class Filter
             return input;
         }
     }
-
-    private static String[] parseArgs(String filter)
-    {
-        return parseArgs(filter, true);
-    }
-
-    private static String[] parseArgs(String filter, boolean splitOnComma)
-    {
-        int quote1 = filter.indexOf("\"");
-        int quote2;
-        boolean isQuoted = true;
-        // quote must be preceded only by whitespace...
-        if (quote1 < 0 || filter.substring(0,quote1).trim().length() > 0) {
-            quote1 = -1;
-            quote2 = filter.lastIndexOf(")");
-            if (quote2 < 0) return null;
-
-            isQuoted = false;
-        } else {
-            quote2 = filter.indexOf("\"",quote1+1);
-            if (quote2 < 0) quote2 = filter.length();
-        }
-
-        String arg0 = filter.substring(quote1+1,quote2);
-
-        String arg1 = null;
-        if (isQuoted) {
-            int quote3 = filter.indexOf("\"",quote2+1);
-            if (quote3 > 0) {
-                int quote4 = filter.indexOf("\"",quote3+1);
-                if (quote4 > 0) {
-                    arg1 = filter.substring(quote3+1,quote4);
-                }
-            }
-        }
-
-        if (arg1 != null) {
-            // some bizarre special case a la ("xyz","abc")
-            // with a guarantee of no escaped double quotes
-            // tracked this down, being used by calc("expr","%2f")
-            // to pass optional 2nd format str arg.
-            // probably (?) isn't breaking anything.
-            return new String[]{filter,arg0,arg1};
-        } else if (isQuoted || !splitOnComma || arg0.indexOf(",") < 0) {
-            return new String[]{arg0};
-        } else {
-            return parseCommaDelimitedArgs(arg0);
-        }
-    }
-
-    private static String[] parseCommaDelimitedArgs(String argStr)
-    {
-        String[] args = new String[15];
-        // always pass pre-split args string in position 0
-        args[0] = argStr;
-        int argX = 1;
-
-        int marker = 0;
-
-        while (argX < args.length) {
-            int commaPos = nextArgDelim(argStr,marker);
-            if (commaPos < 0) break;
-
-            int quotePos = nextUnescapedDelim("\"", argStr, marker);
-            if (quotePos > -1 && quotePos < commaPos) {
-                // arg must start with quote to be considered quoted
-                if (argStr.substring(marker,quotePos).trim().length() == 0) {
-                    int endQuotePos = nextUnescapedDelim("\"",argStr,quotePos+1);
-                    if (endQuotePos > 0) {
-                        String arg = argStr.substring(quotePos+1,endQuotePos);
-                        args[argX] = arg;
-                        argX++;
-                        commaPos = nextArgDelim(argStr,endQuotePos+1);
-                        if (commaPos > 0) {
-                            marker = commaPos + 1;
-                        } else {
-                            marker = argStr.length();
-                        }
-                        continue;
-                    }
-                }
-            }
-            int regexPos = RegexFilter.nextRegexDelim(argStr, marker);
-            if (regexPos > -1 && regexPos < commaPos) {
-                // arg must start with / or m/ to be considered regex
-                String regexOpen = argStr.substring(marker,regexPos).trim();
-                if (regexOpen.length() == 0 || regexOpen.equals("m")) {
-                    int endRegexPos = RegexFilter.nextRegexDelim(argStr, regexPos+1);
-                    if (endRegexPos > 0) {
-                        commaPos = nextArgDelim(argStr,endRegexPos+1);
-                        int endArgPos = commaPos;
-                        if (commaPos < 0) {
-                            // no more args
-                            endArgPos = argStr.length();
-                            marker = endArgPos;
-                        } else {
-                            marker = commaPos+1;
-                        }
-                        String arg = argStr.substring(regexPos,endArgPos);
-                        args[argX] = arg;
-                        argX++;
-                        continue;
-                    }
-                }
-            }
-
-            String arg = argStr.substring(marker,commaPos);
-            args[argX] = arg;
-            argX++;
-            marker = commaPos+1;
-            commaPos = nextArgDelim(argStr,marker);
-        }
-        if (argX == args.length) return args; // maxed out
-
-        // got here? no more commas...
-        int closeParenPos = nextUnescapedDelim(")",argStr,marker);
-        int finalArgEnd = argStr.length();
-        if (closeParenPos > 0) {
-            finalArgEnd = closeParenPos;
-        }
-        String finalArg = argStr.substring(marker,finalArgEnd);
-        args[argX] = finalArg;
-        argX++;
-
-        // check for nomatch(...) args
-        if (argX+1 < args.length && closeParenPos > 0 && closeParenPos + 1 < argStr.length()) {
-            int nextParen = argStr.indexOf('(',closeParenPos+1);
-            if (nextParen > 0) {
-                String appendixTag = argStr.substring(closeParenPos+1,nextParen);
-                args[argX] = "|"+appendixTag+"|";
-                argX++;
-                int endPos = argStr.length();
-                if (argStr.endsWith(")")) endPos--;
-                String appendixArg = argStr.substring(nextParen+1,endPos);
-                args[argX] = appendixArg;
-                argX++;
-            }
-        }
-
-        String[] truncated = new String[argX];
-        System.arraycopy(args, 0, truncated, 0, argX);
-        return truncated;
-    }
-
-    /**
-     * magicBraces wraps unbraced tag-specials ~tag ^command +include in {~braces}
-     * to trigger proper re-processing later on.  magicBraces leaves unprefixed
-     * values intact.
-     */
-    public static String magicBraces(Chunk context, String output)
-    {
-        if (output == null || output.length() == 0) return output;
-
-        char firstChar = output.charAt(0);
-        if (firstChar == '~' || firstChar == '$') {
-            return context != null ? context.makeTag(output) : "{"+output+"}";
-        } else if (firstChar == '^' || firstChar == '.') {
-            if (context == null) {
-                /// turn .cmd into {.cmd}
-                return TemplateSet.PROTOCOL_SHORTHAND+output.substring(1)+TemplateSet.DEFAULT_TAG_END;
-            } else {
-                return context.makeTag('.'+output.substring(1));
-            }
-        } else if (firstChar == '+') {
-            return "{"+output+"}";
-        } else {
-            return output;
-        }
-    }
-
-    public static int nextArgDelim(String arglist, int searchFrom)
-    {
-        return nextUnescapedDelim(",",arglist,searchFrom);
-    }
-
-    public static int nextUnescapedDelim(String delim, String regex, int searchFrom)
-    {
-        int delimPos = regex.indexOf(delim, searchFrom);
-
-        boolean isProvenDelimeter = false;
-        while (!isProvenDelimeter) {
-            // count number of backslashes that precede this forward slash
-            int bsCount = 0;
-            while (delimPos-(1+bsCount) >= searchFrom && regex.charAt(delimPos - (1+bsCount)) == '\\') {
-                bsCount++;
-            }
-            // if odd number of backslashes precede this delimiter char, it's escaped
-            // if even number precede, it's not escaped, it's the true delimiter
-            // (because it's preceded by either no backslash or an escaped backslash)
-            if (bsCount % 2 == 0) {
-                isProvenDelimeter = true;
-            } else {
-                // keep looking for real delimiter
-                delimPos = regex.indexOf(delim, delimPos+1);
-                // if the regex is not legal (missing delimiters??), bail out
-                if (delimPos < 0) return -1;
-            }
-        }
-        return delimPos;
-    }
-
 
     public static String[] splitFilters(String filter)
     {
@@ -367,11 +151,11 @@ public class Filter
                 if (slashPos < 0) break;
                 slashPos = RegexFilter.nextRegexDelim(filter,slashPos+1);
                 if (slashPos < 0) break;
-                int commaPos = nextUnescapedDelim(",",filter,slashPos+1);
+                int commaPos = FilterArgs.nextUnescapedDelim(",",filter,slashPos+1);
                 if (commaPos < 0) break;
-                int moreArgs = nextUnescapedDelim(",",filter,commaPos+1);
+                int moreArgs = FilterArgs.nextUnescapedDelim(",",filter,commaPos+1);
                 if (moreArgs < 0) {
-                    int closeParen = nextUnescapedDelim(")",filter,commaPos+1);
+                    int closeParen = FilterArgs.nextUnescapedDelim(")",filter,commaPos+1);
                     if (closeParen < 0) break;
                     // else
                     if (filter.length() > closeParen+8 && filter.substring(closeParen+1,closeParen+8).equals("nomatch")) {
@@ -391,7 +175,7 @@ public class Filter
             // reached here? find end of nomatch(...) clause
             int openParen = filter.indexOf("(",cursor);
             if (openParen > 0) {
-                int closeParen = nextUnescapedDelim(")",filter,openParen+1);
+                int closeParen = FilterArgs.nextUnescapedDelim(")",filter,openParen+1);
                 if (closeParen > 0) {
                     pipePos = filter.indexOf("|",closeParen+1);
                     return pipePos;
@@ -563,83 +347,22 @@ public class Filter
         return cursor;
     }
 
-    public static int grokValidColonScanPoint(String wholeTag, int startHere)
-    {
-        // presumably we are starting at the final filter.
-        // so, we need to ignore colons that appear within function args
-        // eg:
-        // s/...:.../...:.../
-        // sprintf(...:...)
-        // ondefined(...:...)
-        // onmatch(/:/,:,/:/,:)
-        // onmatch(/:/,:,/:/,:)nomatch(:)
-        // onmatch(/(asdf|as:df)/,:)
-        if (wholeTag.charAt(startHere) == 's' && wholeTag.charAt(startHere+1) == '/') {
-            int regexMid = RegexFilter.nextRegexDelim(wholeTag,startHere+2);
-            int regexEnd = RegexFilter.nextRegexDelim(wholeTag,regexMid+1);
-            return regexEnd+1;
-        }
-        // this assumes no whitespace in the filters
-        if (wholeTag.length() > startHere+7 && wholeTag.substring(startHere,startHere+7).equals("onmatch")) {
-            // tricky, you have to traverse each regex and consider the contents as blind spots (anything goes)
-            boolean skippedArgs = false;
-            startHere += 8;
-            while (!skippedArgs) {
-                int slashPos = wholeTag.indexOf("/",startHere);
-                if (slashPos < 0) break;
-                slashPos = RegexFilter.nextRegexDelim(wholeTag,slashPos+1);
-                if (slashPos < 0) break;
-                int commaPos = nextUnescapedDelim(",",wholeTag,slashPos+1);
-                if (commaPos < 0) break;
-                int moreArgs = nextUnescapedDelim(",",wholeTag,commaPos+1);
-                if (moreArgs < 0) {
-                    int closeParen = nextUnescapedDelim(")",wholeTag,commaPos+1);
-                    if (closeParen < 0) break;
-                    // else
-                    if (wholeTag.length() > closeParen+8 && wholeTag.substring(closeParen+1,closeParen+8).equals("nomatch")) {
-                        startHere = closeParen+1;
-                        skippedArgs = true;
-                        // drop out and continue on to exclude nomatch(...) args
-                    } else {
-                        // this is the end of the onmatch(/regex/,output,/regex/,output)
-                        // there is no onmatch(...)nomatch(...) suffix
-                        return closeParen+1;
-                    }
-                } else {
-                    startHere = moreArgs+1;
-                }
-            }
-        }
-
-        // got here?  just one set of parens left to skip, maybe less!
-
-        int openParen = wholeTag.indexOf("(",startHere);
-        if (openParen < 0) return startHere;
-
-        int closeParen = nextUnescapedDelim(")",wholeTag,openParen+1);
-        if (closeParen < 0) return startHere;
-
-        // if it has args and it's not an onmatch, then this close-paren is the end of the last filter
-        return closeParen+1;
-    }
-
-    public static String accessArrayIndex(TableData table, String getFilter)
+    public static String accessArrayIndex(TableData table, FilterArgs getFilter)
     {
         return accessArrayIndex(extractListFromTable(table), getFilter);
     }
 
-    public static String accessArrayIndex(String[] array, String getFilter)
+    public static String accessArrayIndex(String[] array, FilterArgs getFilter)
     {
         if (array == null) return "";
         return accessArrayIndex(Arrays.asList(array), getFilter);
     }
 
-    public static String accessArrayIndex(List<String> list, String getFilter)
+    public static String accessArrayIndex(List<String> list, FilterArgs getFilter)
     {
         if (list == null) return "";
-        int parenPos = getFilter.indexOf('(');
-        if (parenPos > 0) {
-            String[] args = parseArgs(getFilter.substring(parenPos+1),false);
+        String[] args = getFilter.getFilterArgs();
+        if (args != null) {
             String idx = args[0];
             try {
                 int x = Integer.parseInt(idx);
@@ -673,12 +396,12 @@ public class Filter
         return list;
     }
 
-    public static String joinInlineTable(TableData table, String joinFilter)
+    public static String joinInlineTable(TableData table, FilterArgs joinFilter)
     {
         return joinStringList(extractListFromTable(table), joinFilter);
     }
 
-    public static String joinStringArray(String[] array, String joinFilter)
+    public static String joinStringArray(String[] array, FilterArgs joinFilter)
     {
         if (array == null) return "";
         if (array.length == 1) return array[0];
@@ -686,18 +409,13 @@ public class Filter
         return joinStringList(Arrays.asList(array), joinFilter);
     }
 
-    public static String joinStringList(List<String> list, String joinFilter)
+    public static String joinStringList(List<String> list, FilterArgs joinFilter)
     {
         if (list == null) return "";
         if (list.size() == 1) return list.get(0);
 
-        String divider = null;
-        // the only arg is the divider
-        int parenPos = joinFilter.indexOf('(');
-        if (parenPos > 0) {
-            String[] args = parseArgs(joinFilter.substring(parenPos+1),false);
-            divider = args[0];
-        }
+        // to do: handle quoted divider case
+        String divider = joinFilter.getUnparsedArgs();
 
         StringBuilder x = new StringBuilder();
         int i = 0;

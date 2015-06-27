@@ -6,6 +6,7 @@ import java.util.StringTokenizer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import com.x5.template.filters.FilterArgs;
 import com.x5.template.filters.RegexFilter;
 
 public class LocaleTag extends BlockTag
@@ -172,10 +173,10 @@ public class LocaleTag extends BlockTag
     {
         if (isSimple) {
             // scan for matching non-escaped ]
-            return Filter.nextUnescapedDelim(LOCALE_SIMPLE_CLOSE, template, tagPos + LOCALE_SIMPLE_OPEN.length());
+            return FilterArgs.nextUnescapedDelim(LOCALE_SIMPLE_CLOSE, template, tagPos + LOCALE_SIMPLE_OPEN.length());
         } else {
             // scan for matching non-escaped }
-            return Filter.nextUnescapedDelim(LOCALE_TAG_CLOSE, template, tagPos + LOCALE_TAG_OPEN.length());
+            return FilterArgs.nextUnescapedDelim(LOCALE_TAG_CLOSE, template, tagPos + LOCALE_TAG_OPEN.length());
         }
     }
 

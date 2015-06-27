@@ -14,12 +14,11 @@ import com.x5.template.Chunk;
  */
 public class QuickCalcFilter extends BasicFilter implements ChunkFilter
 {
-    public String transformText(Chunk chunk, String text, String[] args)
+    public String transformText(Chunk chunk, String text, FilterArgs args)
     {
         String calc = null;
-        if (args != null && args.length > 0) calc = args[0];
 
-        return applyQuickCalc(text,calc);
+        return applyQuickCalc(text, args.getUnparsedArgs());
     }
 
     public String getFilterName()

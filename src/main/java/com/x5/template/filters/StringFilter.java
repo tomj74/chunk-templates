@@ -6,7 +6,7 @@ public class StringFilter extends BasicFilter
 {
 
     @Override
-    public String transformText(Chunk chunk, String text, String[] args)
+    public String transformText(Chunk chunk, String text, FilterArgs args)
     {
         // basic filter converts argument to string by default.  no-op.
         return text;

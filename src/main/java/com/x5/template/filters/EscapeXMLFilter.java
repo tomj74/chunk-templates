@@ -8,7 +8,7 @@ public class EscapeXMLFilter extends BasicFilter implements ChunkFilter
     private static final String[] replaceWith =
             new String[]{"&amp;","&lt;","&gt;","&quot;","&apos;"};
 
-    public String transformText(Chunk chunk, String text, String[] args)
+    public String transformText(Chunk chunk, String text, FilterArgs args)
     {
         if (text == null) return null;
 

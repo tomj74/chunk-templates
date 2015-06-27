@@ -12,13 +12,13 @@ public class JoinFilter extends ListFilter
     }
 
     @SuppressWarnings("rawtypes")
-    public Object transformList(Chunk chunk, List list, String[] args)
+    public Object transformList(Chunk chunk, List list, FilterArgs args)
     {
         if (list == null) return "";
         if (list.size() == 1) return list.get(0);
 
         // the only arg is the divider
-        String divider = args.length > 0 && !args[0].equals("join") ? args[0] : null;
+        String divider = args.getUnparsedArgs();
 
         StringBuilder x = new StringBuilder();
         int i = 0;

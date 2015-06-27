@@ -7,8 +7,10 @@ import com.x5.template.Snippet;
 
 public class ExecFilter extends BasicFilter
 {
-    public String transformText(Chunk chunk, String text, String[] args)
+    public String transformText(Chunk chunk, String text, FilterArgs arg)
     {
+        String[] args = arg.getFilterArgs();
+
         String templateName;
         if (args != null && args.length > 0) {
             templateName = args[0];

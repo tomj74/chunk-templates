@@ -12,9 +12,12 @@ public class ListIndexFilter extends ListFilter
     }
 
     @SuppressWarnings("rawtypes")
-    public Object transformList(Chunk chunk, List list, String[] args)
+    public Object transformList(Chunk chunk, List list, FilterArgs arg)
     {
-        if (list == null || args.length < 1) return null;
+        if (list == null) return null;
+
+        String[] args = arg.getFilterArgs();
+        if (args.length < 1) return null;
 
         int i = Integer.parseInt(args[0]);
         if (i < 0) {

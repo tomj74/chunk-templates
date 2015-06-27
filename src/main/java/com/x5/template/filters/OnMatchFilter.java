@@ -9,7 +9,7 @@ import com.x5.template.Filter;
 public class OnMatchFilter extends BasicFilter implements ChunkFilter
 {
     @Override
-    public String transformText(Chunk chunk, String text, String[] args)
+    public String transformText(Chunk chunk, String text, FilterArgs args)
     {
         String result = applyMatchTransform(chunk, text, args);
         // onmatch output is never null?
@@ -23,20 +23,23 @@ public class OnMatchFilter extends BasicFilter implements ChunkFilter
         return "onmatch";
     }
 
-    private static String applyMatchTransform(Chunk context, String text, String[] args)
+    private static String applyMatchTransform(Chunk context, String text, FilterArgs arg)
     {
+        String[] args = arg.getFilterArgs();
+
         if (args == null) return text;
+
         if (args.length == 1 && args[0] != null && args[0].length() == 0) {
             return text;
         }
 
-        for (int i=1; i<args.length; i+=2) {
+        for (int i=0; i<args.length; i+=2) {
             if (i+1 >= args.length) return text;
             String test = args[i];
             String value = args[i+1];
 
             if (test.equals("|nomatch|")) {
-                return Filter.magicBraces(context, value);
+                return FilterArgs.magicBraces(context, value);
             }
 
             if (text == null) continue; // won't ever match
@@ -64,7 +67,7 @@ public class OnMatchFilter extends BasicFilter implements ChunkFilter
             Pattern p = Pattern.compile(pattern);
             Matcher m = p.matcher(text);
             if (m.find()) {
-                return Filter.magicBraces(context, value);
+                return FilterArgs.magicBraces(context, value);
             }
         }
 

@@ -6,14 +6,14 @@ import com.x5.template.Chunk;
 
 public class LengthFilter implements ChunkFilter
 {
-    public Object applyFilter(Chunk chunk, String text, String[] args)
+    public Object applyFilter(Chunk chunk, String text, FilterArgs args)
     {
         if (text == null) return "0";
         return Integer.toString(text.length());
     }
 
     @SuppressWarnings("rawtypes")
-    public Object applyFilter(Chunk chunk, Object obj, String[] args)
+    public Object applyFilter(Chunk chunk, Object obj, FilterArgs args)
     {
         if (obj == null) return "0";
         int len;

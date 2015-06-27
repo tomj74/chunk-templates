@@ -4,7 +4,7 @@ import com.x5.template.Chunk;
 
 public class URLEncodeFilter extends BasicFilter implements ChunkFilter
 {
-    public String transformText(Chunk chunk, String text, String[] args)
+    public String transformText(Chunk chunk, String text, FilterArgs args)
     {
         if (text == null) return null;
 
