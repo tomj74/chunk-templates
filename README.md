@@ -29,7 +29,7 @@ Available from Maven Central:
 
 Features
 ========
-  * Compatible with Android, GAE (Google App Engine).
+  * Compatible with Android, GAE (Google App Engine), [Spring MVC][7].
   * Nestable looping and branching (if/elseIf/else).
   * Macros, includes and conditional includes.
   * Speedy rendering engine that pre-parses templates.
@@ -70,3 +70,4 @@ Or download madrobotbeans-0.1.jar from the [Downloads][2] area.  Thanks to Elton
   [4]: https://code.google.com/p/mad-robot/
   [5]: http://www.x5software.com/chunk/
   [6]: https://sourceforge.net/projects/chunk-templates/files/
+  [7]: http://www.x5software.com/chunk/wiki/Spring_MVC
