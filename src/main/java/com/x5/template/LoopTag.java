@@ -241,7 +241,7 @@ public class LoopTag extends BlockTag
                                     data = new TableOfMaps(list);
                                 } else {
                                     // last-ditch effort to extract data, treat as POJOs
-                                    data = TableOfMaps.boxObjectList((List)dataStore);
+                                    data = TableOfMaps.boxCollection(list);
                                 }
                             }
                         } else if (dataStore instanceof Object[]) {
@@ -252,8 +252,21 @@ public class LoopTag extends BlockTag
                                 data = TableOfMaps.boxObjectArray((Object[])dataStore);
                             }
                         } else if (dataStore instanceof Map) {
-                            Map object = (Map)dataStore;
-                            data = new ObjectTable(object);
+                            if (dataStore instanceof com.x5.util.ObjectDataMap) {
+                                Object unwrapped = ((com.x5.util.ObjectDataMap)dataStore).unwrap();
+                                if (unwrapped instanceof java.util.Collection) {
+                                    data = TableOfMaps.boxCollection((java.util.Collection)unwrapped);
+                                } else if (unwrapped instanceof java.util.Enumeration) {
+                                    data = TableOfMaps.boxEnumeration((java.util.Enumeration)unwrapped);
+                                } else if (unwrapped instanceof java.util.Iterator) {
+                                    data = TableOfMaps.boxIterator((java.util.Iterator)unwrapped);
+                                }
+                            }
+                            if (data == null) {
+                                // Doesn't support traditional iteration. Loop over object's keys:values instead.
+                                Map object = (Map)dataStore;
+                                data = new ObjectTable(object);
+                            }
                         }
 
                         // only loop if following pointer

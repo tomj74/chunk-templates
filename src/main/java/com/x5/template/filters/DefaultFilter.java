@@ -24,4 +24,9 @@ public class DefaultFilter extends BasicFilter implements ChunkFilter
         return "default";
     }
 
+    public String[] getFilterAliases()
+    {
+        return new String[]{"onnull"};
+    }
+
 }

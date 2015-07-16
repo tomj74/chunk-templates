@@ -1,5 +1,8 @@
 package com.x5.template;
 
+import java.util.Map;
+import java.util.StringTokenizer;
+
 import org.junit.Test;
 
 import static org.junit.Assert.*;
@@ -363,9 +366,35 @@ public class LoopTest
     {
         Theme theme = new Theme();
         Chunk c = theme.makeChunk();
-        c.set("nums","1,2,3,4");
+        c.set("nums", "1,2,3,4");
         c.append("{.loop in $nums|split(,) as $n}{$n}{.divider} {/divider}{/loop}");
         assertEquals("1 2 3 4", c.toString());
+    }
+
+    @Test
+    public void testLoopOverNestedEnumeration()
+    {
+        Theme theme = new Theme();
+        Chunk c = theme.makeChunk();
+        StringTokenizer tokens = new StringTokenizer("a b c d");
+        Map<String,Object> map = new java.util.HashMap<String,Object>();
+        map.put("tokens", tokens);
+        c.set("token_holder", map);
+        c.append("{% loop in $token_holder.tokens as $token divider='-' %}{$token}{% endloop %}");
+
+        assertEquals("a-b-c-d", c.toString());
+    }
+
+    @Test
+    public void testLoopOverEnumeration()
+    {
+        Theme theme = new Theme();
+        Chunk c = theme.makeChunk();
+        StringTokenizer tokens = new StringTokenizer("a b c d");
+        c.set("tokens", tokens);
+        c.append("{% loop in $tokens as $token divider='-' %}{$token}{% endloop %}");
+
+        assertEquals("a-b-c-d", c.toString());
     }
 
     @Test

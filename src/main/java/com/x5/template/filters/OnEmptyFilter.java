@@ -15,7 +15,7 @@ public class OnEmptyFilter extends BasicFilter implements ChunkFilter
         if (args != null && args.length > 0) swapFor = args[0];
         if (swapFor == null) return null;
 
-        // null and empty string are both considered empty
+        // null and empty string and whitespace-only are all considered empty
         return (text == null || text.trim().length() == 0) ? FilterArgs.magicBraces(chunk, swapFor) : text;
     }
 

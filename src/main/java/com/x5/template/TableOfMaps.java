@@ -1,6 +1,8 @@
 package com.x5.template;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -79,13 +81,46 @@ public class TableOfMaps implements TableData
             return null;
         }
 
+        return boxIterator(dataStore.iterator());
+    }
+
+    @SuppressWarnings("rawtypes")
+    static TableData boxEnumeration(Enumeration dataStore)
+    {
+        if (dataStore == null || !dataStore.hasMoreElements()) {
+            return null;
+        }
+
+        // convert to list of POJOs
         List<Map> boxedObjects = new ArrayList<Map>();
-        Iterator i = dataStore.iterator();
+        while (dataStore.hasMoreElements()) {
+            boxedObjects.add(new ObjectDataMap(dataStore.nextElement()));
+        }
+
+        return new TableOfMaps(boxedObjects);
+    }
+
+    @SuppressWarnings("rawtypes")
+    static TableData boxCollection(Collection collection)
+    {
+        if (collection == null || collection.size() < 1) {
+            return null;
+        }
+
+        return boxIterator(collection.iterator());
+    }
+
+    static TableData boxIterator(Iterator i)
+    {
+        if (i == null || !i.hasNext()) {
+            return null;
+        }
+
+        List<Map> boxedObjects = new ArrayList<Map>();
         while (i.hasNext()) {
             boxedObjects.add(new ObjectDataMap(i.next()));
         }
 
         return new TableOfMaps(boxedObjects);
     }
-
 }

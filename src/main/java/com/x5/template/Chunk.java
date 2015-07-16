@@ -36,7 +36,7 @@ import com.x5.util.TableData;
  * set up replacement rules for those tags like so:
  *
  * <PRE>
- *    TemplateSet templates = getTemplates(); // defined elsewhere
+ *    Theme templates = getTemplates(); // defined elsewhere
  *    Chunk myChunk = templates.makeChunk("my_template");
  *    myChunk.set("my_tag","hello tag");
  *    System.out.print( myChunk.toString() );
@@ -48,9 +48,8 @@ import com.x5.util.TableData;
  * hash mark surrounded by curly brackets/braces.
  *
  * <P>
- * TemplateSet is handy if you have a folder with lots of html templates.<BR>
  * Here's an even simpler example, where the template string is supplied<BR>
- * without using TemplateSet:
+ * without using a theme:
  *
  * <PRE>
  *    String templateBody = "Hello {$name}!  Your balance is ${$balance}."
@@ -91,9 +90,9 @@ import com.x5.util.TableData;
  * <P>
  * A: No*.  To keep things simple and reduce potential for confusion, Chunk<BR>
  * does not auto-magically fill any tags based on naming conventions or<BR>
- * in-template directives.  You must explicitly invoke the "include command:<BR>
+ * in-template directives.  You must explicitly invoke the include command:<BR>
  *
- *   bla bla bla {.include #myTemplate} foo foo foo
+ *   bla bla bla {% include #myTemplate %} foo foo foo
  *
  * <P>* Actually, this documentation is outdated, and several extensions to the<BR>
  * original template syntax are now available:
@@ -111,7 +110,7 @@ import com.x5.util.TableData;
  * <B>Q: My final output says "infinite recursion detected."  What gives?</B>
  *
  * <P>
- * A: You did some variation of this:
+ * A: You tripped the recursion depth limit (17) or you did some variation of this:
  * <PRE>
  *   TEMPLATE:
  *     bla bla bla {$name}
@@ -167,10 +166,9 @@ import com.x5.util.TableData;
  * <B>Q: Are tag names and subtemplate names case sensitive?</B>
  *
  * <P>
- * A: Yes. I prefer to use mixed case in {$tagNames} with first letter<BR>
- * lowercase.  In my experience this aids readability since tags are similar<BR>
- * to java variables in concept and that is the java case convention for<BR>
- * variables.   Similarly, I prefer lowercase with underscores for all<BR>
+ * A: Yes. I prefer to use snake case in {$tag_names} but be aware<BR>
+ * that {$tag} and {$Tag} and {$TAG} are three different values.<BR>
+ * Similarly, I prefer lowercase with underscores for all<BR>
  * {#sub_template_names}{#} since templates tend to be defined within html<BR>
  * files which are typically named in all lowercase.
  *
@@ -245,7 +243,7 @@ import com.x5.util.TableData;
  * Updates: <A href="http://www.x5software.com/chunk/">Chunk Documentation</A><BR>
  *
  * @author Tom McClure
- * @version 3.0.0
+ * @version 3.0.1
  */
 
 public class Chunk implements Map<String,Object>
@@ -253,7 +251,7 @@ public class Chunk implements Map<String,Object>
     public static final int HASH_THRESH = 8;
     public static final int DEPTH_LIMIT = 17;
 
-    public static final String VERSION = "3.0.0";
+    public static final String VERSION = "3.0.1";
 
     private static final String TRUE = "TRUE";
 
@@ -461,18 +459,7 @@ public class Chunk implements Map<String,Object>
         if (tagName == null) return;
         // ensure that tagValue is either a String or a Chunk (or some tabular data)
         if (tagValue != null) {
-            tagValue = coercePrimitivesToString(tagValue);
-            if (tagValue instanceof Chunk || tagValue instanceof TableData) {
-                // don't treat chunk or tabledata as a Map
-            } else if (tagValue instanceof Map) {
-                // great, a map!
-            } else if (!(tagValue instanceof String
-                    || tagValue instanceof Snippet
-                    || tagValue instanceof List
-                    || tagValue instanceof Object[])) {
-                // force to map
-                tagValue = new ObjectDataMap(tagValue);
-            }
+            tagValue = coercePrimitivesToStringAndBoxAliens(tagValue);
         }
         if (tagValue == null) {
             tagValue = (ifNull == null) ? "NULL" : ifNull;
@@ -1086,9 +1073,9 @@ public class Chunk implements Map<String,Object>
                 tagValue = null;
             }
         }
-        // convert primitives to string
-        if (!(tagValue instanceof String)) {
-            tagValue = coercePrimitivesToString(tagValue);
+        // convert primitives to string, box illegal aliens
+        if (tagValue != null && !(tagValue instanceof String)) {
+            tagValue = coercePrimitivesToStringAndBoxAliens(tagValue);
         }
 
         String filters = tag.getFilters();
@@ -1126,16 +1113,40 @@ public class Chunk implements Map<String,Object>
         }
     }
 
-    // unbox and stringify primitive wrapper objects
-    private Object coercePrimitivesToString(Object o)
+    // unbox and stringify primitive wrapper objects, box any objects if not chunk-friendly
+    private Object coercePrimitivesToStringAndBoxAliens(Object o)
     {
+        if (o == null) return o;
+
         if (o instanceof Boolean) {
             return ((Boolean)o).booleanValue() ? "TRUE" : null;
         } else if (o != null && ObjectDataMap.isWrapperType(o.getClass())) {
             return o.toString();
         } else {
+            return boxIfAlienObject(o);
+        }
+    }
+
+    private Object boxIfAlienObject(Object o)
+    {
+        if (o == null) return o;
+
+        if (o instanceof Chunk || o instanceof TableData) {
+            // Chunk and TableData can be handled natively
+            return o;
+        } else if (o instanceof Map) {
+            // Map can be handled natively
+            return o;
+        } else if (o instanceof String
+                || o instanceof Snippet
+                || o instanceof List
+                || o instanceof Object[]) {
+            // can all be handled natively
             return o;
         }
+
+        // unrecognized object. wrap inside map.
+        return new ObjectDataMap(o);
     }
 
     protected Object resolveTagValue(String tagName, int depth)
@@ -1288,7 +1299,7 @@ public class Chunk implements Map<String,Object>
         if (rules == null || rules.size() <= 0) return;
         Set<String> keys = rules.keySet();
         for (String tagName : keys) {
-            setOrDelete(tagName,rules.get(tagName));
+            setOrDelete(tagName, rules.get(tagName));
         }
     }
 
