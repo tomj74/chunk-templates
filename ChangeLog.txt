@@ -1,5 +1,11 @@
 Release History
 
+v3.0.1 - 2015-07-16 tmcclure
+
+  Better handling of nested POJOs.
+  The loop command now supports Collection/Iterator/Enumeration in
+    addition to Object[] arrays and List.
+
 v3.0.0 - 2015-06-27 tmcclure
 
   Overhaul of ChunkFilter for improved argument handling.
