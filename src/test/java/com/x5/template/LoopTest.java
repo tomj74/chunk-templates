@@ -1,5 +1,6 @@
 package com.x5.template;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.StringTokenizer;
 
@@ -386,6 +387,64 @@ public class LoopTest
     }
 
     @Test
+    public void testLoopOverMap()
+    {
+        Theme theme = new Theme();
+        Chunk c = theme.makeChunk();
+        Map<String,Object> map = new java.util.HashMap<String,Object>();
+        map.put("a", "1");
+        map.put("b", "2");
+        c.set("map", map);
+        c.append("{% loop in $map as $key:$value divider='-' %}{$key}:{$value}{% endloop %}");
+
+        assertEquals("a:1-b:2", c.toString());
+    }
+
+    @Test
+    public void testLoopOverNestedMap()
+    {
+        Theme theme = new Theme();
+        Chunk c = theme.makeChunk();
+        Map<String,Object> mapA = new java.util.HashMap<String,Object>();
+        Map<String,Object> mapB = new java.util.HashMap<String,Object>();
+        mapB.put("a", "1");
+        mapB.put("b", "2");
+        mapA.put("child", mapB);
+        c.set("parent_map", mapA);
+        c.append("{% loop in $parent_map.child as $key:$value divider='-' %}{$key}:{$value}{% endloop %}");
+
+        assertEquals("a:1-b:2", c.toString());
+    }
+
+    @Test
+    public void testLoopOverChildObject()
+    {
+        Theme theme = new Theme();
+        Chunk c = theme.makeChunk();
+        ChunkTest.CircularThing bob = new ChunkTest.CircularThing("Bob", 28, false);
+        c.set("bob", bob);
+        c.append("{% loop in $bob.boss as $key:$value divider='-' %}{$key}:{$value|type}{% endloop %}");
+
+        assertEquals("age:STRING-boss:OBJECT-children:LIST-map:NULL-name:STRING-pi:STRING", c.toString());
+    }
+
+    @Test
+    public void testLoopOverChildMap()
+    {
+        Theme theme = new Theme();
+        Chunk c = theme.makeChunk();
+        ChunkTest.CircularThing bob = new ChunkTest.CircularThing("Bob", 28, false);
+        Map map = new HashMap<String,String>();
+        map.put("a", "1");
+        map.put("b", "2");
+        bob.setMap(map);
+        c.set("bob", bob);
+        c.append("{% loop in $bob.map as $key:$value divider='-' %}{$key}:{$value}{% endloop %}");
+
+        assertEquals("a:1-b:2", c.toString());
+    }
+
+    @Test
     public void testLoopOverEnumeration()
     {
         Theme theme = new Theme();
@@ -517,7 +576,7 @@ public class LoopTest
         String widgets = "[[widget_id,widget_name],[1,thingamabob],[2,doodad]]";
 
         Chunk c = theme.makeChunk();
-        c.append("{.loop in ~widgets as w}{$w.widget_id}{.onEmpty}EMPTY{/loop}");
+        c.append("{.loop in $widgets as $w}{$w.widget_id}{.onEmpty}EMPTY{/loop}");
 
         c.set("widgets", widgets);
 

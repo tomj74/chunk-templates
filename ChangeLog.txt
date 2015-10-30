@@ -1,5 +1,9 @@
 Release History
 
+v3.0.2 - 2015-10-30 tmcclure
+
+  Fixes bugs: looping over wrapped map, looping over POJO with null values
+
 v3.0.1 - 2015-07-16 tmcclure
 
   Better handling of nested POJOs.

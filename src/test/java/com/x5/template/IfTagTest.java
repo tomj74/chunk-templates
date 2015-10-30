@@ -337,6 +337,16 @@ public class IfTagTest
     }
 
     @Test
+    public void testLengthFilter()
+    {
+        Chunk c = new Chunk();
+        c.set("x", new String[]{});
+        c.append("{% if ($x|length == 0) %}pass{% else %}fail{% endif %}");
+
+        assertEquals("pass", c.toString());
+    }
+
+    @Test
     public void testOnEmptyFilter()
     {
         Chunk c = new Chunk();
@@ -344,10 +354,10 @@ public class IfTagTest
         c.setOrDelete("b",null);
         c.set("c","non-empty");
         c.set("d","   \n   ");
-        c.append("{^if (~a|onempty(EMPTY) == EMPTY) }EMPTY{^else}FULL{/if} ");
-        c.append("{^if (~b|onempty(EMPTY) == EMPTY) }EMPTY{^else}FULL{/if} ");
-        c.append("{^if (~c|onempty(EMPTY) == EMPTY) }EMPTY{^else}FULL{/if} ");
-        c.append("{^if (~d|onempty(EMPTY) == EMPTY) }EMPTY{^else}FULL{/if}");
+        c.append("{% if ($a|onempty(EMPTY) == EMPTY) }EMPTY{% else %}FULL{% endif %} ");
+        c.append("{% if ($b|onempty(EMPTY) == EMPTY) }EMPTY{% else %}FULL{% endif %} ");
+        c.append("{% if ($c|onempty(EMPTY) == EMPTY) }EMPTY{% else %}FULL{% endif %} ");
+        c.append("{% if ($d|onempty(EMPTY) == EMPTY) }EMPTY{% else %}FULL{% endif %}");
 
         assertEquals("EMPTY EMPTY FULL EMPTY", c.toString());
     }

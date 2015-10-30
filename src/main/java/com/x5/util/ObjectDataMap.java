@@ -162,14 +162,13 @@ public class ObjectDataMap implements Map
             try {
                 paramValue = field.get(pojo);
             } catch (IllegalAccessException e) {
+                continue;
             }
 
-            if (paramValue != null) {
-                if (pickle == null) pickle = new HashMap<String,Object>();
-                // convert isActive to is_active
-                paramName = splitCamelCase(paramName);
-                storeValue(pickle, paramClass, paramName, paramValue, isBean);
-            }
+            if (pickle == null) pickle = new HashMap<String,Object>();
+            // convert isActive to is_active
+            paramName = splitCamelCase(paramName);
+            storeValue(pickle, paramClass, paramName, paramValue, isBean);
         }
 
         return pickle;
@@ -201,7 +200,9 @@ public class ObjectDataMap implements Map
     private static void storeValue(Map<String,Object> pickle, Class paramClass,
                             String paramName, Object paramValue, boolean isBean)
     {
-        if (paramClass.isArray() || paramValue instanceof List) {
+        if (paramValue == null) {
+            pickle.put(paramName, null);
+        } else if (paramClass.isArray() || paramValue instanceof List) {
             pickle.put(paramName, paramValue);
         } else if (paramClass == String.class) {
             pickle.put(paramName, paramValue);

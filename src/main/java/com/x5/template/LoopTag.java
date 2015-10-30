@@ -260,6 +260,8 @@ public class LoopTag extends BlockTag
                                     data = TableOfMaps.boxEnumeration((java.util.Enumeration)unwrapped);
                                 } else if (unwrapped instanceof java.util.Iterator) {
                                     data = TableOfMaps.boxIterator((java.util.Iterator)unwrapped);
+                                } else if (unwrapped instanceof Map) {
+                                    data = new ObjectTable((Map)unwrapped);
                                 }
                             }
                             if (data == null) {

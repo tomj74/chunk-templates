@@ -3,6 +3,7 @@ package com.x5.template;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import org.junit.Test;
 
@@ -922,6 +923,7 @@ public class ChunkTest
         boolean isActive;
         CircularThing boss;
         CircularThing[] children;
+        Map<String,String> map;
 
         public CircularThing(String name, int age, boolean isActive)
         {
@@ -932,6 +934,10 @@ public class ChunkTest
             this.boss = this;
             // I traveled back in time, I am my own dad!
             this.children = new CircularThing[]{this,this};
+        }
+
+        public void setMap(Map<String,String> map) {
+            this.map = map;
         }
     }
 
