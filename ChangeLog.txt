@@ -1,8 +1,15 @@
 Release History
 
+v3.1.0 - 2015-11-15 tmcclure
+
+  Performance enhancements.
+  slice, reverse and get filters now work on STRING type data, not just LIST type.
+  Parens are now optional for simple if conditions.
+  TemplateConfig now easier to use programmatically.
+
 v3.0.2 - 2015-10-30 tmcclure
 
-  Fixes bugs: looping over wrapped map, looping over POJO with null values
+  Fixes bugs: looping over wrapped map, looping over POJO with null values.
 
 v3.0.1 - 2015-07-16 tmcclure
 
@@ -98,18 +105,18 @@ v2.1 - New {$tag|filter(#x_template)} runs the #x_template snippet as
        Easier access to POJO attributes and bean properties:
          * chunk.setToBean('my_thing', someObject)
              copies someObject's public accessor properties to a Map
-	     so the template can do this:
+         so the template can do this:
                 {$my_thing.price}
              to get the value of
                 someObject.getPrice()
          * chunk.set('item', somePOJO)
              copies somePOJO's non-private attributes to a Map
-	     so the template can do this:
+         so the template can do this:
                 {$item.price}
              to get the value of
                 somePOJO.price
          * Map values seen by template renderer are a snapshot from
-	   time of first attribute access.
+       time of first attribute access.
 
 v2.0 - Refactored for 20% speed gain.
        New |type filter {$what_am_i|type} outputs one of the following:

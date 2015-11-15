@@ -21,25 +21,25 @@ public class PadRightFilter extends BasicFilter implements ChunkFilter
 
     protected String padText(String text, String[] args)
     {
-    	if (text.length() == 0) return text;
+        if (text.length() == 0) return text;
 
-    	if (args == null || args.length == 0 && (args[0].equals("rpad"))) {
-    		return text + " ";
-    	}
+        if (args == null || args.length == 0 && (args[0].equals("rpad"))) {
+            return text + " ";
+        }
 
-    	String suffix = args[0];
-    	int howmany = 1;
-    	if (args.length > 1) {
-    		try {
-    			howmany = Integer.parseInt(args[1]);
-    		} catch (NumberFormatException e) {}
-    	}
-    	if (howmany == 1) return text + suffix;
+        String suffix = args[0];
+        int howmany = 1;
+        if (args.length > 1) {
+            try {
+                howmany = Integer.parseInt(args[1]);
+            } catch (NumberFormatException e) {}
+        }
+        if (howmany == 1) return text + suffix;
 
-    	StringBuilder sb = new StringBuilder(text);
-    	for (int i=0; i<howmany; i++) {
-    		sb.append(suffix);
-    	}
-    	return sb.toString();
+        StringBuilder sb = new StringBuilder(text);
+        for (int i=0; i<howmany; i++) {
+            sb.append(suffix);
+        }
+        return sb.toString();
     }
 }

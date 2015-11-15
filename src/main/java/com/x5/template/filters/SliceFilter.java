@@ -62,7 +62,7 @@ public class SliceFilter extends ListFilter
                     }
                 }
             }
-            step = parseSliceArg(stepArg,1,-1);
+            step = parseSliceArg(stepArg, 1, -1);
             from = parseSliceArg(fromArg, step < 0 ? len-1 : 0, len);
             to = parseSliceArg(endArg, step < 0 ? -1 : len, len);
             // prevent list index exceptions, infinite iterations
@@ -75,6 +75,11 @@ public class SliceFilter extends ListFilter
             step = 1;
         }
 
+        return slice(list, from, to, step);
+    }
+
+    public static Object slice(List list, int from, int to, int step)
+    {
         if (step == 1) {
             return list.subList(from, to);
         } else {

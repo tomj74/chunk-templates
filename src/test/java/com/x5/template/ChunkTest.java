@@ -738,6 +738,19 @@ public class ChunkTest
     }
 
     @Test
+    public void snakeCaseTest()
+    {
+        assertEquals("snake_xml_case", ObjectDataMap.splitCamelCase("SnakeXMLCase"));
+        assertEquals("snake_xml", ObjectDataMap.splitCamelCase("SnakeXML"));
+        assertEquals("snake_xm", ObjectDataMap.splitCamelCase("SnakeXM"));
+        assertEquals("snake_x_ma", ObjectDataMap.splitCamelCase("SnakeXMa"));
+        assertEquals("snake_x_maze", ObjectDataMap.splitCamelCase("SnakeXMaze"));
+        assertEquals("snake_maze", ObjectDataMap.splitCamelCase("SnakeMaze"));
+        assertEquals("snake2_case", ObjectDataMap.splitCamelCase("Snake2Case"));
+        assertEquals("snake2_xml_case", ObjectDataMap.splitCamelCase("Snake2XMLCase"));
+    }
+
+    @Test
     public void circularPOJOTest()
     {
         Theme theme = new Theme();

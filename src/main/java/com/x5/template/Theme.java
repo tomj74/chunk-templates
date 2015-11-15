@@ -25,7 +25,7 @@ public class Theme implements ContentSource, ChunkFactory
 
     public Theme()
     {
-        this(null, null, null);
+        this(null, null, ThemeConfig.STANDARD_DEFAULT_EXT);
     }
 
     public Theme(ThemeConfig config)
@@ -57,12 +57,12 @@ public class Theme implements ContentSource, ChunkFactory
 
     public Theme(String themeLayerNames)
     {
-        this(null, themeLayerNames, null);
+        this(null, themeLayerNames, ThemeConfig.STANDARD_DEFAULT_EXT);
     }
 
     public Theme(String themesFolder, String themeLayerNames)
     {
-        this(themesFolder, themeLayerNames, null);
+        this(themesFolder, themeLayerNames, ThemeConfig.STANDARD_DEFAULT_EXT);
     }
 
     public Theme(String themesFolder, String themeLayerNames, String ext)
@@ -70,6 +70,15 @@ public class Theme implements ContentSource, ChunkFactory
         this.themesFolder = themesFolder;
         this.themeLayerNames = themeLayerNames;
         this.fileExtension = ext;
+    }
+
+    public void setTemplateFolder(String pathToTemplates)
+    {
+        if (this.themeLayers.size() > 0) {
+            throw new java.lang.IllegalStateException("Must specify extension before lazy init.");
+        } else {
+            this.themesFolder = pathToTemplates;
+        }
     }
 
     public void setDefaultFileExtension(String ext)

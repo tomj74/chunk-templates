@@ -327,11 +327,11 @@ public class IfTagTest
     {
         Chunk c = new Chunk();
         c.set("a", 1);
-        c.append("{^if (~a|qcalc(%2) == 0)}EVEN{^else}ODD{/if}");
+        c.append("{.if (~a|qcalc(%2) == 0)}EVEN{.else}ODD{/if}");
 
         Chunk d = new Chunk();
         d.set("a", 2);
-        d.append("{^if (~a|qcalc(%2) == 0)}EVEN{^else}ODD{/if}");
+        d.append("{.if (~a|qcalc(%2) == 0)}EVEN{.else}ODD{/if}");
 
         assertEquals("ODDEVEN",c.toString()+d.toString());
     }
@@ -342,6 +342,16 @@ public class IfTagTest
         Chunk c = new Chunk();
         c.set("x", new String[]{});
         c.append("{% if ($x|length == 0) %}pass{% else %}fail{% endif %}");
+
+        assertEquals("pass", c.toString());
+    }
+
+    @Test
+    public void testLengthFilterNoParens()
+    {
+        Chunk c = new Chunk();
+        c.set("x", new String[]{});
+        c.append("{% if $x|length == 0 %}pass{% else %}fail{% endif %}");
 
         assertEquals("pass", c.toString());
     }

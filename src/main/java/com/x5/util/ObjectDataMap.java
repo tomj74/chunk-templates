@@ -85,22 +85,29 @@ public class ObjectDataMap implements Map
     }
 
     private static final Class[] NO_ARGS = new Class[]{};
+    private static Map<Class,Boolean> hasOwnToString = new HashMap<Class,Boolean>();
 
     public static String getAsString(Object obj)
     {
-        Method toString = null;
-        try {
-            toString = obj.getClass().getMethod("toString", NO_ARGS);
-        } catch (NoSuchMethodException e) {
-        } catch (SecurityException e) {
+        Class objClass = obj.getClass();
+        Boolean doStringify = hasOwnToString.get(objClass);
+        if (doStringify == null) {
+            // perform expensive check... but just this once.
+            Method toString = null;
+            try {
+                toString = obj.getClass().getMethod("toString", NO_ARGS);
+            } catch (NoSuchMethodException e) {
+            } catch (SecurityException e) {
+            }
+            doStringify = new Boolean(toString != null && !toString.getDeclaringClass().equals(Object.class));
+            hasOwnToString.put(objClass, doStringify);
         }
-
-        // If this class has its own toString() method, use it.
-        if (toString.getDeclaringClass().equals(Object.class)) {
-            // don't expose the default toString() info.
-            return "OBJECT:" + obj.getClass().getName();
-        } else {
+        if (doStringify.booleanValue()) {
+            // class has its own toString method -- safe.
             return obj.toString();
+        } else {
+            // don't expose Object's toString() info.
+            return "OBJECT:" + obj.getClass().getName();
         }
     }
 
@@ -142,9 +149,21 @@ public class ObjectDataMap implements Map
         return data;
     }
 
+    private static Map<Class,Field[]> declaredFields = new HashMap<Class,Field[]>();
+
     public Map<String,Object> mapifyPOJO(Object pojo)
     {
-        Field[] fields = pojo.getClass().getDeclaredFields();
+        Field[] fields = null;
+
+        Class pojoClass = pojo.getClass();
+        if (declaredFields.containsKey(pojoClass)) {
+            fields = declaredFields.get(pojoClass);
+        } else {
+            // expensive. cache!
+            fields = pojoClass.getDeclaredFields();
+            declaredFields.put(pojoClass, fields);
+        }
+
         Map<String,Object> pickle = null;
 
         for (int i=0; i<fields.length; i++) {
@@ -202,16 +221,16 @@ public class ObjectDataMap implements Map
     {
         if (paramValue == null) {
             pickle.put(paramName, null);
-        } else if (paramClass.isArray() || paramValue instanceof List) {
-            pickle.put(paramName, paramValue);
         } else if (paramClass == String.class) {
+            pickle.put(paramName, paramValue);
+        } else if (paramClass.isArray() || paramValue instanceof List) {
             pickle.put(paramName, paramValue);
         } else if (paramValue instanceof Boolean) {
             if (((Boolean)paramValue).booleanValue()) {
                 pickle.put(paramName, "TRUE");
             }
         } else if (paramClass.isPrimitive() || isWrapperType(paramClass)) {
-            pickle.put(paramName, paramValue.toString());
+            pickle.put(paramName, paramValue);
         } else {
             // box all non-primitive object member fields
             // in their own ObjectDataMap wrapper.
@@ -222,17 +241,45 @@ public class ObjectDataMap implements Map
 
     }
 
-    // splitCamelCase converts SimpleXMLStuff to Simple_XML_Stuff
+    private static Map<String,String> snakeCased = new HashMap<String,String>();
+
+    // splitCamelCase converts SimpleXMLStuff to simple_xml_stuff
     public static String splitCamelCase(String s)
     {
-       return s.replaceAll(
-          String.format("%s|%s|%s",
-             "(?<=[A-Z])(?=[A-Z][a-z])",
-             "(?<=[^A-Z])(?=[A-Z])",
-             "(?<=[A-Za-z])(?=[^A-Za-z])"
-          ),
-          "_"
-       ).toLowerCase();
+        String cached = snakeCased.get(s);
+        if (cached != null) return cached;
+
+        // no regex! single pass through string
+        StringBuilder snakeCase = new StringBuilder();
+        int m = 0;
+        char[] chars = s.toCharArray();
+        // ascii lower
+        char[] lower = new char[chars.length];
+        for (int i=0; i<chars.length; i++) {
+            char c = chars[i];
+            lower[i] = (c >= 'A' && c <= 'Z') ? (char)(c + 32) : c;
+        }
+        for (int i=1; i<chars.length; i++) {
+            char c0 = chars[i-1];
+            char c1 = chars[i];
+            if (c0 < 'A' || c0 > 'Z') {
+                if (c1 >= 'A' && c1 <= 'Z') {
+                    // non-cap, then cap
+                    snakeCase.append(lower, m, i-m);
+                    snakeCase.append('_');
+                    m = i;
+                }
+            } else if (i-m > 1 && c0 >= 'A' && c0 <= 'Z' && (c1 > 'Z' || c1 < 'A')) {
+                snakeCase.append(lower, m, i-1-m);
+                snakeCase.append('_');
+                m = i-1;
+            }
+        }
+        snakeCase.append(lower, m, lower.length-m);
+
+        cached = snakeCase.toString();
+        snakeCased.put(s, cached);
+        return cached;
     }
 
     public int size()

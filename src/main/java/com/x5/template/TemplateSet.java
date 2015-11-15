@@ -101,13 +101,11 @@ public class TemplateSet implements ContentSource, ChunkFactory
     // performance by avoiding typical multiple parses of a
     // file for its subtemplates in a short span of code.
     private static final long MIN_CACHE = 5 * 1000;
-    private static final int DEFAULT_REFRESH = 15; // minutes
-    private static final String DEFAULT_EXTENSION = "chtml";
 
     private Hashtable<String,Snippet> cache = new Hashtable<String,Snippet>();
     private Hashtable<String,Long> cacheFetch = new Hashtable<String,Long>();
-    private int dirtyInterval = DEFAULT_REFRESH; // minutes
-    private String defaultExtension = DEFAULT_EXTENSION;
+    private int dirtyInterval = 0; // minutes
+    private String defaultExtension = null;
     private String tagStart = DEFAULT_TAG_START;
     private String tagEnd = DEFAULT_TAG_END;
     private String templatePath = System.getProperty("templateset.folder","");
@@ -120,17 +118,6 @@ public class TemplateSet implements ContentSource, ChunkFactory
     private String expectedEncoding = TemplateDoc.getDefaultEncoding();
 
     public TemplateSet() {}
-
-    /**
-     * Makes a template "factory" which reads in template files from the
-     * file system in the templatePath folder.  Caches for 15 minutes.
-     * Assumes .html is default file extension.
-     * @param templatePath folder where template files are located.
-     */
-    public TemplateSet(String templatePath)
-    {
-        this(templatePath, DEFAULT_EXTENSION, DEFAULT_REFRESH);
-    }
 
     /**
      * Makes a template "factory" which reads in template files from the
@@ -152,7 +139,7 @@ public class TemplateSet implements ContentSource, ChunkFactory
             this.templatePath = templatePath;
         }
         this.dirtyInterval = refreshMins;
-        this.defaultExtension = (extension == null ? DEFAULT_EXTENSION : extension);
+        this.defaultExtension = extension;
     }
 
     /**

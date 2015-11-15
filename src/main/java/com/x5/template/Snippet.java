@@ -37,7 +37,7 @@ public class Snippet
     public static Snippet getSnippet(String template)
     {
         if (Snippet.useCache) {
-            return getSnippetFromCache(template);
+            return getSnippetFromCache(template, null);
         } else {
             return new Snippet(template);
         }
@@ -46,14 +46,14 @@ public class Snippet
     public static Snippet getSnippet(String template, String origin)
     {
         if (Snippet.useCache) {
-            return getSnippetFromCache(template);
+            return getSnippetFromCache(template, origin);
         } else {
             return new Snippet(template, origin);
         }
     }
 
     /* premature optimization? */
-    private static Snippet getSnippetFromCache(String template)
+    private static Snippet getSnippetFromCache(String template, String origin)
     {
         long timestamp = System.currentTimeMillis();
 
@@ -66,7 +66,7 @@ public class Snippet
             cacheAge.put(template, timestamp);
             return s;
         } else {
-            s = new Snippet(template);
+            s = new Snippet(template, origin);
             snippetCache.put(template, s);
             cacheAge.put(template, timestamp);
             return s;
@@ -75,11 +75,11 @@ public class Snippet
 
     private static boolean isCacheEnabled()
     {
-        String useCacheProperty = System.getProperty("chunk.snippetcache");
+        String useCacheProperty = System.getProperty("chunk.nosnippetcache");
         if (useCacheProperty != null) {
-            return true;
-        } else {
             return false;
+        } else {
+            return true;
         }
     }
 
@@ -913,15 +913,15 @@ public class Snippet
         if (template == null) return null;
         if (template.size() == 1) return template.get(0);
         for (int i=1; i<template.size(); i++) {
-        	Snippet a = template.get(i-1);
-        	Snippet b = template.get(i);
-        	if (a.origin == null && b.origin == null) continue;
-        	if (a.origin != null && b.origin != null) {
-        		if (a.origin.equals(b.origin)) {
-        			continue;
-        		}
-        	}
-        	throw new EndOfSnippetException("Can't merge snippets, incompatible origins.");
+            Snippet a = template.get(i-1);
+            Snippet b = template.get(i);
+            if (a.origin == null && b.origin == null) continue;
+            if (a.origin != null && b.origin != null) {
+                if (a.origin.equals(b.origin)) {
+                    continue;
+                }
+            }
+            throw new EndOfSnippetException("Can't merge snippets, incompatible origins.");
         }
         // Merge will work -- but, can't just slap all parts together,
         // since block tag might start in one snippet and end in another.

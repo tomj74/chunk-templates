@@ -24,7 +24,7 @@ public class SplitFilter implements ChunkFilter
             if (args.length == 1) {
                 delim = args[0];
             } else if (args.length > 1) {
-                // edge case -- split(,) is not supposed to be split("","")
+                // edge case -- split(,) means split(",") not split("","")
                 if (arg.getUnparsedArgs().equals(",")) {
                     delim = ",";
                 } else {

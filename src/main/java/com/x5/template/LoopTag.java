@@ -16,7 +16,6 @@ import com.x5.util.TableData;
 
 public class LoopTag extends BlockTag
 {
-    private Chunk chunk;
     private String rowTemplate;
     private String emptyTemplate;
     private Map<String,Object> options;
@@ -59,22 +58,20 @@ public class LoopTag extends BlockTag
     {
     }
 
-    public LoopTag(String params, Chunk ch, String origin)
+    // this constructor is only called when the loop tag has no body
+    // eg {% loop data="$mydata" template="#test_row" no_data="#test_empty" divider="<hr/>" %}
+    public LoopTag(String params, Chunk context, String origin)
     {
-        this.chunk = ch;
         parseParams(params);
-
-        // this constructor is only called when the loop tag has no body
-        // eg {% loop data="$mydata" template="#test_row" no_data="#test_empty" divider="<hr/>" %}
-        initWithoutBlock(origin);
+        initWithoutBlock(context, origin);
     }
 
-    private void initWithoutBlock(String origin)
+    private void initWithoutBlock(Chunk context, String origin)
     {
         // set up snippets
-        if (this.chunk == null) return;
+        if (context == null) return;
 
-        ContentSource snippetRepo = chunk.getTemplateSet();
+        ContentSource snippetRepo = context.getTemplateSet();
         if (snippetRepo == null) return;
 
         if (this.rowTemplate != null) {
@@ -104,6 +101,33 @@ public class LoopTag extends BlockTag
         } else {
             parseAttributes(params);
         }
+
+        parseCounterTagModifiers();
+    }
+
+    private void parseCounterTagModifiers()
+    {
+        if (options == null) return;
+        String counterTag = (String)options.get("counter_tag");
+        if (counterTag == null) return;
+
+        counterTag = eatTagSymbol(counterTag);
+        if (counterTag.indexOf(",") > 0) {
+            String[] counterArgs = counterTag.split(",");
+            counterTag = counterArgs[0];
+            try {
+                int counterOffset = Integer.parseInt(counterArgs[1]);
+                options.put("_counter_offset", new Integer(counterOffset));
+            } catch (NumberFormatException e) {}
+            // optional third arg is step size
+            if (counterArgs.length > 2) {
+                try {
+                    int counterStep = Integer.parseInt(counterArgs[2]);
+                    options.put("_counter_step", new Integer(counterStep));
+                } catch (NumberFormatException e) {}
+            }
+        }
+        options.put("counter_tag", counterTag);
     }
 
     // {^loop in ~data}...{^/loop} (or {^loop in ~data as x}...)
@@ -184,10 +208,11 @@ public class LoopTag extends BlockTag
     }
 
     @SuppressWarnings("rawtypes")
-    private TableData fetchData(String dataVar, String origin)
+    private TableData fetchData(String dataVar, Chunk context, String origin)
     {
         TableData data = null;
 
+        // TODO avoid repeating this loop data resolution step on multiple runs of the loop
         if (dataVar != null) {
             int rangeMarker = dataVar.indexOf("[");
             if (rangeMarker > 0) {
@@ -208,8 +233,8 @@ public class LoopTag extends BlockTag
                 // tag reference (eg, tag assigned to query result table)
                 dataVar = dataVar.substring(1);
 
-                if (chunk != null) {
-                    Object dataStore = chunk.get(dataVar);
+                if (context != null) {
+                    Object dataStore = context.get(dataVar);
 
                     // if nec, follow pointers until data is reached
                     int depth = 0;
@@ -222,7 +247,7 @@ public class LoopTag extends BlockTag
                             // simple strings are now encased in Snippet obj's
                             Snippet snippetData = (Snippet)dataStore;
                             if (snippetData.isSimplePointer()) {
-                                dataStore = chunk.get(snippetData.getPointer());
+                                dataStore = context.get(snippetData.getPointer());
                                 depth++;
                                 continue;
                             } else {
@@ -276,10 +301,10 @@ public class LoopTag extends BlockTag
                     }
                 }
             } else {
-                // template reference
-                if (chunk != null) {
+                // template reference to template containing inline table
+                if (context != null) {
                     dataVar = qualifyTemplateRef(origin, dataVar);
-                    String tableAsString = chunk.getTemplateSet().fetch(dataVar);
+                    String tableAsString = context.getTemplateSet().fetch(dataVar);
                     if (tableAsString != null) {
                         data = InlineTable.parseTable(tableAsString);
                     }
@@ -350,19 +375,11 @@ public class LoopTag extends BlockTag
             }
             if (options.containsKey("counter_tag")) {
                 counterTag = (String)options.get("counter_tag");
-                counterTag = eatTagSymbol(counterTag);
-                if (counterTag.indexOf(",") > 0) {
-                    String[] counterArgs = counterTag.split(",");
-                    counterTag = counterArgs[0];
-                    try {
-                        counterOffset = Integer.parseInt(counterArgs[1]);
-                    } catch (NumberFormatException e) {}
-                    // optional third arg is step size
-                    if (counterArgs.length > 2) {
-                        try {
-                            counterStep = Integer.parseInt(counterArgs[2]);
-                        } catch (NumberFormatException e) {}
-                    }
+                if (options.containsKey("_counter_offset")) {
+                    counterOffset = ((Integer)options.get("_counter_offset")).intValue();
+                }
+                if (options.containsKey("_counter_step")) {
+                    counterStep = ((Integer)options.get("_counter_step")).intValue();
                 }
             }
             if (options.containsKey("first_last")) {
@@ -821,11 +838,10 @@ public class LoopTag extends BlockTag
             options.put("dividerSnippet", dividerSnippet);
         }
 
-        this.chunk = context;
         TableData data = null;
 
         if (options != null) {
-            data = fetchData((String)options.get("data"), origin);
+            data = fetchData((String)options.get("data"), context, origin);
         }
 
         cookLoopToPrinter(out, context, origin, true, depth, data);

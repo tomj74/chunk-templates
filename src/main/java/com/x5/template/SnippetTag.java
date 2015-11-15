@@ -12,6 +12,7 @@ public class SnippetTag extends SnippetPart
     protected String tag;
 
     private String[] path;
+    private boolean hasBackticks;
     private String filters;
     private String ifNull;
     private boolean applyFiltersIfNull = false;
@@ -102,6 +103,7 @@ public class SnippetTag extends SnippetPart
 
     private String[] parsePath(String deepRef)
     {
+        if (deepRef.indexOf("`") > -1) hasBackticks = true;
         if (deepRef.indexOf('.',1) < 0 || deepRef.charAt(0) == '.') {
             // no segments, or command-prefix (and therefore segments should
             // not be handled here).
@@ -213,6 +215,11 @@ public class SnippetTag extends SnippetPart
     {
         if (path == null) init();
         return path;
+    }
+
+    public boolean hasBackticks()
+    {
+        return this.hasBackticks;
     }
 
     public String getDefaultValue()

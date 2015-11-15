@@ -12,9 +12,8 @@ import com.x5.template.filters.RegexFilter;
 
 public class IfTag extends BlockTag
 {
-    // chosenPath simplest case: 0 is "then", -1 is "else"
-    // else-if case: 0 is "then", 1 is first else-if, 2 is 2nd else-if, -1 is "else"
     private String primaryCond;
+    private Map<String,IfTest> condTests = new HashMap<String,IfTest>();
 
     private Snippet body;
     private boolean doTrim = true;
@@ -24,7 +23,7 @@ public class IfTag extends BlockTag
     public IfTag(String params, Snippet body)
     {
         parseParams(params);
-        initBody(body);
+        this.body = body;
     }
 
     public IfTag()
@@ -41,29 +40,14 @@ public class IfTag extends BlockTag
         return "/if";
     }
 
-    private void initBody(Snippet body)
-    {
-        // FIXME pre-scan body to identify all ^else and ^elseIf blocks
-        this.body = body;
-    }
-
     private void parseParams(String params)
     {
-        String cond = parseCond(params);
-        primaryCond = cond;
-        /*
-        if (context != null) {
-            if (isTrueExpr(primaryCond, context)) {
-                chosenPath = 0;
-            } else {
-                chosenPath = -1;
-            }
-        }*/
+        primaryCond = parseCond(params);
+        condTests.put(primaryCond, new IfTest(primaryCond));
+
         options = parseAttributes(params);
         if (options == null) return;
 
-        //thenTemplate = options.get("then");
-        //elseTemplate = options.get("else");
         String trimOpt = options.get("trim");
         if (trimOpt != null) {
             if (trimOpt.equalsIgnoreCase("false") || trimOpt.equalsIgnoreCase("none")) {
@@ -77,36 +61,27 @@ public class IfTag extends BlockTag
         if (params == null) return null;
 
         // look for conditional test. first, try parens (...)
-        int openParenPos = params.indexOf("(");
-        int quotedCondPos = params.indexOf(" cond=\"");
+        int exprPos = params.indexOf("f") + 1; // if or elseIf
+        int openParenPos = params.indexOf("(", exprPos);
 
-        if (openParenPos > -1) {
-            //int closeParenPos = params.indexOf(")",openParenPos+1);
+        if (openParenPos > -1 && params.substring(exprPos,openParenPos).trim().length() == 0) {
             int closeParenPos = params.lastIndexOf(")");
-            if (quotedCondPos < 0 && closeParenPos > openParenPos) {
+            if (closeParenPos > openParenPos) {
                 String test = params.substring(openParenPos+1,closeParenPos);
                 return test;
             }
         }
 
-        if (quotedCondPos > -1) {
-            quotedCondPos += " cond='".length();
-            int closeQuotePos = params.indexOf("\"",quotedCondPos);
-            if (closeQuotePos < 0) {
-                return params.substring(quotedCondPos);
-            } else {
-                return params.substring(quotedCondPos,closeQuotePos);
-            }
-        }
-
-        return null;
+        // no parens?  allow conditional to not be encased in parens, a la python/go.
+        return params.substring(exprPos);
     }
+
+    private static final Pattern paramPattern = Pattern.compile(" ([a-zA-Z0-9_-]+)=(\"([^\"]*)\"|'([^\']*)')");
 
     private Map<String,String> parseAttributes(String params)
     {
         // find and save all xyz="abc" style attributes
-        Pattern p = Pattern.compile(" ([a-zA-Z0-9_-]+)=(\"([^\"]*)\"|'([^\']*)')");
-        Matcher m = p.matcher(params);
+        Matcher m = paramPattern.matcher(params);
         HashMap<String,String> opts = null;
         while (m.find()) {
             m.group(0); // need to do this for subsequent number to be correct?
@@ -116,151 +91,6 @@ public class IfTag extends BlockTag
             opts.put(paramName, paramValue);
         }
         return opts;
-    }
-
-    private boolean isTrueExpr(String test, Chunk context)
-    {
-        if (test == null) return false;
-        test = test.trim();
-        if (test.length() == 0) return false;
-
-        char firstChar = test.charAt(0);
-        if (firstChar == '!' || firstChar == '~' || firstChar == '$') {
-            test = test.substring(1);
-        }
-        // eat one more in the !~tag case
-        if (firstChar == '!' && (test.charAt(0) == '~' || test.charAt(0) == '$')) {
-            test = test.substring(1);
-        }
-
-        if (test.indexOf('=') < 0 && test.indexOf("!~") < 0) {
-            // simplest case: no comparison, just a non-null (or null) test
-            Object tagValue = context.get(test);
-            if (firstChar == '~' || firstChar == '$') {
-                return (tagValue != null) ? true : false;
-            } else if (firstChar == '!') {
-                return (tagValue == null) ? true : false;
-            } else {
-                // should this be an error?
-                return (test.equalsIgnoreCase("true")) ? true : false;
-            }
-        }
-
-        // now handle straight equality/inequality
-        // (~asdf == ~xyz) and (~asdf != ~xyz)
-        boolean isNeg = false;
-        if (test.indexOf("==") > 0 || (isNeg = test.indexOf("!=") > 0)) {
-            String[] parts = test.split("!=|==");
-            if (parts.length == 2) {
-                String tagA = parts[0].trim();
-                String tagB = parts[1].trim();
-
-                // get A
-                Object tagValue = context.get(tagA);
-                String tagValueA = tagValue == null ? "" : tagValue.toString();
-
-                if (tagB.charAt(0) == '~' || tagB.charAt(0) == '$') {
-                    // equality (or inequality) of two variables (tags)
-                    // resolve both tags and compare
-
-                    // get B
-                    tagValue = context.get(tagB.substring(1));
-                    String tagValueB = tagValue == null ? "" : tagValue.toString();
-
-                    if (isNeg) {
-                        return (tagValueA.equals(tagValueB)) ? false : true;
-                    } else {
-                        return (tagValueA.equals(tagValueB)) ? true : false;
-                    }
-                } else {
-                    // equality (or inequality) of one variable (tag)
-                    // compared to a constant string
-                    String match = tagB;
-                    // allow tagB to be quoted?  if so, strip quotes here
-                    if (tagB.charAt(0) == '"' && tagB.charAt(match.length()-1) == '"') {
-                        // FIXME should scan for unescaped end-quote in the middle of the string
-                        match = tagB.substring(1, tagB.length()-1);
-                        // quoted strings may have escaped characters.
-                        // unescape.
-                        match = unescape(match);
-                    } else if (tagB.charAt(0) == '\'' && tagB.charAt(match.length()-1) == '\'') {
-                        // FIXME should scan for unescaped end-quote in the middle of the string
-                        match = tagB.substring(1, tagB.length()-1);
-                        // unescape
-                        match = unescape(match);
-                    }
-                    if (isNeg) {
-                        return (tagValueA.equals(match)) ? false : true;
-                    } else {
-                        return (tagValueA.equals(match)) ? true : false;
-                    }
-                }
-            }
-        }
-
-        // handle pattern match
-        String[] parts = test.split("=~");
-        boolean neg = false;
-        if (parts.length != 2) {
-            parts = test.split("!~");
-            neg = true;
-            if (parts.length != 2) {
-                return false; // or error?
-            }
-        }
-
-        String var = parts[0].trim();
-        String regex = parts[1].trim();
-
-        Object tagValue = context.get(var);
-
-        boolean isMatch = isMatch(tagValue == null ? null : tagValue.toString(), regex);
-
-        if (neg) {
-            return isMatch ? false : true;
-        } else {
-            return isMatch ? true : false;
-        }
-    }
-
-    private String unescape(String x)
-    {
-        // this method does more or less what we want
-        return RegexFilter.parseRegexEscapes(x);
-    }
-
-    private boolean isMatch(String text, String regex)
-    {
-        if (text == null || regex == null) return false;
-        regex = regex.trim();
-
-        int cursor = 0;
-        if (regex.charAt(cursor) == 'm') cursor++;
-        if (regex.charAt(cursor) == '/') cursor++;
-        int regexEnd = RegexFilter.nextRegexDelim(regex,cursor);
-        if (regexEnd < 0) return false; // fatal, unmatched regex boundary
-
-        String pattern = regex.substring(cursor,regexEnd);
-
-        // check for modifiers after regex end
-        boolean ignoreCase = false;
-        boolean multiLine = false;
-        boolean dotAll = false;
-
-        for (int i=regex.length()-1; i>regexEnd; i--) {
-            char option = regex.charAt(i);
-            if (option == 'i') ignoreCase = true;
-            if (option == 'm') multiLine = true;
-            if (option == 's') dotAll = true; // dot matches newlines too
-        }
-
-        if (multiLine) pattern = "(?m)" + pattern;
-        if (ignoreCase) pattern = "(?i)" + pattern;
-        if (dotAll) pattern = "(?s)" + pattern;
-
-        Pattern p = Pattern.compile(pattern);
-        Matcher m = p.matcher(text);
-        return m.find();
     }
 
     public boolean doSmartTrimAroundBlock()
@@ -349,6 +179,17 @@ public class IfTag extends BlockTag
         return -1;
     }
 
+    private boolean isTrueExpr(String test, Chunk context)
+    {
+        IfTest compiledTest = condTests.get(test);
+        if (compiledTest == null) {
+            compiledTest = new IfTest(test);
+            condTests.put(test, compiledTest);
+        }
+
+        return compiledTest.isTrue(context);
+    }
+
     public void renderBlock(Writer out, Chunk context, String origin, int depth)
     throws IOException
     {
@@ -356,25 +197,19 @@ public class IfTag extends BlockTag
         List<SnippetPart> bodyParts = body.getParts();
         int nextElseTag = nextElseTag(bodyParts,0);
 
-        //int path = 0;
-
         if (isTrueExpr(primaryCond, context)) {
-            //chosenPath = 0;
             if (nextElseTag < 0) nextElseTag = bodyParts.size();
             renderChosenParts(out, context, origin, depth, bodyParts, 0, nextElseTag);
         } else {
-            // locate next {^else} or {^elseIf} tag, or output nothing
+            // locate next else or elseIf tag, or output nothing
             while (nextElseTag > -1) {
-                //path++;
                 String elseTag = ((SnippetTag)bodyParts.get(nextElseTag)).getTag();
                 if (elseTag.equals(".else")) {
-                    //chosenPath = path;
                     renderChosenParts(out, context, origin, depth, bodyParts, nextElseTag+1, bodyParts.size());
                     break;
                 } else {
                     String elseIfCond = parseCond(elseTag);
                     if (isTrueExpr(elseIfCond, context)) {
-                        //chosenPath = path;
                         int nextBoundary = nextElseTag(bodyParts,nextElseTag+1);
                         if (nextBoundary == -1) nextBoundary = bodyParts.size();
                         renderChosenParts(out, context, origin, depth, bodyParts, nextElseTag+1, nextBoundary);
@@ -447,5 +282,203 @@ public class IfTag extends BlockTag
                 }
             }
         }
+    }
+
+    private static class IfTest
+    {
+        private static final int EXISTENCE = 0;
+        private static final int COMPARE_CONSTANT = 1;
+        private static final int COMPARE_REGEX = 2;
+        private static final int COMPARE_TAGEXPR = 3;
+
+        private int testType = 0;
+        private boolean isNeg = false;
+
+        // when comparing against a constant, this is the constant
+        // when comparing against a regex, this is the regex
+        private String compareTo = null;
+
+        // if left side or right side are tag expressions, pre-init them and store here
+        private SnippetTag leftSide = null;
+        private SnippetTag rightSide = null;
+
+        public IfTest(String test)
+        {
+            init(test);
+        }
+
+        private void init(String test)
+        {
+            if (test == null) return;
+            test = test.trim();
+            if (test.length() == 0) return;
+
+            char firstChar = test.charAt(0);
+            if (firstChar == '$' || firstChar == '!' || firstChar == '~') {
+                test = test.substring(1);
+            }
+            // eat one more in the !~tag case
+            if (firstChar == '!' && (test.charAt(0) == '$' || test.charAt(0) == '~')) {
+                test = test.substring(1);
+            }
+
+            if (test.indexOf('=') < 0 && test.indexOf("!~") < 0) {
+                this.testType = IfTest.EXISTENCE;
+                // simplest case: no comparison, just a non-null (or null) test
+                if (firstChar == '$' || firstChar == '~') {
+                    this.leftSide = SnippetTag.parseTag(test);
+                } else if (firstChar == '!') {
+                    this.leftSide = SnippetTag.parseTag(test);
+                    this.isNeg = true;
+                } else {
+                    this.isNeg = !test.equalsIgnoreCase("true");
+                }
+                return;
+            }
+
+            // now handle straight equality/inequality
+            // ($asdf == $xyz) and ($asdf != $xyz)
+            int eqPos = test.indexOf("==");
+            int ineqPos = test.indexOf("!=");
+            if (eqPos > 0 || ineqPos > 0) {
+                this.isNeg = eqPos < 0;
+                String tagA = test.substring(0, isNeg ? ineqPos : eqPos).trim();
+                String tagB = test.substring((isNeg ? ineqPos : eqPos) + 2).trim();
+
+                this.leftSide = SnippetTag.parseTag(tagA);
+
+                if (tagB.charAt(0) == '$' || tagB.charAt(0) == '~') {
+                    this.rightSide = SnippetTag.parseTag(tagB.substring(1));
+                    this.testType = IfTest.COMPARE_TAGEXPR;
+                } else {
+                    this.testType = IfTest.COMPARE_CONSTANT;
+                    String match = tagB;
+                    // allow tagB to be quoted?  if so, strip quotes here
+                    if (tagB.charAt(0) == '"' && tagB.charAt(match.length()-1) == '"') {
+                        // FIXME should scan for unescaped end-quote in the middle of the string
+                        match = tagB.substring(1, tagB.length()-1);
+                        // quoted strings may have escaped characters.
+                        // unescape.
+                        match = unescape(match);
+                    } else if (tagB.charAt(0) == '\'' && tagB.charAt(match.length()-1) == '\'') {
+                        // FIXME should scan for unescaped end-quote in the middle of the string
+                        match = tagB.substring(1, tagB.length()-1);
+                        // unescape
+                        match = unescape(match);
+                    }
+                    this.compareTo = match;
+                }
+                return;
+            }
+
+            // handle pattern match
+            int regexOpPos = test.indexOf("=~");
+            int negRegexOpPos = test.indexOf("!~");
+            if (regexOpPos < 0 && negRegexOpPos < 0) {
+                isNeg = true;
+                return;
+            }
+            this.isNeg = regexOpPos < 0;
+            regexOpPos = isNeg ? negRegexOpPos : regexOpPos;
+
+            String var = test.substring(0, regexOpPos).trim();
+            String regex = test.substring(regexOpPos + 2).trim();
+            this.leftSide = SnippetTag.parseTag(var);
+            this.testType = IfTest.COMPARE_REGEX;
+            this.compareTo = regex;
+        }
+
+        private String unescape(String x)
+        {
+            // this method does more or less what we want
+            return RegexFilter.parseRegexEscapes(x);
+        }
+
+        public boolean isTrue(Chunk context)
+        {
+            Object leftSideValue;
+
+            switch (testType) {
+            case EXISTENCE:
+                if (leftSide == null) {
+                    return !isNeg;
+                }
+                leftSideValue = context.resolveTagValue(leftSide, 1);
+                return (leftSideValue == null) ? isNeg : !isNeg;
+            case COMPARE_CONSTANT:
+                leftSideValue = context.resolveTagValue(leftSide, 1);
+                if (leftSideValue == null) {
+                    return (compareTo == null) ? !isNeg : isNeg;
+                }
+                return leftSideValue.toString().equals(compareTo == null ? "" : compareTo) ? !isNeg : isNeg;
+            case COMPARE_TAGEXPR:
+                leftSideValue = context.resolveTagValue(leftSide, 1);
+                Object rightSideValue = context.resolveTagValue(rightSide, 1);
+                if (leftSideValue == null && rightSideValue == null) {
+                    return !isNeg;
+                }
+                if (leftSideValue == null || rightSideValue == null) {
+                    return isNeg;
+                }
+                String leftStr = leftSideValue.toString();
+                String rightStr = rightSideValue.toString();
+                return leftStr.equals(rightStr) ? !isNeg : isNeg;
+            case COMPARE_REGEX:
+                leftSideValue = context.resolveTagValue(leftSide, 1);
+                String testStr = leftSideValue == null ? null : leftSideValue.toString();
+                return isMatch(testStr, this.compareTo) ? !isNeg : isNeg;
+            default:
+                return false;
+            }
+        }
+
+        private boolean isMatch(String text, String regex)
+        {
+            if (text == null || regex == null) return false;
+            regex = regex.trim();
+
+            Pattern p = compilePattern(regex);
+            if (p == null) return false;
+            Matcher m = p.matcher(text);
+            return m.find();
+        }
+
+        private static Map<String,Pattern> compiledRegex = new HashMap<String,Pattern>();
+
+        private Pattern compilePattern(String regex)
+        {
+            if (compiledRegex.containsKey(regex)) {
+                return compiledRegex.get(regex);
+            }
+
+            int cursor = 0;
+            if (regex.charAt(cursor) == 'm') cursor++;
+            if (regex.charAt(cursor) == '/') cursor++;
+            int regexEnd = RegexFilter.nextRegexDelim(regex,cursor);
+            if (regexEnd < 0) return null; // fatal, unmatched regex boundary
+
+            String pattern = regex.substring(cursor,regexEnd);
+            // check for modifiers after regex end
+            boolean ignoreCase = false;
+            boolean multiLine = false;
+            boolean dotAll = false;
+
+            for (int i=regex.length()-1; i>regexEnd; i--) {
+                char option = regex.charAt(i);
+                if (option == 'i') ignoreCase = true;
+                if (option == 'm') multiLine = true;
+                if (option == 's') dotAll = true; // dot matches newlines too
+            }
+
+            if (multiLine) pattern = "(?m)" + pattern;
+            if (ignoreCase) pattern = "(?i)" + pattern;
+            if (dotAll) pattern = "(?s)" + pattern;
+
+            Pattern p = Pattern.compile(pattern);
+            compiledRegex.put(regex, p);
+
+            return p;
+        }
+
     }
 }

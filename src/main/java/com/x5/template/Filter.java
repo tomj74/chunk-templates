@@ -71,28 +71,28 @@ public class Filter
             return typeFilter(context, input);
         }
 
-        if (input instanceof String || input instanceof Snippet) {
+        String text = null;
+        if (input instanceof String) {
+            text = (String)input;
+        } else if (input instanceof Snippet) {
+            text = ((Snippet)input).toSimpleString();
+        }
+
+        if (text != null) {
             // provide a few core filters without making a whole class for each one.
-            String text = BasicFilter.stringify(input);
             if (filter.equals("trim")) {
                 // trim leading and trailing whitespace
-                return text == null ? null : text.trim(); //text.replaceAll("^\\s+","").replaceAll("\\s+$","");
+                return text.trim(); //text.replaceAll("^\\s+","").replaceAll("\\s+$","");
             } else if (filter.startsWith("join(")) {
-                if (text != null) {
-                    TableData array = InlineTable.parseTable(text);
-                    if (array != null) {
-                        return joinInlineTable(array, filterArgs);
-                    }
+                TableData array = InlineTable.parseTable(text);
+                if (array != null) {
+                    return joinInlineTable(array, filterArgs);
                 }
             } else if (filter.startsWith("get(")) {
-                if (text != null) {
-                    TableData array = InlineTable.parseTable(text);
-                    if (array != null) {
-                        return accessArrayIndex(array, filterArgs);
-                    }
+                TableData array = InlineTable.parseTable(text);
+                if (array != null) {
+                    return accessArrayIndex(array, filterArgs);
                 }
-            } else if (filter.equals("type")) {
-                return "STRING";
             }
         }
 

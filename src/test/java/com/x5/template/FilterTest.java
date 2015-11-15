@@ -699,7 +699,7 @@ public class FilterTest
 
         c.append("{$z|get(0)} {$z|str} {$z|str|get(0)}");
 
-        assertEquals("rice [rice, spam, seaweed] [rice, spam, seaweed]", c.toString());
+        assertEquals("rice [rice, spam, seaweed] [", c.toString());
     }
 
     @Test
@@ -726,6 +726,26 @@ public class FilterTest
         c.resetTemplate();
         c.append("{$x|slice(2::-2)|get(1)}");
         assertEquals("A", c.toString());
+    }
+
+    @Test
+    public void testSliceOnString()
+    {
+        Theme theme = new Theme();
+        Chunk c = theme.makeChunk();
+        c.append("{$x|slice(:1)}");
+        c.set("x", "Walter");
+        assertEquals("W", c.toString());
+    }
+
+    @Test
+    public void testReverseOnString()
+    {
+        Theme theme = new Theme();
+        Chunk c = theme.makeChunk();
+        c.append("{$x|reverse}");
+        c.set("x", "redruM");
+        assertEquals("Murder", c.toString());
     }
 
     @Test

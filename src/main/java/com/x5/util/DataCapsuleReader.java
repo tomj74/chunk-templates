@@ -121,7 +121,11 @@ public class DataCapsuleReader
     private static String transmogrify(String s)
     {
         String spaced = ObjectDataMap.splitCamelCase(s);
-        return spaced.replaceFirst("^get_", "");
+        if (spaced.startsWith("get_")) {
+            return spaced.substring(4);
+        } else {
+            return spaced;
+        }
     }
 
     public String[] getColumnLabels(String altPrefix)

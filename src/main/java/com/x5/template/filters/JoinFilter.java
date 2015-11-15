@@ -14,11 +14,16 @@ public class JoinFilter extends ListFilter
     @SuppressWarnings("rawtypes")
     public Object transformList(Chunk chunk, List list, FilterArgs args)
     {
-        if (list == null) return "";
-        if (list.size() == 1) return list.get(0);
-
         // the only arg is the divider
         String divider = args.getUnparsedArgs();
+
+        return join(list, divider);
+    }
+
+    public static Object join(List list, String divider)
+    {
+        if (list == null) return "";
+        if (list.size() == 1) return list.get(0);
 
         StringBuilder x = new StringBuilder();
         int i = 0;
