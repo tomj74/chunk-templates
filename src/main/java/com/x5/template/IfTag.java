@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import com.x5.template.filters.FilterArgs;
 import com.x5.template.filters.RegexFilter;
 
 public class IfTag extends BlockTag
@@ -322,7 +323,10 @@ public class IfTag extends BlockTag
                 test = test.substring(1);
             }
 
-            if (test.indexOf('=') < 0 && test.indexOf("!~") < 0) {
+            // find the end of the LHS
+            int scanStart = skipModifiers(test);
+
+            if (test.indexOf('=', scanStart) < 0 && test.indexOf("!~", scanStart) < 0) {
                 this.testType = IfTest.EXISTENCE;
                 // simplest case: no comparison, just a non-null (or null) test
                 if (firstChar == '$' || firstChar == '~') {
@@ -338,8 +342,8 @@ public class IfTag extends BlockTag
 
             // now handle straight equality/inequality
             // ($asdf == $xyz) and ($asdf != $xyz)
-            int eqPos = test.indexOf("==");
-            int ineqPos = test.indexOf("!=");
+            int eqPos = test.indexOf("==", scanStart);
+            int ineqPos = test.indexOf("!=", scanStart);
             if (eqPos > 0 || ineqPos > 0) {
                 this.isNeg = eqPos < 0;
                 String tagA = test.substring(0, isNeg ? ineqPos : eqPos).trim();
@@ -372,8 +376,8 @@ public class IfTag extends BlockTag
             }
 
             // handle pattern match
-            int regexOpPos = test.indexOf("=~");
-            int negRegexOpPos = test.indexOf("!~");
+            int regexOpPos = test.indexOf("=~", scanStart);
+            int negRegexOpPos = test.indexOf("!~", scanStart);
             if (regexOpPos < 0 && negRegexOpPos < 0) {
                 isNeg = true;
                 return;
@@ -386,6 +390,28 @@ public class IfTag extends BlockTag
             this.leftSide = SnippetTag.parseTag(var);
             this.testType = IfTest.COMPARE_REGEX;
             this.compareTo = regex;
+        }
+
+        private int skipModifiers(String test)
+        {
+            char[] chars = test.toCharArray();
+            int i=0;
+            for (; i<chars.length; i++) {
+                char c = chars[i];
+                if (Character.isJavaIdentifierPart(c)) continue;
+                if (c == '|' || c == ':' || c == '.') continue;
+                if (c == '(') {
+                    i = FilterArgs.nextUnescapedDelim(")", test, i+1);
+                    continue;
+                }
+                if (c == '/') {
+                    i = RegexFilter.nextRegexDelim(test, i+1);
+                    continue;
+                }
+                // end of the road
+                break;
+            }
+            return i;
         }
 
         private String unescape(String x)

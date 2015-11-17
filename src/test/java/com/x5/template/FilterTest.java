@@ -250,9 +250,85 @@ public class FilterTest
     public void testQuickCalc()
     {
         Chunk c = new Chunk();
-        c.set("howmuch","30");
-        c.append("{~howmuch|qcalc(*10)} {~howmuch|qcalc(/10)} {~howmuch|qcalc(+10)} {~howmuch|qcalc(-10)} {~howmuch|qcalc(%14)} {~howmuch|qcalc(^2)}");
-        assertEquals("300 3 40 20 2 900",c.toString());
+        c.set("howmuch", "30");
+        c.append("{$howmuch|qcalc(*10)} {$howmuch|qcalc(/10)} {$howmuch|qcalc(+10)} {$howmuch|qcalc(-10)} {$howmuch|qcalc(%14)} {$howmuch|qcalc(^2)}");
+        assertEquals("300 3 40 20 2 900", c.toString());
+    }
+
+    @Test
+    public void testQuickCalcFloats()
+    {
+        Chunk c = new Chunk();
+        c.set("howmuch", "2.5");
+        c.append("{$howmuch|qcalc(*1.5)|sprintf(%.2f)} ");
+        c.append("{$howmuch|qcalc(/0.5)|sprintf(%.2f)} ");
+        c.append("{$howmuch|qcalc(+2.6)|sprintf(%.2f)} ");
+        c.append("{$howmuch|qcalc(-.3)|sprintf(%.2f)} ");
+        c.append("{$howmuch|qcalc(%2.0)|sprintf(%.2f)} ");
+        c.append("{$howmuch|qcalc(^2.0)|sprintf(%.2f)}");
+        assertEquals("3.75 5.00 5.10 2.20 0.50 6.25", c.toString());
+    }
+
+    @Test
+    public void testCompNullPassThrough()
+    {
+        Chunk c = new Chunk();
+        c.set("n", "100");
+        c.append("{% $n|comp(>50) %} {% $n|comp(<50):FALSE %} {% $n|comp(<50) %}");
+        assertEquals("TRUE FALSE {% $n|comp(<50) %}", c.toString());
+    }
+
+    @Test
+    public void testQuickCalcComparisons()
+    {
+        Chunk c = new Chunk();
+        c.set("n", "30");
+        c.append("{.if $n|comp(>20) }pass{.else}fail{/if} ");
+        c.append("{.if $n|comp(>-20) }pass{.else}fail{/if} ");
+        c.append("{.if $n|comp(<40) }pass{.else}fail{/if} ");
+        c.append("{.if $n|comp(>=30) }pass{.else}fail{/if} ");
+        c.append("{.if $n|comp(>=31) }fail{.else}pass{/if} ");
+        c.append("{.if $n|comp(<=30) }pass{.else}fail{/if} ");
+        c.append("{.if $n|comp(<=29) }fail{.else}pass{/if} ");
+        c.append("{.if $n|comp(==30) }pass{.else}fail{/if} ");
+        c.append("{.if $n|comp(!=20) }pass{.else}fail{/if} ");
+        c.append("{.if $n|comp(!=30) }fail{.else}pass{/if} ");
+        c.append("{.if $n|comp(<>30) }fail{.else}pass{/if} ");
+        c.append("{.if $n|comp(<>31) }pass{.else}fail{/if} ");
+        assertEquals("pass pass pass pass pass pass pass pass pass pass pass pass ", c.toString());
+    }
+
+    @Test
+    public void testQuickCalcComparisonsWithSpaces()
+    {
+        Chunk c = new Chunk();
+        c.set("n", "30");
+        c.append("{.if $n|comp(> 20) }pass{.else}fail{/if} ");
+        c.append("{.if $n|comp(< 40) }pass{.else}fail{/if} ");
+        c.append("{.if $n|comp(<= 30 ) }pass{.else}fail{/if} ");
+        c.append("{.if $n|comp(\"<=29\") }fail{.else}pass{/if} ");
+        c.append("{.if $n|comp( == 30 ) }pass{.else}fail{/if} ");
+        assertEquals("pass pass pass pass pass ", c.toString());
+    }
+
+    @Test
+    public void testQuickCalcComparisonsFloat()
+    {
+        Chunk c = new Chunk();
+        c.set("n", "2.5");
+        c.append("{.if $n|qc(>2.4) }pass{.else}fail{/if} ");
+        c.append("{.if $n|qc(>-2.4) }pass{.else}fail{/if} ");
+        c.append("{.if $n|qc(<2.7) }pass{.else}fail{/if} ");
+        c.append("{.if $n|qc(>=2.5) }pass{.else}fail{/if} ");
+        c.append("{.if $n|qc(>=2.500001) }fail{.else}pass{/if} ");
+        c.append("{.if $n|qc(<=2.5) }pass{.else}fail{/if} ");
+        c.append("{.if $n|qc(<=2.4999999) }fail{.else}pass{/if} ");
+        c.append("{.if $n|qc(==2.5) }pass{.else}fail{/if} ");
+        c.append("{.if $n|qc(!=2.501) }pass{.else}fail{/if} ");
+        c.append("{.if $n|qc(!=2.5) }fail{.else}pass{/if} ");
+        c.append("{.if $n|qc(<>2.5) }fail{.else}pass{/if} ");
+        c.append("{.if $n|qc(<>2.500001) }pass{.else}fail{/if} ");
+        assertEquals("pass pass pass pass pass pass pass pass pass pass pass pass ", c.toString());
     }
 
     @Test
