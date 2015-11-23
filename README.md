@@ -69,5 +69,5 @@ Or download madrobotbeans-0.1.jar from the [Downloads][2] area.  Thanks to Elton
   [3]: http://www.x5software.com/chunk/wiki/index.php/Eclipse_Template_Editor_plugin
   [4]: https://code.google.com/p/mad-robot/
   [5]: http://www.x5software.com/chunk/
-  [6]: https://sourceforge.net/projects/chunk-templates/files/
+  [6]: https://github.com/tomj74/chunk-templates/releases/latest
   [7]: http://www.x5software.com/chunk/wiki/Spring_MVC
