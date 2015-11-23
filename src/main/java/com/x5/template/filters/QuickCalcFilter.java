@@ -106,7 +106,14 @@ public class QuickCalcFilter extends BasicFilter implements ChunkFilter
                 if (op == '*') z = x * y;
                 if (op == '/') z = x / y;
                 if (op == '%') z = x % y;
-                if (op == '^') z = Math.round( Math.pow(x,y) );
+                if (op == '^') {
+                    if (y < 0) {
+                        // negative exponents will not result in integers
+                        return Double.toString(Math.pow(x, y));
+                    } else {
+                        z = Math.round(Math.pow(x, y));
+                    }
+                }
                 return Long.toString(z);
             }
         } catch (NumberFormatException e) {

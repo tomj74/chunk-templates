@@ -223,6 +223,38 @@ public class FilterTest
     }
 
     @Test
+    public void testBooleanFormat()
+    {
+        Chunk c = new Chunk();
+        c.set("n", "1");
+        c.set("f", "1.0");
+        c.append("{$n|sprintf(%b)} {$f|sprintf(\"%b\")}");
+        assertEquals("true true", c.toString());
+        c.set("n", "0");
+        c.set("f", "0.0");
+        assertEquals("false false", c.toString());
+        c.append(" {$t|fmt(%B)}");
+        c.set("t", "TRUE");
+        assertEquals("false false TRUE", c.toString());
+        c.set("t", "True");
+        assertEquals("false false TRUE", c.toString());
+        c.set("t", "true");
+        assertEquals("false false TRUE", c.toString());
+        c.set("t", "boogers");
+        assertEquals("false false TRUE", c.toString());
+        c.set("t", "FALSE");
+        assertEquals("false false FALSE", c.toString());
+        c.set("t", "False");
+        assertEquals("false false FALSE", c.toString());
+        c.set("t", "false");
+        assertEquals("false false FALSE", c.toString());
+        c.set("t", "");
+        assertEquals("false false FALSE", c.toString());
+        c.unset("t");
+        assertEquals("false false FALSE", c.toString());
+    }
+
+    @Test
     public void testSimpleCalc()
     {
         Chunk c = new Chunk();
@@ -232,6 +264,46 @@ public class FilterTest
 
         c.append(" {$howmuch|calc(\"*10+4\",\"%.0f\")}");
         assertEquals("304 304", c.toString());
+    }
+
+    @Test
+    public void testCalcWithTags()
+    {
+        Chunk c = new Chunk();
+        c.set("howmuch", 30);
+        c.set("offset", 4);
+        c.append("{$howmuch|calc(*10+$offset)|sprintf(%.0f)}");
+        assertEquals("304",c.toString());
+
+        c.append(" {$howmuch|calc(\"*10+$offset\",\"%.0f\")}");
+        assertEquals("304 304", c.toString());
+    }
+
+    @Test
+    public void testCalcWithX()
+    {
+        Chunk c = new Chunk();
+        c.set("howmuch", 30);
+        c.set("x", 20);
+        c.set("offset", 4);
+        c.append("{$howmuch|calc(10*$x+$offset)|sprintf(%.1f)}");
+        assertEquals("304.0", c.toString());
+        c.resetTemplate();
+        c.set("n", Math.PI);
+        c.append("{$n|calc(\"cos($x)\",\"%.1f\")}");
+        assertEquals("-1.0", c.toString());
+    }
+
+    @Test
+    public void testCalcWithCompare()
+    {
+        Chunk c = new Chunk();
+        c.set("n", 30);
+        c.set("m", 10);
+        c.append("{$n|calc(>$m+$m)|fmt(%b)}");
+        assertEquals("true", c.toString());
+        c.append(" {$n|calc(<$m+$m)|fmt(%b)}");
+        assertEquals("true false", c.toString());
     }
 
     @Test
@@ -285,14 +357,14 @@ public class FilterTest
         c.set("n", "30");
         c.append("{.if $n|comp(>20) }pass{.else}fail{/if} ");
         c.append("{.if $n|comp(>-20) }pass{.else}fail{/if} ");
-        c.append("{.if $n|comp(<40) }pass{.else}fail{/if} ");
+        c.append("{.if ($n|comp(<40)) }pass{.else}fail{/if} ");
         c.append("{.if $n|comp(>=30) }pass{.else}fail{/if} ");
         c.append("{.if $n|comp(>=31) }fail{.else}pass{/if} ");
         c.append("{.if $n|comp(<=30) }pass{.else}fail{/if} ");
         c.append("{.if $n|comp(<=29) }fail{.else}pass{/if} ");
         c.append("{.if $n|comp(==30) }pass{.else}fail{/if} ");
         c.append("{.if $n|comp(!=20) }pass{.else}fail{/if} ");
-        c.append("{.if $n|comp(!=30) }fail{.else}pass{/if} ");
+        c.append("{.if ($n|comp(!=30)) }fail{.else}pass{/if} ");
         c.append("{.if $n|comp(<>30) }fail{.else}pass{/if} ");
         c.append("{.if $n|comp(<>31) }pass{.else}fail{/if} ");
         assertEquals("pass pass pass pass pass pass pass pass pass pass pass pass ", c.toString());

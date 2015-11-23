@@ -3,3 +3,5 @@
 pom.xml.asc
 self-release.sh
 /.settings/
+README.txt
+*jardesc

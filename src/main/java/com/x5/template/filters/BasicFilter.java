@@ -46,6 +46,7 @@ public abstract class BasicFilter implements ChunkFilter
         new AlternateFilter(),
         new Base64DecodeFilter(),
         new Base64EncodeFilter(),
+        new BooleanFilter(),
         new CalcFilter(),
         new CheckedFilter(),
         new DefangFilter(),

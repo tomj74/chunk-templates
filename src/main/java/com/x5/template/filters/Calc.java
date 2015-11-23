@@ -21,35 +21,6 @@ import java.util.ArrayList;
 
 public class Calc
 {
-    public static void main(String[] args)
-    {
-        String expr = "2 + 2 * x";
-        String[] varnames = new String[]{"x"};
-        String[] varvalues = new String[]{"20"};
-        System.out.println(evalExpression(expr,"0",varnames,varvalues));
-        System.out.println(evalExpression("sin(pi)","0.00",null,null));
-
-        expr = "(2 + 2 * x^x) % 2";
-        System.out.println(evalExpression(expr,null,varnames,varvalues));
-
-        java.util.HashMap<String,Object> map = new java.util.HashMap<String,Object>();
-        map.put("a","20");
-        map.put("b","30");
-
-        String calcString = "\"$x * 3 + $y * 40\",\"%.2f\",~a,~b";
-        System.out.println(evalCalc(calcString, map));
-
-        calcString = "\"$x * $x\",\"%.2f\",~a,~b";
-        System.out.println(evalCalc(calcString, map));
-
-        calcString = "\"$x + $y\",\"%.2f\",$a,$b";
-        System.out.println(evalCalc(calcString, map));
-
-        map.put("c","40");
-        calcString = "\"$x + $y + $z\",$a,$b,$c";
-        System.out.println(evalCalc(calcString, map));
-    }
-
     public static String evalCalc(String calc, Map<String,Object> vars)
     {
         int quote1 = calc.indexOf("\"");
@@ -85,7 +56,12 @@ public class Calc
 
             int closeParen = calc.indexOf(")",argStart);
             if (closeParen < 0) closeParen = calc.length();
-            varValues = grokVarValues(calc.substring(argStart,closeParen),vars);
+
+            String tagNames = calc.substring(argStart, closeParen);
+            String[] tagNameList = tagNames.split(",");
+            if (tagNameList != null) {
+                varValues = grokVarValues(tagNameList, vars);
+            }
         }
 
         /*
@@ -111,30 +87,25 @@ public class Calc
         }
     }
 
-    private static String[] grokVarValues(String list, Map<String,Object> vars)
+    static String[] grokVarValues(String[] varList, Map<String,Object> vars)
     {
-        String[] tokens = list.split(",");
-        if (tokens == null) return null;
+        String[] values = new String[varList.length];
 
-        String[] values = new String[tokens.length];
-
-        for (int i=0; i<tokens.length; i++) {
+        for (int i=0; i<varList.length; i++) {
             // look up value in vars
-            String key = tokens[i];
+            String key = varList[i];
             key = key.trim();
             if (key.startsWith("~") || key.startsWith("$")) key = key.substring(1);
             //System.err.println("scanning map for "+key);
             Object value = vars.get(key);
             if (value instanceof String) {
                 values[i] = (String)value;
-            //} else {
-            //    values[i] = value.toString();
             }
         }
         return values;
     }
 
-    private static String[] parseVarNames(String expr)
+    static String[] parseVarNames(String expr)
     {
         String[] varNames = null;
         ArrayList<String> names = null;

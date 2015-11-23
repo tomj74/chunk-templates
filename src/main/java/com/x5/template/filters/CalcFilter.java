@@ -10,7 +10,7 @@ public class CalcFilter extends BasicFilter implements ChunkFilter
         if (text == null) return null;
         if (args.getFilterArgs() == null) return text;
 
-        return easyCalc(text, args);
+        return easyCalc(text, args, chunk);
     }
 
     public String getFilterName()
@@ -18,26 +18,48 @@ public class CalcFilter extends BasicFilter implements ChunkFilter
         return "calc";
     }
 
-    private static String easyCalc(String text, FilterArgs arg)
+    private static String easyCalc(String text, FilterArgs arg, Chunk context)
     {
         String[] args = arg.getFilterArgs();
         String expr = args[0];
 
-        // optional -- format string; only possible when args are quoted
         String fmt = null;
         if (args.length > 1) {
-            fmt = args[1];
+            fmt = args[args.length-1];
         }
 
-        if (expr.indexOf("x") < 0) expr = "x"+expr;
-        expr = expr.replace("\\$","");
+        if (expr.indexOf("$x") < 0) {
+            expr = "$_input_" + expr;
+        } else {
+            expr = expr.replace("$x", "$_input_");
+        }
         try {
-            return Calc.evalExpression(expr,fmt,new String[]{"x"},new String[]{text});
+            String[] varNames = Calc.parseVarNames(expr);
+            String[] varValues = grokVarValues(context, varNames, text);
+            String jepExpr = expr.replace('$', 'V');
+            return Calc.evalExpression(jepExpr, fmt, varNames, varValues);
         } catch (NumberFormatException e) {
             // not a number?  no-op
             return text;
         } catch (NoClassDefFoundError e) {
             return "[ERROR: jeplite jar missing from classpath! calc filter requires jeplite library]";
         }
+    }
+
+    private static String[] grokVarValues(Chunk context, String[] varNames, String input)
+    {
+        String[] varValues = new String[varNames.length];
+        for (int i=0; i<varNames.length; i++) {
+            if (varNames[i].equals("V_input_")) {
+                varValues[i] = input;
+            } else {
+                Object value = context.get(varNames[i].substring(1));
+                if (value instanceof String) {
+                    varValues[i] = (String)value;
+                }
+            }
+        }
+
+        return varValues;
     }
 }

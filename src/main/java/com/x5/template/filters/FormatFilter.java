@@ -9,8 +9,6 @@ public class FormatFilter extends BasicFilter
 {
     public String transformText(Chunk chunk, String text, FilterArgs arg)
     {
-        if (text == null) return null;
-
         String fmtString = arg.getUnparsedArgs();
 
         if (fmtString == null) return "";
@@ -28,20 +26,18 @@ public class FormatFilter extends BasicFilter
         return "sprintf";
     }
 
+    public String[] getFilterAliases()
+    {
+        return new String[]{"fmt","format"};
+    }
+
     private static String applyFormatString(String text, String formatString, ChunkLocale locale)
     {
-        // strip calling wrapper ie "sprintf(%.03f)" -> "%.03f"
-        if (formatString.startsWith("sprintf(")) {
-            formatString = formatString.substring(8);
-            if (formatString.endsWith(")")) {
-                formatString = formatString.substring(0,formatString.length()-1);
-            }
-        }
         // strip quotes if arg is quoted
         char first = formatString.charAt(0);
         char last = formatString.charAt(formatString.length()-1);
         if (first == last && (first == '\'' || first == '"')) {
-            formatString = formatString.substring(1,formatString.length()-1);
+            formatString = formatString.substring(1, formatString.length()-1);
         }
 
         return formatNumberFromString(formatString, text, locale);
@@ -71,6 +67,26 @@ public class FormatFilter extends BasicFilter
         try {
 
             Locale locale = getJavaLocale(chunkLocale);
+
+            if ("bB".indexOf(expecting) > -1) {
+                boolean b = false;
+                if (value != null && value.trim().length() > 0) {
+                    try {
+                        float f = Float.valueOf(value);
+                        b = f != 0.0;
+                    } catch (NumberFormatException e) {
+                        if (!value.trim().equalsIgnoreCase("FALSE")) {
+                            b = true;
+                        }
+                    }
+                }
+                return String.format(locale, formatString, b);
+            }
+
+            // the remaining cases will not accept null input
+            if (value == null) {
+                return null;
+            }
 
             if ("sS".indexOf(expecting) > -1) {
                 return String.format(locale, formatString, value);

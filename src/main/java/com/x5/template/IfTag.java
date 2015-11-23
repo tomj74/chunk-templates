@@ -310,9 +310,13 @@ public class IfTag extends BlockTag
 
         private void init(String test)
         {
-            if (test == null) return;
+            if (test == null || test.trim().length() == 0) {
+                this.testType = IfTest.EXISTENCE;
+                this.isNeg = true;
+                return;
+            }
+
             test = test.trim();
-            if (test.length() == 0) return;
 
             char firstChar = test.charAt(0);
             if (firstChar == '$' || firstChar == '!' || firstChar == '~') {

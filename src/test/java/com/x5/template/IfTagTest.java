@@ -10,8 +10,67 @@ public class IfTagTest
     {
         Chunk c = new Chunk();
         c.set("moon_material", "cheese");
-        c.append("{^if (~moon_material == cheese)} The moon is made of cheese! {^else} The moon is not made of cheese :( {/if}");
+        c.append("{.if ($moon_material == cheese)} The moon is made of cheese! {.else} The moon is not made of cheese :( {/if}");
         assertEquals(" The moon is made of cheese! ", c.toString());
+    }
+
+    @Test
+    public void testIfTagWithConstants()
+    {
+        Chunk c = new Chunk();
+        c.append("{.if (true)} The moon is made of cheese! {.else} The moon is not made of cheese :( {/if}");
+        assertEquals(" The moon is made of cheese! ", c.toString());
+        c.resetTemplate();
+        c.append("{.if (false)}was true{.else}was false{/if}");
+        assertEquals("was false", c.toString());
+        c.resetTemplate();
+        c.append("{.if ()}was true{.else}was false{/if}");
+        assertEquals("was false", c.toString());
+        c.resetTemplate();
+        c.append("{.if (0)}was true{.else}was false{/if}");
+        assertEquals("was false", c.toString());
+        c.resetTemplate();
+        c.append("{.if (0.0)}was true{.else}was false{/if}");
+        assertEquals("was false", c.toString());
+        c.resetTemplate();
+        c.append("{.if (1)}was true{.else}was false{/if}");
+        assertEquals("was false", c.toString());
+        c.resetTemplate();
+        c.append("{.if (1.0)}was true{.else}was false{/if}");
+        assertEquals("was false", c.toString());
+        c.resetTemplate();
+        c.append("{.if (goobers)}was true{.else}was false{/if}");
+        assertEquals("was false", c.toString());
+    }
+
+    @Test
+    public void testIfTagWithTruthyTags()
+    {
+        Chunk c = new Chunk();
+        c.set("t", "true");
+        c.set("f", "false");
+        c.append("{.if ($t)} The moon is made of cheese! {.else} The moon is not made of cheese :( {/if}");
+        assertEquals(" The moon is made of cheese! ", c.toString());
+        c.resetTemplate();
+        c.append("{.if ($f)}was true{.else}was false{/if}");
+        assertEquals("was true", c.toString());
+        c.resetTemplate();
+        c.unset("f");
+        c.append("{.if ($f)}was true{.else}was false{/if}");
+        assertEquals("was false", c.toString());
+    }
+
+    @Test
+    public void testIfTagWithCalcBool()
+    {
+        Chunk c = new Chunk();
+        c.set("n", 30);
+        c.set("m", 10);
+        c.append("{.if $n|calc(>$m+$m)|bool }was true{.else}was false{/if}");
+        assertEquals("was true", c.toString());
+        c.resetTemplate();
+        c.append("{.if $n|calc(<$m+$m)|bool }was true2{.else}was false2{/if}");
+        assertEquals("was false2", c.toString());
     }
 
     @Test
@@ -20,9 +79,9 @@ public class IfTagTest
         Chunk c = new Chunk();
         c.append("{.if ($x == \"velveeta\")}happy{/if}");
         c.append("{% if ($x == 'velveeta') %}happy{% endif %}");
-        c.set("x","velveeta");
+        c.set("x", "velveeta");
 
-        assertEquals("happyhappy",c.toString());
+        assertEquals("happyhappy", c.toString());
     }
 
     @Test
@@ -82,7 +141,7 @@ public class IfTagTest
     public void testElsePathNoElse()
     {
         Chunk c = new Chunk();
-        c.append("{^if (~moon_material)} The moon is made of something! {/if}");
+        c.append("{.if ($moon_material)} The moon is made of something! {/if}");
         assertEquals("", c.toString());
     }
 
@@ -91,7 +150,7 @@ public class IfTagTest
     {
         Chunk c = new Chunk();
         c.set("moon_material", "something");
-        c.append("{^if (!moon_material)} The moon is not made of anything! {^else} The moon is made of something :) {/if}");
+        c.append("{.if (!moon_material)} The moon is not made of anything! {.else} The moon is made of something :) {/if}");
         assertEquals(" The moon is made of something :) ", c.toString());
     }
 
@@ -101,7 +160,7 @@ public class IfTagTest
         // this also tests trimming first line break.
         Chunk c = new Chunk();
         c.set("moon_material", "stilton");
-        c.append("{^if (~moon_material == cheese)}\n The moon is made of cheese! \n{^elseIf (~moon_material == stilton)}\n The moon is made of Stilton! \n{^else}\n The moon is not made of cheese :( \n{/if}\n");
+        c.append("{.if ($moon_material == cheese)}\n The moon is made of cheese! \n{.elseIf ($moon_material == stilton)}\n The moon is made of Stilton! \n{.else}\n The moon is not made of cheese :( \n{/if}\n");
         assertEquals(" The moon is made of Stilton! \n", c.toString());
     }
 
