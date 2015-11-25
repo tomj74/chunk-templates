@@ -1,5 +1,11 @@
 Release History
 
+v3.1.1 - 2015-11-24 tmcclure
+
+  Revises calc filter to work with direct tag references.
+  New bool filter converts truthy value (like "1.0"/"0.0") to TRUE/null
+  comp filter enhanced to handle simple numeric comparisons
+
 v3.1.0 - 2015-11-15 tmcclure
 
   Performance enhancements.

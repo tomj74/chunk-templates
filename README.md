@@ -23,7 +23,7 @@ Available from Maven Central:
     <dependency>
       <groupId>com.x5dev</groupId>
       <artifactId>chunk-templates</artifactId>
-      <version>3.1.0</version>
+      <version>3.1.1</version>
     </dependency>
 ```
 
@@ -45,6 +45,33 @@ Features
   * Eclipse Template Editor plugin available with syntax highlighting & more.
 
 An [Eclipse plugin][3] provides syntax highlighting, outline navigation pane for snippets in .chtml files, and auto-hyperlinks of snippet references.  Requires Eclipse Helios (3.6) or better.  [Get the plugin][3].
+
+----
+Dependencies
+============
+
+Most features work fully with the standalone jar.  A couple advanced features can be unlocked by adding these libraries to the classpath:
+
+ * Provide macro (exec) arguments in JSON format - [download json-smart jar][8] or fetch via maven:
+```
+    <dependency>
+      <groupId>net.minidev</groupId>
+      <artifactId>json-smart</artifactId>
+      <version>1.1.1</version>
+      <scope>compile</scope>
+    </dependency>
+```
+
+ * Enable jeplite-powered math expression evaluation via the |calc(...) filter - [download jeplite jar][9] or fetch via maven:
+```
+    <dependency>
+      <groupId>org.cheffo</groupId>
+      <artifactId>jeplite</artifactId>
+      <version>0.8.7a</version>
+      <scope>compile</scope>
+      <optional>true</optional>
+    </dependency>
+```
 
 ----
 
@@ -71,3 +98,5 @@ Or download madrobotbeans-0.1.jar from the [Downloads][2] area.  Thanks to Elton
   [5]: http://www.x5software.com/chunk/
   [6]: https://github.com/tomj74/chunk-templates/releases/latest
   [7]: http://www.x5software.com/chunk/wiki/Spring_MVC
+  [8]: https://github.com/tomj74/chunk-templates/releases/download/release-2.4/json-smart-1.1.1.jar
+  [9]: https://github.com/tomj74/chunk-templates/releases/download/release-2.4/jeplite-0.8.7a.jar
