@@ -58,7 +58,6 @@ Most features work fully with the standalone jar.  A couple advanced features ca
       <groupId>net.minidev</groupId>
       <artifactId>json-smart</artifactId>
       <version>1.1.1</version>
-      <scope>compile</scope>
     </dependency>
 ```
 
@@ -68,8 +67,6 @@ Most features work fully with the standalone jar.  A couple advanced features ca
       <groupId>org.cheffo</groupId>
       <artifactId>jeplite</artifactId>
       <version>0.8.7a</version>
-      <scope>compile</scope>
-      <optional>true</optional>
     </dependency>
 ```
 
