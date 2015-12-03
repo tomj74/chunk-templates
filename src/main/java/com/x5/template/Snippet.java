@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Vector;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -14,10 +15,10 @@ public class Snippet
     private List<SnippetPart> parts = null;
     private String simpleText = null;
     private String origin = null;
+    private long lastAccess = 0;
 
     private static boolean useCache = isCacheEnabled();
-    private static HashMap<String,Snippet> snippetCache = new HashMap<String,Snippet>();
-    private static HashMap<String,Long> cacheAge = new HashMap<String,Long>();
+    private static HashMap<String,Snippet> snippetCache = new HashMap<String,Snippet>(512);
     private static long lastGC = 0;
     private static long gcCounter = 0;
     private static final int gcInterval = 500;
@@ -63,12 +64,12 @@ public class Snippet
 
         Snippet s = snippetCache.get(template);
         if (s != null) {
-            cacheAge.put(template, timestamp);
+            s.lastAccess = timestamp;
             return s;
         } else {
             s = new Snippet(template, origin);
+            s.lastAccess = timestamp;
             snippetCache.put(template, s);
-            cacheAge.put(template, timestamp);
             return s;
         }
     }
@@ -88,13 +89,11 @@ public class Snippet
         long threshhold = timestamp - CAN_GC_AFTER;
         if (lastGC > threshhold) return;
 
-        Iterator<String> i = snippetCache.keySet().iterator();
+        Iterator<java.util.Map.Entry<String,Snippet>> i = snippetCache.entrySet().iterator();
         while (i.hasNext()) {
-            String key = i.next();
-            long age = cacheAge.get(key);
-            if (age < threshhold) {
-                i.remove();
-                cacheAge.remove(key);
+            java.util.Map.Entry<String,Snippet> entry = i.next();
+            if (entry.getValue().lastAccess < threshhold) {
+                snippetCache.remove(entry.getKey());
             }
         }
         lastGC = timestamp;
@@ -987,5 +986,4 @@ public class Snippet
             return flat;
         }
     }
-
 }

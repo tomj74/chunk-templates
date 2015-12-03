@@ -31,20 +31,47 @@ public class Filter
         return filters;
     }
 
+    private FilterArgs filterArgs;
+
     public static Object applyFilter(Chunk context, String filter, Object input)
     {
         if (filter == null) return input;
 
-        // filters might be daisy-chained
-        int pipePos = findNextFilter(filter);
-        if (pipePos >= 0) {
-            String firstFilter = filter.substring(0,pipePos);
-            String nextFilters = filter.substring(pipePos+1);
-            Object output = applyFilter(context, firstFilter, input);
-            return applyFilter(context, nextFilters, output);
+        return applyFilter(context, parseFilterChain(filter), input);
+    }
+
+    public static Object applyFilter(Chunk context, Filter[] filters, Object input)
+    {
+        if (filters == null) return input;
+
+        Object filtered = input;
+        for (int i=0; i<filters.length; i++) {
+            filtered = filters[i].apply(context, filtered);
         }
 
-        FilterArgs filterArgs = new FilterArgs(filter);
+        return filtered;
+    }
+
+    public static Filter[] parseFilterChain(String filter)
+    {
+        if (filter == null) return null;
+
+        String[] filters = splitFilters(filter);
+        Filter[] parsedFilters = new Filter[filters.length];
+        for (int i=0; i<filters.length; i++) {
+            parsedFilters[i] = new Filter(filters[i]);
+        }
+
+        return parsedFilters;
+    }
+
+    public Filter(String filter)
+    {
+        this.filterArgs = new FilterArgs(filter);
+    }
+
+    public Object apply(Chunk context, Object input)
+    {
         String filterName = filterArgs.getFilterName();
 
         // if custom filter is registered with this name, it takes precedence
@@ -67,7 +94,8 @@ public class Filter
             }
         }
 
-        if (filter.equals("type")) {
+        String rawFilter = filterArgs.getUnparsedFilter();
+        if (rawFilter.equals("type")) {
             return typeFilter(context, input);
         }
 
@@ -80,15 +108,15 @@ public class Filter
 
         if (text != null) {
             // provide a few core filters without making a whole class for each one.
-            if (filter.equals("trim")) {
+            if (rawFilter.equals("trim")) {
                 // trim leading and trailing whitespace
                 return text.trim(); //text.replaceAll("^\\s+","").replaceAll("\\s+$","");
-            } else if (filter.startsWith("join(")) {
+            } else if (rawFilter.startsWith("join(")) {
                 TableData array = InlineTable.parseTable(text);
                 if (array != null) {
                     return joinInlineTable(array, filterArgs);
                 }
-            } else if (filter.startsWith("get(")) {
+            } else if (rawFilter.startsWith("get(")) {
                 TableData array = InlineTable.parseTable(text);
                 if (array != null) {
                     return accessArrayIndex(array, filterArgs);

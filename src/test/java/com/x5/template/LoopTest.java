@@ -429,6 +429,26 @@ public class LoopTest
     }
 
     @Test
+    public void testLoopOverBeanChildListOfObjects()
+    {
+        Theme theme = new Theme();
+        Chunk c = theme.makeChunk();
+
+        ChunkTest.ThingBean bob = new ChunkTest.ThingBean();
+        bob.setName("bob");
+        bob.setAge(28);
+        bob.setActive(true);
+        ChunkTest.ThingBean[] kids = bob.getChildren();
+        kids[0].setName("jack");
+        kids[1].setName("jill");
+
+        c.set("bob", bob);
+        c.append("{% loop in $bob.children as $child divider='-' %}{$child.name}{% endloop %}");
+
+        assertEquals("jack-jill", c.toString());
+    }
+
+    @Test
     public void testLoopOverChildMap()
     {
         Theme theme = new Theme();

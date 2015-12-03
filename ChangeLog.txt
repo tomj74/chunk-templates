@@ -1,5 +1,10 @@
 Release History
 
+v3.1.2 - 2015-12-03 tmcclure
+
+  Fixes bugs in bean boxing.
+  Performance enhancements.
+
 v3.1.1 - 2015-11-24 tmcclure
 
   Revises calc filter to work with direct tag references.

@@ -13,7 +13,7 @@ public class SnippetTag extends SnippetPart
 
     private String[] path;
     private boolean hasBackticks;
-    private String filters;
+    private Filter[] filters;
     private String ifNull;
     private boolean applyFiltersIfNull = false;
 
@@ -93,7 +93,7 @@ public class SnippetTag extends SnippetPart
 
             this.ifNull = defValue;
             this.applyFiltersIfNull = order.equals(Filter.FILTER_LAST);
-            this.filters = filter;
+            this.filters = Filter.parseFilterChain(filter);
         }
 
         // break deep references like bob.hand.thumb into an array
@@ -246,7 +246,7 @@ public class SnippetTag extends SnippetPart
         return ifNull;
     }
 
-    public String getFilters()
+    public Filter[] getFilters()
     {
         return filters;
     }

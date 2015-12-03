@@ -610,6 +610,18 @@ public class ChunkTest
     }
 
     @Test
+    public void canAccessInheritedPublicPojoFields()
+    {
+        Theme theme = new Theme();
+        Chunk c = theme.makeChunk();
+
+        c.set("x", new BigThing("Bob", 28, true));
+        c.append("{$x.age}");
+
+        assertEquals("28", c.toString());
+    }
+
+    @Test
     public void doubleCapsuleTest()
     {
         Theme theme = new Theme();
@@ -891,7 +903,7 @@ public class ChunkTest
     public static class Thing
     {
         String name;
-        int age;
+        public int age;
         double pi = Math.PI;
         Double e = new Double(Math.E);
         boolean isActive;
@@ -959,6 +971,7 @@ public class ChunkTest
      */
     public static class ThingBean implements java.io.Serializable, Cloneable
     {
+        public final double PI = Math.PI;
         private String name;
         private int age;
         private double pi = Math.PI;

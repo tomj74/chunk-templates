@@ -87,6 +87,11 @@ public class ObjectDataMap implements Map
     private static final Class[] NO_ARGS = new Class[]{};
     private static Map<Class,Boolean> hasOwnToString = new HashMap<Class,Boolean>();
 
+    public boolean isBean()
+    {
+        return this.isBean;
+    }
+
     public static String getAsString(Object obj)
     {
         Class objClass = obj.getClass();
@@ -119,12 +124,17 @@ public class ObjectDataMap implements Map
             return mapifyCapsule((DataCapsule)pojo);
         }
         if (!isBean) {
-            data = mapifyPOJO(pojo);
-            if (data == null || data.isEmpty()) {
-                // hmmm, maybe it's a bean?
-                isBean = true;
+            if (hasNonFinalPublicFields(pojo)) {
+                data = mapifyPOJO(pojo);
+                if (data == null || data.isEmpty()) {
+                    // hmmm, maybe it's a bean?
+                    isBean = true;
+                } else {
+                    return data;
+                }
             } else {
-                return data;
+                // no public (non-final) fields, treat as bean
+                isBean = true;
             }
         }
         if (isBean) {
@@ -151,7 +161,29 @@ public class ObjectDataMap implements Map
 
     private static Map<Class,Field[]> declaredFields = new HashMap<Class,Field[]>();
 
-    public Map<String,Object> mapifyPOJO(Object pojo)
+    private boolean hasNonFinalPublicFields(Object pojo)
+    {
+        Field[] fields = grokFields(pojo);
+        for (int i=0; i<fields.length; i++) {
+            Field field = fields[i];
+            int mods = field.getModifiers();
+            if (Modifier.isPrivate(mods)) {
+                continue;
+            }
+            if (Modifier.isProtected(mods)) {
+                continue;
+            }
+            if (Modifier.isFinal(mods)) {
+                continue;
+            }
+
+            return true;
+        }
+
+        return false;
+    }
+
+    private Field[] grokFields(Object pojo)
     {
         Field[] fields = null;
 
@@ -161,9 +193,24 @@ public class ObjectDataMap implements Map
         } else {
             // expensive. cache!
             fields = pojoClass.getDeclaredFields();
+            Field[] publicFields = pojoClass.getFields();
+            if (publicFields != null && fields != null) {
+                Field[] allFields = new Field[fields.length + publicFields.length];
+                System.arraycopy(fields, 0, allFields, 0, fields.length);
+                System.arraycopy(publicFields, 0, allFields, fields.length, publicFields.length);
+                fields = allFields;
+            } else if (fields == null) {
+                fields = publicFields;
+            }
             declaredFields.put(pojoClass, fields);
         }
 
+        return fields;
+    }
+
+    public Map<String,Object> mapifyPOJO(Object pojo)
+    {
+        Field[] fields = grokFields(pojo);
         Map<String,Object> pickle = null;
 
         for (int i=0; i<fields.length; i++) {
@@ -376,8 +423,8 @@ public class ObjectDataMap implements Map
 
             // copy properties into hashtable
             for (PropertyDescriptor property : properties) {
-                Class paramClass = property.getPropertyType();
                 Method getter = property.getReadMethod();
+                if (getter == null) continue;
                 try {
                     Object paramValue = getter.invoke(bean, (Object[])null);
 
@@ -392,6 +439,7 @@ public class ObjectDataMap implements Map
 
                         if (pickle == null) pickle = new HashMap<String,Object>();
 
+                        Class paramClass = property.getPropertyType();
                         storeValue(pickle, paramClass, paramName, paramValue, true);
                     }
                 } catch (InvocationTargetException e) {

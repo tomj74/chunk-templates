@@ -12,6 +12,7 @@ import java.util.regex.Pattern;
 
 import com.x5.template.filters.RegexFilter;
 import com.x5.util.DataCapsuleTable;
+import com.x5.util.ObjectDataMap;
 import com.x5.util.TableData;
 
 public class LoopTag extends BlockTag
@@ -23,6 +24,8 @@ public class LoopTag extends BlockTag
     private Snippet emptySnippet = null;
     private Snippet dividerSnippet = null;
     private Snippet rowSnippet = null;
+
+    private SnippetTag dataTag = null;
 
     // for speed
     private Chunk rowX;
@@ -168,7 +171,7 @@ public class LoopTag extends BlockTag
         }
     }
 
-    // ^loop(~data[...range...],#rowTemplate,#emptyTemplate)
+    // ^loop(~data,#rowTemplate,#emptyTemplate)
     private void parseFnParams(String params)
     {
         int endOfParams = params.length();
@@ -189,7 +192,7 @@ public class LoopTag extends BlockTag
         }
     }
 
-    // {% loop data="~data" template="#..." no_data="#..." range="..." per_page="x" page="x" %}
+    // {% loop data="~data" template="#..." no_data="#..." per_page="x" page="x" %}
     private void parseAttributes(String params)
     {
         Map<String,Object> opts = Attributes.parse(params);
@@ -207,101 +210,39 @@ public class LoopTag extends BlockTag
         this.emptyTemplate = (String)opts.get("no_data");
     }
 
+    private SnippetTag parseDataTag(String dataVar)
+    {
+        char c0 = dataVar.charAt(0);
+        boolean isDirective = false;
+        if (c0 == '^' || c0 == '.') {
+            // expand "external" shortcut syntax eg ^wiki becomes ~.wiki
+            dataVar = RegexFilter.applyRegex(dataVar, "s/^[\\^\\.]/~./");
+            isDirective = true;
+        }
+        if (isDirective || c0 == '~' || c0 == '$') {
+            // tag reference (eg, tag assigned to query result table)
+            dataVar = dataVar.substring(1);
+            return SnippetTag.parseTag(dataVar);
+        }
+
+        return null;
+    }
+
+    // TODO avoid repeating this loop data resolution step on multiple runs of the loop
     @SuppressWarnings("rawtypes")
     private TableData fetchData(String dataVar, Chunk context, String origin)
     {
         TableData data = null;
 
-        // TODO avoid repeating this loop data resolution step on multiple runs of the loop
-        if (dataVar != null) {
-            int rangeMarker = dataVar.indexOf("[");
-            if (rangeMarker > 0) {
-                int rangeMarker2 = dataVar.indexOf("]",rangeMarker);
-                if (rangeMarker2 < 0) rangeMarker2 = dataVar.length();
-                String range = dataVar.substring(rangeMarker+1,rangeMarker2);
-                dataVar = dataVar.substring(0,rangeMarker);
-                registerOption("range",range);
-            }
-            char c0 = dataVar.charAt(0);
-            boolean isDirective = false;
-            if (c0 == '^' || c0 == '.') {
-                // expand "external" shortcut syntax eg ^wiki becomes ~.wiki
-                dataVar = RegexFilter.applyRegex(dataVar, "s/^[\\^\\.]/~./");
-                isDirective = true;
-            }
-            if (isDirective || c0 == '~' || c0 == '$') {
-                // tag reference (eg, tag assigned to query result table)
-                dataVar = dataVar.substring(1);
+        if (dataVar == null || context == null) {
+            return data;
+        }
 
-                if (context != null) {
-                    Object dataStore = context.get(dataVar);
+        if (dataTag == null) {
+            dataTag = parseDataTag(dataVar);
 
-                    // if nec, follow pointers until data is reached
-                    int depth = 0;
-                    while (dataStore != null && depth < 10) {
-                        if (dataStore instanceof TableData) {
-                            data = (TableData)dataStore;
-                        } else if (dataStore instanceof String) {
-                            data = InlineTable.parseTable((String)dataStore);
-                        } else if (dataStore instanceof Snippet) {
-                            // simple strings are now encased in Snippet obj's
-                            Snippet snippetData = (Snippet)dataStore;
-                            if (snippetData.isSimplePointer()) {
-                                dataStore = context.get(snippetData.getPointer());
-                                depth++;
-                                continue;
-                            } else {
-                                data = InlineTable.parseTable(snippetData.toString());
-                            }
-                        } else if (dataStore instanceof String[]) {
-                            data = new SimpleTable((String[])dataStore);
-                        } else if (dataStore instanceof List) {
-                            // is it a list of strings? or a list of kindred objects?
-                            List list = (List)dataStore;
-                            if (list.size() > 0) {
-                                Object a = list.get(0);
-                                if (a instanceof String) {
-                                    data = new SimpleTable(list);
-                                } else if (a instanceof Map) {
-                                    data = new TableOfMaps(list);
-                                } else {
-                                    // last-ditch effort to extract data, treat as POJOs
-                                    data = TableOfMaps.boxCollection(list);
-                                }
-                            }
-                        } else if (dataStore instanceof Object[]) {
-                            // assume array of objects that implement DataCapsule
-                            data = DataCapsuleTable.extractData((Object[])dataStore);
-                            if (data == null) {
-                                // last-ditch effort to extract data, treat as POJOs
-                                data = TableOfMaps.boxObjectArray((Object[])dataStore);
-                            }
-                        } else if (dataStore instanceof Map) {
-                            if (dataStore instanceof com.x5.util.ObjectDataMap) {
-                                Object unwrapped = ((com.x5.util.ObjectDataMap)dataStore).unwrap();
-                                if (unwrapped instanceof java.util.Collection) {
-                                    data = TableOfMaps.boxCollection((java.util.Collection)unwrapped);
-                                } else if (unwrapped instanceof java.util.Enumeration) {
-                                    data = TableOfMaps.boxEnumeration((java.util.Enumeration)unwrapped);
-                                } else if (unwrapped instanceof java.util.Iterator) {
-                                    data = TableOfMaps.boxIterator((java.util.Iterator)unwrapped);
-                                } else if (unwrapped instanceof Map) {
-                                    data = new ObjectTable((Map)unwrapped);
-                                }
-                            }
-                            if (data == null) {
-                                // Doesn't support traditional iteration. Loop over object's keys:values instead.
-                                Map object = (Map)dataStore;
-                                data = new ObjectTable(object);
-                            }
-                        }
-
-                        // only loop if following pointer
-                        break;
-                    }
-                }
-            } else {
-                // template reference to template containing inline table
+            if (dataTag == null) {
+                // template reference to template containing inline table?
                 if (context != null) {
                     dataVar = qualifyTemplateRef(origin, dataVar);
                     String tableAsString = context.getTemplateSet().fetch(dataVar);
@@ -309,10 +250,89 @@ public class LoopTag extends BlockTag
                         data = InlineTable.parseTable(tableAsString);
                     }
                 }
+                return data;
             }
         }
 
+        Object dataStore = context.resolveTagValue(dataTag, 0);
+
+        // if nec, follow pointers until data is reached
+        int depth = 0;
+        while (dataStore != null && depth < 10) {
+            if (dataStore instanceof TableData) {
+                data = (TableData)dataStore;
+            } else if (dataStore instanceof String) {
+                data = InlineTable.parseTable((String)dataStore);
+            } else if (dataStore instanceof Snippet) {
+                // simple strings are now encased in Snippet obj's
+                Snippet snippetData = (Snippet)dataStore;
+                if (snippetData.isSimplePointer()) {
+                    dataStore = context.get(snippetData.getPointer());
+                    depth++;
+                    continue;
+                } else {
+                    data = InlineTable.parseTable(snippetData.toString());
+                }
+            } else if (dataStore instanceof String[]) {
+                data = new SimpleTable((String[])dataStore);
+            } else if (dataStore instanceof List) {
+                // is it a list of strings? or a list of kindred objects?
+                List list = (List)dataStore;
+                if (list.size() > 0) {
+                    Object a = list.get(0);
+                    if (a instanceof String) {
+                        data = new SimpleTable(list);
+                    } else if (a instanceof Map) {
+                        data = new TableOfMaps(list);
+                    } else {
+                        // last-ditch effort to extract data, treat as POJOs/beans
+                        data = TableOfMaps.boxCollection(list, isBeanBag(context, dataTag));
+                    }
+                }
+            } else if (dataStore instanceof Object[]) {
+                // assume array of objects that implement DataCapsule
+                data = DataCapsuleTable.extractData((Object[])dataStore);
+                if (data == null) {
+                    // last-ditch effort to extract data, treat as POJOs/beans
+                    data = TableOfMaps.boxObjectArray((Object[])dataStore, isBeanBag(context, dataTag));
+                }
+            } else if (dataStore instanceof Map) {
+                if (dataStore instanceof ObjectDataMap) {
+                    Object unwrapped = ((ObjectDataMap)dataStore).unwrap();
+                    if (unwrapped instanceof java.util.Collection) {
+                        data = TableOfMaps.boxCollection((java.util.Collection)unwrapped);
+                    } else if (unwrapped instanceof java.util.Enumeration) {
+                        data = TableOfMaps.boxEnumeration((java.util.Enumeration)unwrapped);
+                    } else if (unwrapped instanceof java.util.Iterator) {
+                        data = TableOfMaps.boxIterator((java.util.Iterator)unwrapped);
+                    } else if (unwrapped instanceof Map) {
+                        data = new ObjectTable((Map)unwrapped);
+                    }
+                }
+                if (data == null) {
+                    // Doesn't support traditional iteration. Loop over object's keys:values instead.
+                    Map object = (Map)dataStore;
+                    data = new ObjectTable(object);
+                }
+            }
+
+            // only loop if following pointer
+            break;
+        }
+
         return data;
+    }
+
+    private boolean isBeanBag(Chunk context, SnippetTag dataTag)
+    {
+        String[] pathSegments = dataTag.getPath();
+        String rootRef = pathSegments[0];
+        Object o = context.get(rootRef);
+        if (o != null && o instanceof ObjectDataMap) {
+            return ((ObjectDataMap)o).isBean();
+        }
+
+        return false;
     }
 
     private void registerOption(String param, String value)
@@ -414,7 +434,7 @@ public class LoopTag extends BlockTag
 
         if (this.rowX == null) {
             this.rowX = (factory == null) ? new Chunk() : factory.makeChunk();
-            this.rowX.append( rowSnippet );
+            this.rowX.append(rowSnippet);
         }
         // make sure cached rowX chunk matches context locale
         rowX.setLocale(context.getLocale());
@@ -463,16 +483,19 @@ public class LoopTag extends BlockTag
 
         int counter = 0;
         while (data.hasNext()) {
+            if (counter > 0) {
+                rowX.resetTags();
+                if (dividerSnippet != null) {
+                    dividerSnippet.render(out, context, depth);
+                }
+            }
+
             if (counterTags) {
-                rowX.set("0",counter);
-                rowX.set("1",counter+1);
+                rowX.set("0", counter);
+                rowX.set("1", counter+1);
             }
             if (counterTag != null) {
                 rowX.set(counterTag, counterOffset + counter * counterStep);
-            }
-
-            if (dividerSnippet != null && counter > 0) {
-                dividerSnippet.render(out, context, depth);
             }
 
             Map<String,Object> record = data.nextRecord();
@@ -536,11 +559,9 @@ public class LoopTag extends BlockTag
                         rowX.set(prefix + "." + firstRunTag, "TRUE");
                         rowX.set(prefix + "." + placeTag, firstRunTag);
                     }
-                } else if (counter == 1) {
-                    rowX.unset(firstRunTag);
+                } else {
                     rowX.set(placeTag, "");
                     if (prefix != null) {
-                        rowX.unset(prefix + "." + firstRunTag);
                         rowX.set(prefix + "." + placeTag, "");
                     }
                 }
@@ -558,15 +579,13 @@ public class LoopTag extends BlockTag
             }
 
             // make sure chunk tags are resolved in context
-            rowX.render(out,context);
+            rowX.render(out, context);
 
             counter++;
         }
         // no side effects!
         data.reset();
         rowX.resetTags();
-
-        //return rows.toString();
     }
 
     private String eatTagSymbol(String tag)

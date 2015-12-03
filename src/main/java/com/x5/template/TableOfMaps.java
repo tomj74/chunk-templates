@@ -60,7 +60,7 @@ public class TableOfMaps implements TableData
     }
 
     @SuppressWarnings("rawtypes")
-    static TableData boxObjectArray(Object[] dataStore)
+    static TableData boxObjectArray(Object[] dataStore, boolean isBeans)
     {
         if (dataStore == null || dataStore.length < 1) {
             return null;
@@ -68,7 +68,9 @@ public class TableOfMaps implements TableData
 
         List<Map> boxedObjects = new ArrayList<Map>();
         for (int i=0; i<dataStore.length; i++) {
-            boxedObjects.add(new ObjectDataMap(dataStore[i]));
+            Object o = dataStore[i];
+            ObjectDataMap boxed = isBeans ? ObjectDataMap.wrapBean(o) : new ObjectDataMap(o);
+            boxedObjects.add(boxed);
         }
 
         return new TableOfMaps(boxedObjects);
@@ -81,7 +83,7 @@ public class TableOfMaps implements TableData
             return null;
         }
 
-        return boxIterator(dataStore.iterator());
+        return boxIterator(dataStore.iterator(), false);
     }
 
     @SuppressWarnings("rawtypes")
@@ -100,17 +102,27 @@ public class TableOfMaps implements TableData
         return new TableOfMaps(boxedObjects);
     }
 
-    @SuppressWarnings("rawtypes")
     static TableData boxCollection(Collection collection)
+    {
+        return boxCollection(collection, false);
+    }
+
+    @SuppressWarnings("rawtypes")
+    static TableData boxCollection(Collection collection, boolean isBeans)
     {
         if (collection == null || collection.size() < 1) {
             return null;
         }
 
-        return boxIterator(collection.iterator());
+        return boxIterator(collection.iterator(), isBeans);
     }
 
     static TableData boxIterator(Iterator i)
+    {
+        return boxIterator(i, false);
+    }
+
+    static TableData boxIterator(Iterator i, boolean isBeans)
     {
         if (i == null || !i.hasNext()) {
             return null;
@@ -118,7 +130,9 @@ public class TableOfMaps implements TableData
 
         List<Map> boxedObjects = new ArrayList<Map>();
         while (i.hasNext()) {
-            boxedObjects.add(new ObjectDataMap(i.next()));
+            Object o = i.next();
+            ObjectDataMap boxed = isBeans ? ObjectDataMap.wrapBean(o) : new ObjectDataMap(o);
+            boxedObjects.add(boxed);
         }
 
         return new TableOfMaps(boxedObjects);
