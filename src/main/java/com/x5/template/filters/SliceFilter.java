@@ -43,10 +43,10 @@ public class SliceFilter extends ListFilter
         String firstArg = null;
 
         String[] args = arg.getFilterArgs();
-        firstArg = args[0];
 
         if (args.length > 0) {
-            String[] sliceArgs = SplitFilter.splitNonRegex(firstArg,":");
+            firstArg = args[0];
+            String[] sliceArgs = SplitFilter.splitNonRegex(firstArg, ":");
             boolean colonDelim = sliceArgs.length > 1;
             fromArg = sliceArgs[0];
             if (colonDelim) {
@@ -69,6 +69,7 @@ public class SliceFilter extends ListFilter
             if (from > len) { from = len; }
             if (step == 0) { step = 1; to = from; }
             if ((step > 0 && to < from) || (step < 0 && to > from)) { to = from; }
+            if (to > len) { to = len; }
         } else {
             from = 0;
             to = len;

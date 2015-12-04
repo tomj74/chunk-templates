@@ -851,6 +851,41 @@ public class FilterTest
     }
 
     @Test
+    public void testPageFilter()
+    {
+        Theme theme = new Theme();
+        Chunk c = theme.makeChunk();
+        c.append("{$x|page(2,5)|join(-)}");
+        c.set("x",new String[]{"A","B","C","D","E","F","G","H","I","J","K"});
+        assertEquals("F-G-H-I-J", c.toString());
+
+        c.resetTemplate();
+        c.append("{$x|page($n,5)|join(-)}");
+        c.set("n", 3);
+        assertEquals("K", c.toString());
+        c.set("n", 4);
+        assertEquals("", c.toString());
+        c.set("n", -3);
+        assertEquals("", c.toString());
+    }
+
+    @Test
+    public void testPageFilterLoop()
+    {
+        Theme theme = new Theme();
+        Chunk c = theme.makeChunk();
+        c.append("{% loop in $x|slice(::5) as $a counter=$pg,1 %}\n");
+        c.append("Page {$pg}: {% loop in $x|page($pg,5) as $item divider='-' %}{$item}{% endloop %}\n");
+        c.append("{% endloop %}\n");
+
+        c.set("x",new String[]{"A","B","C","D","E","F","G","H","I","J","K"});
+        assertEquals("Page 1: A-B-C-D-E\nPage 2: F-G-H-I-J\nPage 3: K\n", c.toString());
+
+        c.set("x",new String[]{"A","B","C","D","E","F","G","H","I","J","K","L","M","N","O"});
+        assertEquals("Page 1: A-B-C-D-E\nPage 2: F-G-H-I-J\nPage 3: K-L-M-N-O\n", c.toString());
+    }
+
+    @Test
     public void testSliceFilter()
     {
         Theme theme = new Theme();
@@ -858,6 +893,10 @@ public class FilterTest
         c.append("{$x|slice(::-1)|get(0)}");
         c.set("x",new String[]{"A","B","C"});
         assertEquals("C", c.toString());
+
+        c.resetTemplate();
+        c.append("{$x|slice(1:3)|join(-)}");
+        assertEquals("B-C", c.toString());
 
         c.resetTemplate();
         c.append("{$x|slice(1:2)|get(0)}");
@@ -874,6 +913,26 @@ public class FilterTest
         c.resetTemplate();
         c.append("{$x|slice(2::-2)|get(1)}");
         assertEquals("A", c.toString());
+    }
+
+    @Test
+    public void testSliceFilterOutOfBounds()
+    {
+        Theme theme = new Theme();
+        Chunk c = theme.makeChunk();
+        c.append("{$x|slice(3:4)|join(-)}");
+        c.set("x",new String[]{"A","B","C"});
+        assertEquals("", c.toString());
+
+        c.append("{$x|slice(0:1:0)|join(-)}");
+        assertEquals("", c.toString());
+
+        c.append("{$x|slice(1:0:-1)|join(-)}");
+        c.set("x",new String[]{});
+        assertEquals("", c.toString());
+
+        c.append("{$x|slice(0:-1:-1)|join(-)}");
+        assertEquals("", c.toString());
     }
 
     @Test
