@@ -2,11 +2,11 @@ package com.x5.template;
 
 import java.io.Writer;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.Map;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.Vector;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -18,7 +18,7 @@ public class Snippet
     private long lastAccess = 0;
 
     private static boolean useCache = isCacheEnabled();
-    private static HashMap<String,Snippet> snippetCache = new HashMap<String,Snippet>(512);
+    private static Map<String,Snippet> snippetCache = new ConcurrentHashMap<String,Snippet>(512);
     private static long lastGC = 0;
     private static long gcCounter = 0;
     private static final int gcInterval = 500;
