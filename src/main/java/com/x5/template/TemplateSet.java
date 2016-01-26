@@ -125,7 +125,7 @@ public class TemplateSet implements ContentSource, ChunkFactory
      * Makes a template "factory" which reads in template files from the
      * file system in the templatePath folder.  Caches for refreshMins.
      * Uses "extensions" for the default file extension (do not include dot).
-     * @param classpathThemesFolder folder where template files are located in jar package.
+     * @param classpathThemesFolder folder where template files are located on classpath.
      * @param templatePath  folder where template files are located.
      * @param extension     appends dot plus this String to a template name stub to find template files.
      * @param refreshMins   returns template from cache unless this many minutes have passed.
