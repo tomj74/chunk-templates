@@ -13,7 +13,7 @@ public class Theme implements ContentSource, ChunkFactory
 {
     private ArrayList<ContentSource> themeLayers = new ArrayList<ContentSource>();
 
-    private static final String DEFAULT_THEMES_FOLDER = "themes";
+    public static final String DEFAULT_THEMES_FOLDER = "themes";
 
     private String classpathThemesFolder;
     private String themesFolder;
@@ -123,7 +123,6 @@ public class Theme implements ContentSource, ChunkFactory
     private void init()
     {
         if (classpathThemesFolder == null) classpathThemesFolder = "/" + DEFAULT_THEMES_FOLDER;
-        classpathThemesFolder = Path.ensureTrailingSeparator(classpathThemesFolder);
         if (themesFolder == null) themesFolder = DEFAULT_THEMES_FOLDER;
         themesFolder = Path.ensureTrailingSeparator(themesFolder);
 
