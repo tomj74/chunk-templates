@@ -138,6 +138,11 @@ public class TemplateSet implements ContentSource, ChunkFactory
         this.defaultExtension = extension;
     }
 
+    public TemplateSet(String templatePath, String extension, int refreshMins)
+    {
+        this(null, templatePath, extension, refreshMins);
+    }
+
     /**
      * Retrieve as String the template specified by name.
      * If name contains one or more dots it is assumed that the template
