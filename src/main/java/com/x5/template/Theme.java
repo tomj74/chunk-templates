@@ -50,6 +50,11 @@ public class Theme implements ContentSource, ChunkFactory
         if (encoding != null) {
             this.setEncoding(encoding);
         }
+
+        String themeResourcePath = config.getThemeResourcePath();
+        if (themeResourcePath != null) {
+            this.setClasspathThemesFolder(themeResourcePath);
+        }
     }
 
     public Theme(ContentSource templates)
@@ -74,14 +79,19 @@ public class Theme implements ContentSource, ChunkFactory
         this.fileExtension = ext;
     }
 
-    public void setClasspathThemesFolder(String classpathThemesFolder) {
-        this.classpathThemesFolder = classpathThemesFolder;
+    public void setClasspathThemesFolder(String classpathThemesFolder)
+    {
+        if (this.themeLayers.size() > 0) {
+            throw new java.lang.IllegalStateException("Must specify paths before lazy init.");
+        } else {
+            this.classpathThemesFolder = classpathThemesFolder;
+        }
     }
 
     public void setTemplateFolder(String pathToTemplates)
     {
         if (this.themeLayers.size() > 0) {
-            throw new java.lang.IllegalStateException("Must specify extension before lazy init.");
+            throw new java.lang.IllegalStateException("Must specify paths before lazy init.");
         } else {
             this.themesFolder = pathToTemplates;
         }

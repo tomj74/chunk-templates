@@ -62,6 +62,19 @@ public class ConfigTest
     }
 
     @Test
+    public void testAlternateResourcePath()
+    {
+        Map<String, String> cfg = new HashMap<String,String>();
+        cfg.put("theme_resource_path", "/alt/themes");
+
+        ThemeConfig config = new ThemeConfig(cfg);
+        Theme theme = new Theme(config);
+        Chunk c = theme.makeChunk("hello#hello_world");
+        c.set("what_kind", "bizarro");
+        assertEquals("Hello bizarro world!", c.toString());
+    }
+
+    @Test
     public void testHideErrors()
     {
         Map<String,String> cfg = new HashMap<String,String>();

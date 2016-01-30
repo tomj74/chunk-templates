@@ -13,6 +13,7 @@ import com.x5.template.filters.ChunkFilter;
 public class ThemeConfig
 {
     public static final String THEME_PATH = "theme_path";
+    public static final String THEME_RESOURCE_PATH = "theme_resource_path";
     public static final String LAYER_NAMES = "layers";
     public static final String DEFAULT_EXT = "default_extension";
     public static final String CACHE_MINUTES = "cache_minutes";
@@ -26,6 +27,7 @@ public class ThemeConfig
     public static final String STANDARD_DEFAULT_EXT = "chtml";
 
     private String themePath = null;
+    private String themeResourcePath = null;
     private String layerNames = null;
     private String defaultExtension = STANDARD_DEFAULT_EXT;
     private int cacheMinutes = 0;
@@ -51,6 +53,8 @@ public class ThemeConfig
 
         if (configKey.equals(THEME_PATH)) {
             this.themePath = value;
+        } else if (configKey.equals(THEME_RESOURCE_PATH)) {
+            this.themeResourcePath = value;
         } else if (configKey.equals(LAYER_NAMES)) {
             this.layerNames = value;
         } else if (configKey.equals(DEFAULT_EXT)) {
@@ -167,6 +171,11 @@ public class ThemeConfig
     public String getThemeFolder()
     {
         return this.themePath;
+    }
+
+    public String getThemeResourcePath()
+    {
+        return this.themeResourcePath;
     }
 
     public String getLayerNames()
