@@ -7,17 +7,19 @@ import java.util.HashSet;
 import java.util.Map;
 
 import com.x5.template.filters.ChunkFilter;
+import com.x5.util.Path;
 
 public class Theme implements ContentSource, ChunkFactory
 {
     private ArrayList<ContentSource> themeLayers = new ArrayList<ContentSource>();
 
+    public static final String DEFAULT_THEMES_FOLDER = "themes";
+
+    private String classpathThemesFolder;
     private String themesFolder;
     private String themeLayerNames;
     private String fileExtension;
     private int cacheMins = 0;
-
-    private static final String DEFAULT_THEMES_FOLDER = "themes";
 
     private String localeCode = null;
     private boolean renderErrs = true;
@@ -72,6 +74,10 @@ public class Theme implements ContentSource, ChunkFactory
         this.fileExtension = ext;
     }
 
+    public void setClasspathThemesFolder(String classpathThemesFolder) {
+        this.classpathThemesFolder = classpathThemesFolder;
+    }
+
     public void setTemplateFolder(String pathToTemplates)
     {
         if (this.themeLayers.size() > 0) {
@@ -116,22 +122,18 @@ public class Theme implements ContentSource, ChunkFactory
 
     private void init()
     {
+        if (classpathThemesFolder == null) classpathThemesFolder = "/" + DEFAULT_THEMES_FOLDER;
         if (themesFolder == null) themesFolder = DEFAULT_THEMES_FOLDER;
-        // ensure trailing fileseparator
-        char lastChar = themesFolder.charAt(themesFolder.length()-1);
-        char fs = System.getProperty("file.separator").charAt(0);
-        if (lastChar != '\\' && lastChar != '/' && lastChar != fs) {
-            themesFolder += fs;
-        }
+        themesFolder = Path.ensureTrailingSeparator(themesFolder);
 
         String[] layerNames = parseLayerNames(themeLayerNames);
         if (layerNames == null) {
-            TemplateSet simple = new TemplateSet(themesFolder, fileExtension, cacheMins);
+            TemplateSet simple = new TemplateSet(classpathThemesFolder, themesFolder, fileExtension, cacheMins);
             if (!renderErrs) simple.signalFailureWithNull();
             themeLayers.add(simple);
         } else {
             for (int i=0; i<layerNames.length; i++) {
-                TemplateSet x = new TemplateSet(this.themesFolder + layerNames[i], fileExtension, cacheMins);
+                TemplateSet x = new TemplateSet(classpathThemesFolder, themesFolder + layerNames[i], fileExtension, cacheMins);
                 x.setLayerName(layerNames[i]);
                 // do not return pretty HTML-formatted error strings
                 // when template can not be located -- with multiple

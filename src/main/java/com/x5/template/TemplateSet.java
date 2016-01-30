@@ -17,6 +17,7 @@ import java.util.Set;
 import com.x5.template.filters.ChunkFilter;
 import com.x5.template.filters.RegexFilter;
 import com.x5.util.JarResource;
+import com.x5.util.Path;
 
 // Project Title: Chunk
 // Description: Template Util
@@ -108,6 +109,7 @@ public class TemplateSet implements ContentSource, ChunkFactory
     private String defaultExtension = null;
     private String tagStart = DEFAULT_TAG_START;
     private String tagEnd = DEFAULT_TAG_END;
+    private String classpathThemesFolder = Path.ensureTrailingSeparator("/" + Theme.DEFAULT_THEMES_FOLDER);
     private String templatePath = System.getProperty("templateset.folder","");
     private String layerName = null;
 
@@ -123,21 +125,20 @@ public class TemplateSet implements ContentSource, ChunkFactory
      * Makes a template "factory" which reads in template files from the
      * file system in the templatePath folder.  Caches for refreshMins.
      * Uses "extensions" for the default file extension (do not include dot).
+     * @param classpathThemesFolder folder where template files are located on classpath.
      * @param templatePath  folder where template files are located.
      * @param extension     appends dot plus this String to a template name stub to find template files.
      * @param refreshMins   returns template from cache unless this many minutes have passed.
      */
+    public TemplateSet(String classpathThemesFolder, String templatePath, String extension, int refreshMins)
+    {
+        this(templatePath, extension, refreshMins);
+        this.classpathThemesFolder = Path.ensureTrailingSeparator(classpathThemesFolder);
+    }
+
     public TemplateSet(String templatePath, String extension, int refreshMins)
     {
-        if (templatePath != null) {
-            // ensure trailing fileseparator
-            char lastChar = templatePath.charAt(templatePath.length()-1);
-            char fs = System.getProperty("file.separator").charAt(0);
-            if (lastChar != '\\' && lastChar != '/' && lastChar != fs) {
-                templatePath += fs;
-            }
-            this.templatePath = templatePath;
-        }
+        this.templatePath = Path.ensureTrailingSeparator(templatePath);
         this.dirtyInterval = refreshMins;
         this.defaultExtension = extension;
     }
@@ -614,9 +615,9 @@ public class TemplateSet implements ContentSource, ChunkFactory
         String stub = TemplateDoc.truncateNameToStub(templateName);
         String path;
         if (layerName == null) {
-            path = "/themes/" + stub;
+            path = classpathThemesFolder + stub;
         } else {
-            path = "/themes/" + layerName + stub;
+            path = classpathThemesFolder + layerName + stub;
         }
         if (ext != null && ext.length() > 0) {
             path += '.' + ext;
@@ -653,10 +654,7 @@ public class TemplateSet implements ContentSource, ChunkFactory
 
     public void setLayerName(String layerName)
     {
-        this.layerName = layerName;
-        if (layerName != null && !layerName.endsWith("/")) {
-            this.layerName = this.layerName + "/";
-        }
+        this.layerName = Path.ensureTrailingSeparator(layerName);
     }
 
     public void setEncoding(String encoding)
