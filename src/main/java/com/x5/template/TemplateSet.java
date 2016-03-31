@@ -109,7 +109,7 @@ public class TemplateSet implements ContentSource, ChunkFactory
     private String defaultExtension = null;
     private String tagStart = DEFAULT_TAG_START;
     private String tagEnd = DEFAULT_TAG_END;
-    private String classpathThemesFolder = Path.ensureTrailingSeparator("/" + Theme.DEFAULT_THEMES_FOLDER);
+    private String classpathThemesFolder = Path.ensureTrailingPathSeparator("/" + Theme.DEFAULT_THEMES_FOLDER);
     private String templatePath = System.getProperty("templateset.folder","");
     private String layerName = null;
 
@@ -133,12 +133,12 @@ public class TemplateSet implements ContentSource, ChunkFactory
     public TemplateSet(String classpathThemesFolder, String templatePath, String extension, int refreshMins)
     {
         this(templatePath, extension, refreshMins);
-        this.classpathThemesFolder = Path.ensureTrailingSeparator(classpathThemesFolder);
+        this.classpathThemesFolder = Path.ensureTrailingPathSeparator(classpathThemesFolder);
     }
 
     public TemplateSet(String templatePath, String extension, int refreshMins)
     {
-        this.templatePath = Path.ensureTrailingSeparator(templatePath);
+        this.templatePath = Path.ensureTrailingFileSeparator(templatePath);
         this.dirtyInterval = refreshMins;
         this.defaultExtension = extension;
     }
@@ -654,7 +654,7 @@ public class TemplateSet implements ContentSource, ChunkFactory
 
     public void setLayerName(String layerName)
     {
-        this.layerName = Path.ensureTrailingSeparator(layerName);
+        this.layerName = Path.ensureTrailingFileSeparator(layerName);
     }
 
     public void setEncoding(String encoding)
