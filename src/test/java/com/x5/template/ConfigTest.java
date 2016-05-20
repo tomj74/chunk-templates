@@ -83,7 +83,8 @@ public class ConfigTest
         ThemeConfig config = new ThemeConfig(cfg);
         Theme theme = new Theme(config);
         Chunk c = theme.makeChunk("file_that_does_not_exist");
-        assertEquals("[chtml template 'file_that_does_not_exist' not found]<!-- looked in [themes/file_that_does_not_exist.chtml] -->", c.toString());
+        String expected = "[chtml template 'file_that_does_not_exist' not found]<!-- looked in [themes%sfile_that_does_not_exist.chtml] -->";
+        assertEquals(String.format(expected, System.getProperty("file.separator")), c.toString());
 
         cfg = new HashMap<String,String>();
         cfg.put("hide_errors", "TRUE");

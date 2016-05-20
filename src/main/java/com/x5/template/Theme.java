@@ -134,7 +134,7 @@ public class Theme implements ContentSource, ChunkFactory
     {
         if (classpathThemesFolder == null) classpathThemesFolder = "/" + DEFAULT_THEMES_FOLDER;
         if (themesFolder == null) themesFolder = DEFAULT_THEMES_FOLDER;
-        themesFolder = Path.ensureTrailingSeparator(themesFolder);
+        themesFolder = Path.ensureTrailingFileSeparator(themesFolder);
 
         String[] layerNames = parseLayerNames(themeLayerNames);
         if (layerNames == null) {
