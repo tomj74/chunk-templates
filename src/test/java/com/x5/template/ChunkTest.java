@@ -445,6 +445,15 @@ public class ChunkTest
     }
 
     @Test
+    public void testBacktickInclude()
+    {
+        Theme theme = new Theme("test/base");
+        Chunk c = theme.makeChunk("chunk_test#backtick_include");
+        c.set("tpl_name", "#hello_include");
+        assertEquals("Hello Include!\n\n", c.toString());
+    }
+
+    @Test
     public void testIncludeShorthand()
     {
         Theme theme = new Theme("test/base");
@@ -497,7 +506,7 @@ public class ChunkTest
         Chunk c = new Chunk();
         c.append(tpl);
 
-        assertEquals("ABC\n123!\n keep me \n  keep me too\n",c.toString());
+        assertEquals("ABC\n123!\n keep me \n  keep me too\n", c.toString());
     }
 
     @Test
@@ -508,6 +517,16 @@ public class ChunkTest
         c.append(tpl);
 
         assertEquals("<script>$(document).ready(function(){$('selector').doSomething(':','test');});</script>",c.toString());
+    }
+
+    @Test
+    public void testCommentInXml()
+    {
+        Theme theme = new Theme("test/base");
+        Chunk c = theme.makeChunk("chunk_test#cdata");
+        c.set("item", "cucumber<br>");
+
+        assertEquals("<p><![CDATA[cucumber<br>]]></p>", c.toString());
     }
 
     @Test
@@ -743,10 +762,10 @@ public class ChunkTest
     {
         Theme theme = new Theme();
         Chunk c = theme.makeChunk();
-        c.append("{$x.name} {$x.age} {$x.pi|sprintf(%.02f)} {$x.is_active:FALSE} {$x.hidden:invisible} {$x.hiddentwo:invisible}");
+        c.append("{$x.name} {$x.age} {$x.pi|sprintf(%.02f)} {$x.is_active:FALSE} {$x.hidden:invisible} {$x.hiddentwo:invisible} {$x.wash_type}");
         c.set("x", new Thing("Bob", 28, true));
 
-        assertEquals("Bob 28 3.14 TRUE invisible invisible", c.toString());
+        assertEquals("Bob 28 3.14 TRUE invisible invisible SHOWER", c.toString());
     }
 
     @Test
@@ -768,7 +787,7 @@ public class ChunkTest
         Theme theme = new Theme();
         Chunk c = theme.makeChunk();
         c.append("{$x.name} {$x.age} {$x.pi|sprintf(%.02f)} {$x.is_active:FALSE} {$x.boss.name}\n");
-        c.append("{.loop in $x.children as $child}{$child.name} {/loop}");
+        c.append("{% loop in $x.children as $child %}{$child.name} {% endloop %}");
         c.set("x", new CircularThing("Bob", 28, false));
 
         assertEquals("Bob 28 3.14 FALSE Bob\nBob Bob ", c.toString());
@@ -902,6 +921,9 @@ public class ChunkTest
      */
     public static class Thing
     {
+        public static final String CONSTANT = "constant";
+        public enum WashType { SHOWER, BATH }
+        public WashType washType = WashType.SHOWER;
         String name;
         public int age;
         double pi = Math.PI;

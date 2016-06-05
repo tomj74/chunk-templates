@@ -1,9 +1,17 @@
 Release History
 
+v3.2.1 - 2016-06-05 tmcclure
+
+  Handles path separators correctly on Windows.
+
+v3.2.0 - 2016-01-30 tmcclure
+
+  Allows classpath theme location to be configured.  Defaults to themes/
+
 v3.1.3 - 2015-12-28 tmcclure
 
   Fixes multi-threaded snippet cache bug.
-  Adds page(pageNum,pageSize) filter for lists
+  Adds page(pageNum,pageSize) filter for lists.
 
 v3.1.2 - 2015-12-03 tmcclure
 
@@ -13,8 +21,8 @@ v3.1.2 - 2015-12-03 tmcclure
 v3.1.1 - 2015-11-24 tmcclure
 
   Revises calc filter to work with direct tag references.
-  New bool filter converts truthy value (like "1.0"/"0.0") to TRUE/null
-  comp filter enhanced to handle simple numeric comparisons
+  New bool filter converts truthy value (like "1.0"/"0.0") to TRUE/null.
+  comp filter enhanced to handle simple numeric comparisons.
 
 v3.1.0 - 2015-11-15 tmcclure
 
