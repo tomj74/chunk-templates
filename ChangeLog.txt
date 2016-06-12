@@ -1,5 +1,10 @@
 Release History
 
+v3.2.2 - 2016-06-12 tmcclure
+
+  Fixes template parsing bug in if conditions with unmatched parens.
+  Optimizes bean reflection/introspection.
+
 v3.2.1 - 2016-06-05 tmcclure
 
   Handles path separators correctly on Windows.
