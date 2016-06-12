@@ -7,6 +7,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -399,6 +400,34 @@ public class ObjectDataMap implements Map
         return pickle.entrySet();
     }
 
+    private static class Getter
+    {
+        private static final Object[] NO_ARGS = (Object[])null;
+
+        Method getter;
+        Class valueClass;
+        String name;
+
+        public Getter(PropertyDescriptor property, Method getter)
+        {
+            this.getter = getter;
+            this.valueClass = property.getPropertyType();
+
+            String paramName = property.getName();
+            paramName = splitCamelCase(paramName);
+            if (this.valueClass.toString().equalsIgnoreCase("boolean")) {
+                paramName = "is_"+paramName;
+            }
+            this.name = paramName;
+        }
+
+        Object invoke(Object target)
+        throws InvocationTargetException, IllegalAccessException
+        {
+            return getter.invoke(target, NO_ARGS);
+        }
+    }
+
     private static class IntrospectionException extends Exception
     {
         private static final long serialVersionUID = 8890979383599687484L;
@@ -406,41 +435,45 @@ public class ObjectDataMap implements Map
 
     private static class StandardIntrospector
     {
+        private static Map<Class,List<Getter>> beanGetters = new HashMap<Class,List<Getter>>();
+
         private static Map<String,Object> mapifyBean(Object bean)
         throws IntrospectionException
         {
-            PropertyDescriptor[] properties = null;
-            try {
-                BeanInfo beanInfo = Introspector.getBeanInfo(bean.getClass());
-                properties = beanInfo.getPropertyDescriptors();
-            } catch (java.beans.IntrospectionException e) {
-                throw new IntrospectionException();
-            }
+            Class beanClass = bean.getClass();
+            List<Getter> getters = beanGetters.get(beanClass);
 
-            if (properties == null) return null;
+            if (getters == null) {
+                PropertyDescriptor[] properties = null;
+                try {
+                    BeanInfo beanInfo = Introspector.getBeanInfo(bean.getClass());
+                    properties = beanInfo.getPropertyDescriptors();
+                } catch (java.beans.IntrospectionException e) {
+                    throw new IntrospectionException();
+                }
+
+                if (properties == null) return null;
+
+                getters = new ArrayList<Getter>();
+                for (PropertyDescriptor property : properties) {
+                    Method getter = property.getReadMethod();
+                    if (getter == null) continue;
+                    getters.add(new Getter(property, getter));
+                }
+
+                beanGetters.put(beanClass, getters);
+            }
 
             Map<String,Object> pickle = null;
 
             // copy properties into hashtable
-            for (PropertyDescriptor property : properties) {
-                Method getter = property.getReadMethod();
-                if (getter == null) continue;
+            for (Getter getter : getters) {
                 try {
-                    Object paramValue = getter.invoke(bean, (Object[])null);
+                    Object paramValue = getter.invoke(bean);
 
                     if (paramValue != null) {
-                        // converts isActive() to is_active
-                        // converts getBookTitle() to book_title
-                        String paramName = property.getName();
-                        paramName = splitCamelCase(paramName);
-                        if (paramValue instanceof Boolean) {
-                            paramName = "is_"+paramName;
-                        }
-
                         if (pickle == null) pickle = new HashMap<String,Object>();
-
-                        Class paramClass = property.getPropertyType();
-                        storeValue(pickle, paramClass, paramName, paramValue, true);
+                        storeValue(pickle, getter.valueClass, getter.name, paramValue, true);
                     }
                 } catch (InvocationTargetException e) {
                 } catch (IllegalAccessException e) {
