@@ -794,6 +794,18 @@ public class ChunkTest
     }
 
     @Test
+    public void badIfSyntaxTest()
+    {
+        Theme theme = new Theme();
+        Chunk c = theme.makeChunk();
+        c.append("{% if ($var} %}do this{% else %}do that{% endif %}");
+        c.append("{% if ($var) %}do this{% else %}do that{% endif %}");
+        c.set("var", "truthy-value");
+
+        assertEquals(" %}do thisdo this", c.toString());
+    }
+
+    @Test
     public void POJOLoopTest()
     {
         Theme theme = new Theme();

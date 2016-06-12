@@ -70,6 +70,9 @@ public class IfTag extends BlockTag
             if (closeParenPos > openParenPos) {
                 String test = params.substring(openParenPos+1,closeParenPos);
                 return test;
+            } else {
+                String test = params.substring(openParenPos+1);
+                return test;
             }
         }
 
@@ -406,10 +409,18 @@ public class IfTag extends BlockTag
                 if (c == '|' || c == ':' || c == '.') continue;
                 if (c == '(') {
                     i = FilterArgs.nextUnescapedDelim(")", test, i+1);
+                    if (i < 0) {
+                        // unmatched paren!
+                        return chars.length;
+                    }
                     continue;
                 }
                 if (c == '/') {
                     i = RegexFilter.nextRegexDelim(test, i+1);
+                    if (i < 0) {
+                        // unmatched regex delim!
+                        return chars.length;
+                    }
                     continue;
                 }
                 // end of the road
