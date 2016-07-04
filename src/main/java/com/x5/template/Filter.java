@@ -32,6 +32,8 @@ public class Filter
     }
 
     private FilterArgs filterArgs;
+    private ChunkFilter filter;
+    private boolean isSafe = false;
 
     public static Object applyFilter(Chunk context, String filter, Object input)
     {
@@ -72,6 +74,20 @@ public class Filter
 
     public Object apply(Chunk context, Object input)
     {
+        if (filter != null) {
+            if (isSafe) {
+                return filter.applyFilter(context, input, filterArgs);
+            }
+            try {
+                return filter.applyFilter(context, input, filterArgs);
+            } catch (Exception e) {
+                // poorly behaved contrib code.  don't buy the farm, just
+                // complain to stderr and move along.
+                e.printStackTrace(System.err);
+                return input;
+            }
+        }
+
         String filterName = filterArgs.getFilterName();
 
         // if custom filter is registered with this name, it takes precedence
@@ -83,14 +99,8 @@ public class Filter
         if (customFilters != null) {
             ChunkFilter userFilter = customFilters.get(filterName);
             if (userFilter != null) {
-                try {
-                    return userFilter.applyFilter(context, input, filterArgs);
-                } catch (Exception e) {
-                    // poorly behaved contrib code.  don't buy the farm, just
-                    // complain to stderr and move along.
-                    e.printStackTrace(System.err);
-                    return input;
-                }
+                filter = userFilter;
+                return apply(context, input);
             }
         }
 
@@ -99,13 +109,7 @@ public class Filter
             return typeFilter(context, input);
         }
 
-        String text = null;
-        if (input instanceof String) {
-            text = (String)input;
-        } else if (input instanceof Snippet) {
-            text = ((Snippet)input).toSimpleString();
-        }
-
+        String text = inputAsText(input);
         if (text != null) {
             // provide a few core filters without making a whole class for each one.
             if (rawFilter.equals("trim")) {
@@ -127,10 +131,24 @@ public class Filter
         // try to find a matching factory-standard stock filter for this job.
         ChunkFilter stockFilter = filters.get(filterName);
         if (stockFilter != null) {
-            return stockFilter.applyFilter(context, input, filterArgs);
+            filter = stockFilter;
+            isSafe = true;
+            return apply(context, input);
         } else {
             return input;
         }
+    }
+
+    private String inputAsText(Object input)
+    {
+        if (input instanceof String) {
+            return (String)input;
+        }
+        if (input instanceof Snippet) {
+            return ((Snippet)input).toSimpleString();
+        }
+
+        return null;
     }
 
     public static String[] splitFilters(String filter)

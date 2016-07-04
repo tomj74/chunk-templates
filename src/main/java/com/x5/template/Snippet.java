@@ -18,7 +18,7 @@ public class Snippet
     private long lastAccess = 0;
 
     private static boolean useCache = isCacheEnabled();
-    private static Map<String,Snippet> snippetCache = new ConcurrentHashMap<String,Snippet>(512);
+    private static Map<String,Snippet> snippetCache = useCache ? new ConcurrentHashMap<String,Snippet>(512) : null;
     private static long lastGC = 0;
     private static long gcCounter = 0;
     private static final int gcInterval = 500;
@@ -76,8 +76,8 @@ public class Snippet
 
     private static boolean isCacheEnabled()
     {
-        String useCacheProperty = System.getProperty("chunk.nosnippetcache");
-        if (useCacheProperty != null) {
+        String useCacheProperty = System.getProperty("chunk.snippetcache");
+        if (useCacheProperty == null) {
             return false;
         } else {
             return true;

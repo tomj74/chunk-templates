@@ -20,7 +20,7 @@ public class BooleanFilter extends BasicFilter implements ChunkFilter
             }
         }
 
-        return b ? "TRUE" : null;
+        return b ? Chunk.TRUE : null;
     }
 
     public String getFilterName()

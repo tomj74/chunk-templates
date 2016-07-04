@@ -35,9 +35,11 @@ public class ObjectDataMap implements Map
     private Object object;
     private boolean isBean = false;
 
+    private static BeanIntrospector introspector = null;
     private static final Map<String,Object> EMPTY_MAP = new HashMap<String,Object>();
-
     private static final HashSet<Class<?>> WRAPPER_TYPES = getWrapperTypes();
+    private static final String TRUE = "TRUE";
+    private static final Class[] NO_ARGS = new Class[]{};
 
     private static HashSet<Class<?>> getWrapperTypes()
     {
@@ -85,7 +87,6 @@ public class ObjectDataMap implements Map
         return boxedBean;
     }
 
-    private static final Class[] NO_ARGS = new Class[]{};
     private static Map<Class,Boolean> hasOwnToString = new HashMap<Class,Boolean>();
 
     public boolean isBean()
@@ -117,7 +118,6 @@ public class ObjectDataMap implements Map
         }
     }
 
-    @SuppressWarnings("unused")
     private Map<String,Object> mapify(Object pojo)
     {
         Map<String,Object> data = null;
@@ -139,20 +139,14 @@ public class ObjectDataMap implements Map
             }
         }
         if (isBean) {
-            try {
-                // java.beans.* is missing on android.
-                // Test for existence before use...
-                try {
-                    Class<?> beanClass = Class.forName("java.beans.Introspector");
-                    return StandardIntrospector.mapifyBean(pojo);
-                } catch (ClassNotFoundException e) {
-                    try {
-                        Class<?> madrobotClass = Class.forName("com.madrobot.beans.Introspector");
-                        return MadRobotIntrospector.mapifyBean(pojo);
-                    } catch (ClassNotFoundException e2) {
-                        // soldier on, treat as pojo
-                    }
+            if (introspector == null) {
+                introspector = pickIntrospector();
+                if (introspector == null) {
+                    return data;
                 }
+            }
+            try {
+                return introspector.mapifyBean(pojo);
             } catch (IntrospectionException e) {
                 // hmm, not a bean after all...
             }
@@ -160,10 +154,36 @@ public class ObjectDataMap implements Map
         return data;
     }
 
+    @SuppressWarnings("unused")
+    private static BeanIntrospector pickIntrospector()
+    {
+        // java.beans.* is missing on android.
+        // Test for existence before use...
+        try {
+            Class<?> beanClass = Class.forName("java.beans.Introspector");
+            return new StandardIntrospector();
+        } catch (ClassNotFoundException e) {
+            try {
+                Class<?> madrobotClass = Class.forName("com.madrobot.beans.Introspector");
+                return new MadRobotIntrospector();
+            } catch (ClassNotFoundException e2) {
+                return null;
+            }
+        }
+    }
+
     private static Map<Class,Field[]> declaredFields = new HashMap<Class,Field[]>();
+    private static Map<Class,Boolean> looksLikePojo = new HashMap<Class,Boolean>();
 
     private boolean hasNonFinalPublicFields(Object pojo)
     {
+        Class pojoClass = pojo.getClass();
+        if (looksLikePojo.containsKey(pojoClass)) {
+            return looksLikePojo.get(pojoClass);
+        }
+
+        boolean found = false;
+
         Field[] fields = grokFields(pojo);
         for (int i=0; i<fields.length; i++) {
             Field field = fields[i];
@@ -178,10 +198,12 @@ public class ObjectDataMap implements Map
                 continue;
             }
 
-            return true;
+            found = true;
+            break;
         }
 
-        return false;
+        looksLikePojo.put(pojoClass, found);
+        return found;
     }
 
     private Field[] grokFields(Object pojo)
@@ -275,7 +297,7 @@ public class ObjectDataMap implements Map
             pickle.put(paramName, paramValue);
         } else if (paramValue instanceof Boolean) {
             if (((Boolean)paramValue).booleanValue()) {
-                pickle.put(paramName, "TRUE");
+                pickle.put(paramName, TRUE);
             }
         } else if (paramClass.isPrimitive() || isWrapperType(paramClass)) {
             pickle.put(paramName, paramValue);
@@ -433,11 +455,15 @@ public class ObjectDataMap implements Map
         private static final long serialVersionUID = 8890979383599687484L;
     }
 
-    private static class StandardIntrospector
+    private static interface BeanIntrospector {
+        public Map<String,Object> mapifyBean(Object bean) throws IntrospectionException;
+    }
+
+    private static class StandardIntrospector implements BeanIntrospector
     {
         private static Map<Class,List<Getter>> beanGetters = new HashMap<Class,List<Getter>>();
 
-        private static Map<String,Object> mapifyBean(Object bean)
+        public Map<String,Object> mapifyBean(Object bean)
         throws IntrospectionException
         {
             Class beanClass = bean.getClass();
@@ -485,9 +511,9 @@ public class ObjectDataMap implements Map
     }
 
     // mad robot provides a stopgap introspection library for android projects
-    private static class MadRobotIntrospector
+    private static class MadRobotIntrospector implements BeanIntrospector
     {
-        private static Map<String,Object> mapifyBean(Object bean)
+        public Map<String,Object> mapifyBean(Object bean)
         throws IntrospectionException
         {
             com.madrobot.beans.PropertyDescriptor[] properties = null;

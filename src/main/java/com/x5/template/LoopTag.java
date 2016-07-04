@@ -553,10 +553,10 @@ public class LoopTag extends BlockTag
             // if directed, set $is_first and $is_last tags at appropriate times
             if (firstRunTag != null) {
                 if (counter == 0) {
-                    rowX.set(firstRunTag, "TRUE");
+                    rowX.set(firstRunTag);
                     rowX.set(placeTag, firstRunTag);
                     if (prefix != null) {
-                        rowX.set(prefix + "." + firstRunTag, "TRUE");
+                        rowX.set(prefix + "." + firstRunTag);
                         rowX.set(prefix + "." + placeTag, firstRunTag);
                     }
                 } else {
@@ -569,10 +569,10 @@ public class LoopTag extends BlockTag
             if (lastRunTag != null) {
                 if (!data.hasNext()) {
                     String place = counter == 0 ? (firstRunTag + " " + lastRunTag) : lastRunTag;
-                    rowX.set(lastRunTag, "TRUE");
+                    rowX.set(lastRunTag);
                     rowX.set(placeTag, place);
                     if (prefix != null) {
-                        rowX.set(prefix + "." + lastRunTag, "TRUE");
+                        rowX.set(prefix + "." + lastRunTag);
                         rowX.set(prefix + "." + placeTag, place);
                     }
                 }

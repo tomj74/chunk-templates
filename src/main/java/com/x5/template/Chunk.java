@@ -243,7 +243,7 @@ import com.x5.util.TableData;
  * Updates: <A href="http://www.x5software.com/chunk/">Chunk Documentation</A><BR>
  *
  * @author Tom McClure
- * @version 3.2.2
+ * @version 3.2.3
  */
 
 public class Chunk implements Map<String,Object>
@@ -251,9 +251,9 @@ public class Chunk implements Map<String,Object>
     public static final int HASH_THRESH = 8;
     public static final int DEPTH_LIMIT = 17;
 
-    public static final String VERSION = "3.2.2";
+    public static final String VERSION = "3.2.3";
 
-    private static final String TRUE = "TRUE";
+    public static final String TRUE = "TRUE";
 
     protected Snippet templateRoot = null;
     private String templateOrigin = null;
@@ -1122,8 +1122,8 @@ public class Chunk implements Map<String,Object>
         if (o == null) return o;
 
         if (o instanceof Boolean) {
-            return ((Boolean)o).booleanValue() ? "TRUE" : null;
-        } else if (o != null && ObjectDataMap.isWrapperType(o.getClass())) {
+            return ((Boolean)o).booleanValue() ? TRUE : null;
+        } else if (ObjectDataMap.isWrapperType(o.getClass())) {
             return o.toString();
         } else {
             return boxIfAlienObject(o);

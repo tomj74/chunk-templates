@@ -1,5 +1,9 @@
 Release History
 
+v3.2.3 - 2016-07-04 tmcclure
+
+  Some minor optimization work. Snippet cache now disabled by default.
+
 v3.2.2 - 2016-06-12 tmcclure
 
   Fixes template parsing bug in if conditions with unmatched parens.

@@ -51,29 +51,32 @@ public class QuickCalcFilter extends BasicFilter implements ChunkFilter
                 // handle comparisons
                 if ((op == '!' && op2 == '=') || (op == '<' && op2 == '>')) {
                     double y = Double.parseDouble(calc.substring(2));
-                    return (x == y) ? null : "TRUE";
+                    return (x == y) ? null : Chunk.TRUE;
                 }
                 if (op == '>' || op == '<' || op == '=') {
                     boolean orEq = (op2 == '=');
                     double y = Double.parseDouble(calc.substring(orEq ? 2 : 1));
-                    if (orEq && x == y) return "TRUE";
+                    if (orEq && x == y) return Chunk.TRUE;
                     if (op == '=') return null;
                     if (x > y) {
-                        return (op == '>') ? "TRUE" : null;
+                        return (op == '>') ? Chunk.TRUE : null;
                     } else {
-                        return (op == '<') ? "TRUE" : null;
+                        return (op == '<') ? Chunk.TRUE : null;
                     }
                 }
 
                 double y = Double.parseDouble(calc.substring(1));
+                double z;
 
-                double z = x;
-                if (op == '-') z = x - y;
-                if (op == '+') z = x + y;
-                if (op == '*') z = x * y;
-                if (op == '/') z = x / y;
-                if (op == '%') z = x % y;
-                if (op == '^') z = Math.pow(x, y);
+                switch (op) {
+                  case '-': z = x - y; break;
+                  case '+': z = x + y; break;
+                  case '*': z = x * y; break;
+                  case '/': z = x / y; break;
+                  case '%': z = x % y; break;
+                  case '^': z = Math.pow(x, y); break;
+                  default: z = x;
+                }
                 return Double.toString(z);
 
             } else {
@@ -84,35 +87,38 @@ public class QuickCalcFilter extends BasicFilter implements ChunkFilter
                 // handle comparisons
                 if ((op == '!' && op2 == '=') || (op == '<' && op2 == '>')) {
                     long y = Long.parseLong(calc.substring(2));
-                    return (x == y) ? null : "TRUE";
+                    return (x == y) ? null : Chunk.TRUE;
                 }
                 if (op == '>' || op == '<' || op == '=') {
                     boolean orEq = (op2 == '=');
                     long y = Long.parseLong(calc.substring(orEq ? 2 : 1));
-                    if (orEq && x == y) return "TRUE";
+                    if (orEq && x == y) return Chunk.TRUE;
                     if (op == '=') return null;
                     if (x > y) {
-                        return (op == '>') ? "TRUE" : null;
+                        return (op == '>') ? Chunk.TRUE : null;
                     } else {
-                        return (op == '<') ? "TRUE" : null;
+                        return (op == '<') ? Chunk.TRUE : null;
                     }
                 }
 
                 long y = Long.parseLong(calc.substring(1));
+                long z;
 
-                long z = x;
-                if (op == '-') z = x - y;
-                if (op == '+') z = x + y;
-                if (op == '*') z = x * y;
-                if (op == '/') z = x / y;
-                if (op == '%') z = x % y;
-                if (op == '^') {
+                switch (op) {
+                  case '-': z = x - y; break;
+                  case '+': z = x + y; break;
+                  case '*': z = x * y; break;
+                  case '/': z = x / y; break;
+                  case '%': z = x % y; break;
+                  case '^':
                     if (y < 0) {
                         // negative exponents will not result in integers
                         return Double.toString(Math.pow(x, y));
                     } else {
                         z = Math.round(Math.pow(x, y));
                     }
+                    break;
+                  default: z = x;
                 }
                 return Long.toString(z);
             }
