@@ -323,6 +323,31 @@ public class ChunkTest
     }
 
     @Test
+    public void testSetBoolean()
+    {
+        Chunk c = new Chunk();
+        c.set("x", true);
+        c.append("{% if $x %}truth-template{% else %}untruth-template{% endif %}");
+        c.append("{$x:}");
+
+        assertEquals(c.toString(), "truth-templateTRUE");
+
+        c.set("x", false);
+
+        assertEquals(c.toString(), "untruth-template");
+
+        c.set("x", true);
+
+        assertEquals(c.toString(), "truth-templateTRUE");
+
+        c.resetTemplate();
+        c.set("y", false);
+        c.append("{$y:}{% if $y %}boogers{% else %}snot{% endif %}");
+
+        assertEquals(c.toString(), "snot");
+    }
+
+    @Test
     public void testBackticks()
     {
         // TODO: add some tests for backtick edge cases

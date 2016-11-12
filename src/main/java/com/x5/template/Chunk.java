@@ -552,6 +552,20 @@ public class Chunk implements Map<String,Object>
     }
 
     /**
+     * For convenience, calls .set(tagName, "TRUE") for true values
+     * and .unset(tagName) for false values -- ie since the string
+     * "FALSE" would evaluate to true in a template if-expression.
+     */
+    public void set(String tagName, boolean value)
+    {
+        if (value) {
+            set(tagName, TRUE);
+        } else {
+            unset(tagName);
+        }
+    }
+
+    /**
      * For convenience, auto-converts StringBuffer to String and creates
      * tag replacement rule.  Overwrites any existing rule with this tagName.
      */
