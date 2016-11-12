@@ -39,7 +39,7 @@ public class OnMatchFilter extends BasicFilter implements ChunkFilter
             String value = args[i+1];
 
             if (test.equals("|nomatch|")) {
-                return FilterArgs.magicBraces(context, value);
+                return FilterArgs.magicBraces(context, value, arg);
             }
 
             if (text == null) continue; // won't ever match

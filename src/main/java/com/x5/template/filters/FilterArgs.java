@@ -1,5 +1,7 @@
 package com.x5.template.filters;
 
+import java.util.StringTokenizer;
+
 import com.x5.template.Chunk;
 import com.x5.template.TemplateSet;
 
@@ -7,6 +9,7 @@ public class FilterArgs
 {
     private String rawInvocation;
     private String rawArgs;
+    private String[] deepRefPath;
 
     private String filterName;
     private String[] filterArgs;
@@ -37,6 +40,11 @@ public class FilterArgs
         return this.rawArgs;
     }
 
+    public String[] getDeepRefPath()
+    {
+        return this.deepRefPath;
+    }
+
     private void init()
     {
         filterName = rawInvocation;
@@ -55,8 +63,24 @@ public class FilterArgs
             if (closeParenPos > parenPos) {
                 rawArgs = rawInvocation.substring(parenPos+1, closeParenPos);
                 filterArgs = parseArgs(rawArgs);
+                // check for deep ref after close-paren
+                if (closeParenPos + 2 < rawInvocation.length()) {
+                    int deepRefPos = rawInvocation.indexOf(".", closeParenPos+1);
+                    deepRefPath = parseDeepRef(rawInvocation.substring(deepRefPos+1));
+                }
             }
         }
+    }
+
+    private static String[] parseDeepRef(String deepRef)
+    {
+        StringTokenizer tokens = new StringTokenizer(deepRef, ".");
+        int n = tokens.countTokens();
+        String[] segments = new String[n];
+        for (int i=0; i<n; i++) {
+            segments[i] = tokens.nextToken();
+        }
+        return segments;
     }
 
     private static String[] parseArgs(String parenthetical)
@@ -206,20 +230,30 @@ public class FilterArgs
      */
     public static String magicBraces(Chunk context, String output)
     {
+        return magicBraces(context, output, null);
+    }
+
+    public static String magicBraces(Chunk context, String output, FilterArgs args)
+    {
         if (output == null || output.length() == 0) return output;
 
         char firstChar = output.charAt(0);
         if (firstChar == '~' || firstChar == '$') {
-            return context != null ? context.makeTag(output) : "{"+output+"}";
-        } else if (firstChar == '^' || firstChar == '.') {
-            if (context == null) {
-                /// turn .cmd into {.cmd}
-                return TemplateSet.PROTOCOL_SHORTHAND+output.substring(1)+TemplateSet.DEFAULT_TAG_END;
-            } else {
-                return context.makeTag('.'+output.substring(1));
+            String[] deepRef = (args == null) ? null : args.getDeepRefPath();
+            if (deepRef != null) {
+                for (int i=0; i<deepRef.length; i++) {
+                    output += "." + deepRef[i];
+                }
             }
+            return context != null ? context.makeTag(output.substring(1)) : "{" + output + "}";
+        } else if (firstChar == '^' || firstChar == '.') {
+            if (context != null) {
+                return context.makeTag('.' + output.substring(1));
+            }
+            // turn .cmd into {.cmd}
+            return TemplateSet.PROTOCOL_SHORTHAND + output.substring(1) + TemplateSet.DEFAULT_TAG_END;
         } else if (firstChar == '+') {
-            return "{"+output+"}";
+            return "{" + output + "}";
         } else {
             return output;
         }

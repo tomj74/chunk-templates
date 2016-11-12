@@ -26,7 +26,7 @@ public class AlternateFilter extends BasicFilter implements ChunkFilter
             }
 
             // tag-ify if necessary
-            return FilterArgs.magicBraces(chunk, output);
+            return FilterArgs.magicBraces(chunk, output, arg);
 
         } catch (NumberFormatException e) {
             return text;

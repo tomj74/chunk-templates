@@ -1,5 +1,11 @@
 Release History
 
+v3.2.4 - 2016-11-11 tmcclure
+
+  Support deep reference suffix on filter calls like .get(n).field_name
+  Fix minor issue in exec/macro parser
+  Add convenience method chunk.set("tag", boolean)
+
 v3.2.3 - 2016-07-04 tmcclure
 
   Some minor optimization work. Snippet cache now disabled by default.

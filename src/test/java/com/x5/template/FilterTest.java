@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Locale;
+import java.util.Map;
 import java.util.TimeZone;
 
 import org.junit.Test;
@@ -586,11 +587,87 @@ public class FilterTest
         String[] beatles = new String[]{"John","Paul","George","Ringo"};
         c.set("beatles", beatles);
         c.append("The 2nd beatle is: {$beatles|get(1)}.");
-        assertEquals(c.toString(),"The 2nd beatle is: Paul.");
+        assertEquals(c.toString(), "The 2nd beatle is: Paul.");
 
         c.resetTemplate();
         c.append("The 2nd to last beatle is: {$beatles|get(-2)}.");
-        assertEquals(c.toString(),"The 2nd to last beatle is: George.");
+        assertEquals(c.toString(), "The 2nd to last beatle is: George.");
+    }
+
+    @Test
+    public void testGetAsMacroValue()
+    {
+        Chunk c = new Chunk();
+        Goober g = new Goober(7,"hello");
+        Goober h = new Goober(9,"bye");
+        Goober[] goobers = new Goober[]{g,h};
+        c.set("goobers", goobers);
+        c.append("{% exec %}{$x=}{$goobers|get(0)}{% body %}{$x.message}{% endbody %}{% endexec %}");
+        assertEquals("hello", c.toString());
+    }
+
+    class Goober
+    {
+        public int id;
+        public String message;
+        public Goober parent;
+        public Goober[] children;
+
+        public Goober(int id, String message)
+        {
+            this.id = id;
+            this.message = message;
+        }
+
+        public void setChildren(Goober[] children)
+        {
+            this.children = children;
+        }
+
+        public void setParent(Goober parent)
+        {
+            this.parent = parent;
+        }
+    }
+
+    @Test
+    public void testGetObjectDeepRef()
+    {
+        Chunk c = new Chunk();
+        Goober g = new Goober(7,"hello");
+        Goober h = new Goober(9,"bye");
+        Goober[] goobers = new Goober[]{g,h};
+        c.set("goobers", goobers);
+        c.append("{% $goobers|get(0).message %}");
+
+        assertEquals("hello", c.toString());
+    }
+
+    @Test
+    public void testGetObjectDeepRefTwice()
+    {
+        Chunk c = new Chunk();
+        Goober g = new Goober(7,"hello");
+        Goober h = new Goober(9,"bye");
+        Goober dad = new Goober(1,"eat your spinach!");
+        g.setParent(dad);
+        Goober[] goobers = new Goober[]{g,h};
+        g.setChildren(goobers);
+        c.set("goobers", goobers);
+
+        c.append("{% $goobers|get(0).children|get(1).message %}");
+
+        assertEquals("bye", c.toString());
+
+        c.resetTemplate();
+        c.append("{% $goobers|get(0).parent.message %}");
+
+        assertEquals("eat your spinach!", c.toString());
+
+        c.resetTemplate();
+        c.append("{% $goobers|get(0).parent.message|reverse %}");
+
+        assertEquals("!hcanips ruoy tae", c.toString());
     }
 
     @Test
@@ -752,7 +829,31 @@ public class FilterTest
     {
         Chunk c = new Chunk();
         c.set("stooges",new String[]{"Larry","Curly","Moe"});
-        c.append("{^loop in ~stooges as name counter_tags=\"true\" divider=\"-\"}{~name}:{~0|alternate(EVEN,ODD)}{/loop}");
+        c.append("{% loop in $stooges as $name counter=$i divider=\"-\" %}{$name}:{$i|alternate(EVEN,ODD)}{% endloop %s}");
+
+        assertEquals("Larry:EVEN-Curly:ODD-Moe:EVEN", c.toString());
+    }
+
+    @Test
+    public void testAlternateFilterTags()
+    {
+        Chunk c = new Chunk();
+        c.set("stooges",new String[]{"Larry","Curly","Moe"});
+        c.set("even", "EVEN");
+        c.set("odd", "ODD");
+        c.append("{% loop in $stooges as $name counter=$i divider=\"-\" %}{$name}:{$i|alternate($even,$odd)}{% endloop %s}");
+
+        assertEquals("Larry:EVEN-Curly:ODD-Moe:EVEN", c.toString());
+    }
+
+    @Test
+    public void testAlternateFilterTagsPlusDeepRef()
+    {
+        Chunk c = new Chunk();
+        c.set("stooges",new String[]{"Larry","Curly","Moe"});
+        c.set("even", new Goober(8,"EVEN"));
+        c.set("odd", new Goober(9,"ODD"));
+        c.append("{% loop in $stooges as $name counter=$i divider=\"-\" %}{$name}:{$i|alternate($even,$odd).message}{% endloop %s}");
 
         assertEquals("Larry:EVEN-Curly:ODD-Moe:EVEN", c.toString());
     }

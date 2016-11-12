@@ -18,7 +18,7 @@ public class OnDefinedFilter extends BasicFilter implements ChunkFilter
         if (swapFor == null) return null;
 
         // empty string is considered not-defined
-        return (text.trim().length() == 0) ? "" : FilterArgs.magicBraces(chunk, swapFor);
+        return (text.trim().length() == 0) ? "" : FilterArgs.magicBraces(chunk, swapFor, arg);
     }
 
     public String getFilterName()
