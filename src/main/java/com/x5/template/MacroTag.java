@@ -78,14 +78,17 @@ public class MacroTag extends BlockTag
     {
         List<SnippetPart> parts = body.getParts();
         int bodyEnd = parts.size();
+        int eatUntil = bodyEnd;
         for (int i=bodyEnd-1; i>=0; i--) {
             SnippetPart part = parts.get(i);
             if (part.isTag()) {
                 SnippetTag tag = (SnippetTag)part;
                 if (tag.getTag().equals("./body")) {
                     bodyEnd = i;
+                    eatUntil = i+1;
                 } else if (tag.getTag().startsWith(".data")) {
                     bodyEnd = i;
+                    eatUntil = i;
                 } else if (tag.getTag().equals(".body")) {
                     // everything after this marker is the template
                     Snippet inlineSnippet = new Snippet(parts, i+1, bodyEnd);
@@ -98,7 +101,7 @@ public class MacroTag extends BlockTag
                     this.template = inlineSnippet;
 
                     // strip inline template away, no need to parse for args
-                    for (int j=bodyEnd-1; j>=i; j--) {
+                    for (int j=eatUntil-1; j>=i; j--) {
                         parts.remove(j);
                     }
                     return;
