@@ -1,5 +1,11 @@
 Release History
 
+v3.3.0 - 2017-09-01 tmcclure
+
+  Support complex conditionals w/grouping, && and || operators
+  Resolve filter args if they are tag references
+  Fix: resolve backticks correctly in filter args
+
 v3.2.4 - 2016-11-11 tmcclure
 
   Support deep reference suffix on filter calls like .get(n).field_name
