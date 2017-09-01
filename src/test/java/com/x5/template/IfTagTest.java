@@ -1,6 +1,7 @@
 package com.x5.template;
 
 import org.junit.Test;
+
 import static org.junit.Assert.*;
 
 public class IfTagTest
@@ -12,6 +13,85 @@ public class IfTagTest
         c.set("moon_material", "cheese");
         c.append("{.if ($moon_material == cheese)} The moon is made of cheese! {.else} The moon is not made of cheese :( {/if}");
         assertEquals(" The moon is made of cheese! ", c.toString());
+    }
+
+    @Test
+    public void testAnd()
+    {
+        Chunk c = new Chunk();
+        c.set("moon_material", "cheese");
+        c.set("sun_material", "cheez whiz");
+        c.append("{% if $moon_material == cheese && $sun_material == 'cheez whiz'}pass{% else %}fail{% endif %}");
+        assertEquals("pass", c.toString());
+
+        c.set("moon_material", "rock");
+        c.set("sun_material", "cheez whiz");
+        assertEquals("fail", c.toString());
+
+        c.set("moon_material", "cheese");
+        c.set("sun_material", "incandescent plasma");
+        assertEquals("fail", c.toString());
+
+        c.resetTemplate();
+        c.append("{% if ($moon_material == cheese) && ($sun_material == 'cheez whiz')}pass{% else %}fail{% endif %}");
+        assertEquals("fail", c.toString());
+
+        c.set("moon_material", "cheese");
+        c.set("sun_material", "cheez whiz");
+        assertEquals("pass", c.toString());
+    }
+
+    @Test
+    public void testOr()
+    {
+        Chunk c = new Chunk();
+        c.append("{% if $x == $y || $y == 3 %}pass{% else %}fail{% endif %}");
+        c.set("x", 4);
+        c.set("y", 4);
+
+        assertEquals("pass", c.toString());
+
+        c.set("y", 3);
+        assertEquals("pass", c.toString());
+
+        c.set("y", 42);
+        assertEquals("fail", c.toString());
+    }
+
+    @Test
+    public void testPrecedence()
+    {
+        Chunk c = new Chunk();
+        c.append("{% if $x == $y || $y == 3 && $z == 7 %}pass{% else %}fail{% endif %}");
+        c.set("x", 5);
+        c.set("y", 6);
+        c.set("z", 7);
+
+        assertEquals("fail", c.toString());
+
+        c.set("y", 3);
+        assertEquals("pass", c.toString());
+
+        c.set("z", 8);
+        assertEquals("fail", c.toString());
+    }
+
+    @Test
+    public void testGrouping()
+    {
+        Chunk c = new Chunk();
+        c.append("{% if ($x == $y || $y == 3) && $z == 7 trim='false' %}pass{% else %}fail{% endif %}");
+        c.set("x", 5);
+        c.set("y", 6);
+        c.set("z", 7);
+
+        assertEquals("fail", c.toString());
+
+        c.set("y", 3);
+        assertEquals("pass", c.toString());
+
+        c.set("z", 8);
+        assertEquals("fail", c.toString());
     }
 
     @Test
@@ -150,7 +230,7 @@ public class IfTagTest
     {
         Chunk c = new Chunk();
         c.set("moon_material", "something");
-        c.append("{.if (!moon_material)} The moon is not made of anything! {.else} The moon is made of something :) {/if}");
+        c.append("{.if (!$moon_material)} The moon is not made of anything! {.else} The moon is made of something :) {/if}");
         assertEquals(" The moon is made of something :) ", c.toString());
     }
 
@@ -289,7 +369,37 @@ public class IfTagTest
     }
 
     @Test
+    public void testSmartTrimEnabled()
+    {
+        Chunk c = new Chunk();
+        c.set("moon_material", "roquefort");
+        c.set("cheese_type", "stilton");
+        c.append(" {.if ($moon_material != $cheese_type)} \n The moon is not made of {$cheese_type} cheese! \n{.else} \n darn! \n {/if} \nGoobers\n");
+        assertEquals(" The moon is not made of stilton cheese! \nGoobers\n", c.toString());
+    }
+
+    @Test
+    public void testSmartTrimDisabled()
+    {
+        Chunk c = new Chunk();
+        c.set("moon_material", "roquefort");
+        c.set("cheese_type", "stilton");
+        c.append(" {.if ($moon_material != $cheese_type) trim='false'} \n The moon is not made of {$cheese_type} cheese! \n{.else} \n darn! \n {/if} \nGoobers\n");
+        assertEquals(" \n The moon is not made of stilton cheese! \nGoobers\n", c.toString());
+    }
+
+    @Test
     public void testTrimTrue()
+    {
+        Chunk c = new Chunk();
+        c.set("moon_material", "roquefort");
+        c.set("cheese_type", "stilton");
+        c.append("{^if (~moon_material != ~cheese_type) trim='true'} The moon is not made of {~cheese_type} cheese! {^else} darn! {/if}Goobers\n");
+        assertEquals("The moon is not made of stilton cheese!Goobers\n", c.toString());
+    }
+
+    @Test
+    public void testTrimTrueDoubleQuoted()
     {
         Chunk c = new Chunk();
         c.set("moon_material", "roquefort");
@@ -392,7 +502,7 @@ public class IfTagTest
         d.set("a", 2);
         d.append("{.if (~a|qcalc(%2) == 0)}EVEN{.else}ODD{/if}");
 
-        assertEquals("ODDEVEN",c.toString()+d.toString());
+        assertEquals("ODDEVEN", c.toString() + d.toString());
     }
 
     @Test
@@ -430,4 +540,5 @@ public class IfTagTest
 
         assertEquals("EMPTY EMPTY FULL EMPTY", c.toString());
     }
+
 }
