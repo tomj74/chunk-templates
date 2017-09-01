@@ -37,24 +37,12 @@ public class SelectedFilter extends BasicFilter implements ChunkFilter
     private static String selected(Chunk context, String text, FilterArgs arg, String token)
     {
         // no arg?  so, just return token if text is non-null
-        String[] args = arg.getFilterArgs();
+        String[] args = arg.getFilterArgs(context);
         if (args == null) return token;
 
         String testValue = args[0];
         if (args.length > 1) token = args[1];
 
-        if (testValue.charAt(0) == '~' || testValue.charAt(0) == '$') {
-
-            Object value = context.get(testValue.substring(1));
-            if (value != null && text.equals(value.toString())) {
-                return token;
-            } else {
-                return "";
-            }
-
-        }
-
-        // simple case, compare to static text string
         if (text.equals(testValue)) {
             return token;
         } else {

@@ -6,7 +6,7 @@ public class PadRightFilter extends BasicFilter implements ChunkFilter
 {
     public String transformText(Chunk chunk, String text, FilterArgs args)
     {
-        return text == null ? null : padText(text, args.getFilterArgs());
+        return text == null ? null : padText(text, args.getFilterArgs(chunk));
     }
 
     public String getFilterName()

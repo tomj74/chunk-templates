@@ -10,7 +10,7 @@ public class DefaultFilter extends BasicFilter implements ChunkFilter
     {
         String swapFor = null;
 
-        String[] args = arg.getFilterArgs();
+        String[] args = arg.getUnresolvedArgs();
 
         if (args != null && args.length > 0) swapFor = args[0];
         if (swapFor == null) return null;

@@ -531,4 +531,7 @@ public class Filter
         }
     }
 
+    public static String resolveBackticks(Chunk chunk, String tagName) {
+        return chunk.resolveBackticks(tagName, 0);
+    }
 }

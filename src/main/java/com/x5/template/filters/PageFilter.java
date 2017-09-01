@@ -20,7 +20,7 @@ public class PageFilter extends ListFilter
         int pageSize = 10;
         int from, to;
 
-        String[] args = arg.getFilterArgs();
+        String[] args = arg.getFilterArgs(chunk);
 
         if (args.length > 0) {
             page = resolveArg(chunk, args[0], page);

@@ -8,7 +8,7 @@ public class CalcFilter extends BasicFilter implements ChunkFilter
     public String transformText(Chunk chunk, String text, FilterArgs args)
     {
         if (text == null) return null;
-        if (args.getFilterArgs() == null) return text;
+        if (args.getUnresolvedArgs() == null) return text;
 
         return easyCalc(text, args, chunk);
     }
@@ -20,7 +20,7 @@ public class CalcFilter extends BasicFilter implements ChunkFilter
 
     private static String easyCalc(String text, FilterArgs arg, Chunk context)
     {
-        String[] args = arg.getFilterArgs();
+        String[] args = arg.getUnresolvedArgs();
         String expr = args[0];
 
         String fmt = null;

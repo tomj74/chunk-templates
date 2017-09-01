@@ -12,7 +12,7 @@ public class OnDefinedFilter extends BasicFilter implements ChunkFilter
 
         String swapFor = null;
 
-        String[] args = arg.getFilterArgs();
+        String[] args = arg.getFilterArgs(chunk);
 
         if (args != null && args.length > 0) swapFor = args[0];
         if (swapFor == null) return null;

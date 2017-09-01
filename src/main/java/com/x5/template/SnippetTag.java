@@ -191,7 +191,7 @@ public class SnippetTag extends SnippetPart
                 doesntCountParen = tagName.indexOf(skipToken);
             }
         }
-        if (doesntCountParen < 0) return pipePos;
+        if (doesntCountParen < 0 || doesntCountParen > pipePos) return pipePos;
         // skip to the end-paren and search from there
         int scanFrom = doesntCountParen + skipToken.length();
         int nextParen = tagName.indexOf(closeToken,scanFrom);

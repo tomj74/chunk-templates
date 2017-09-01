@@ -42,7 +42,7 @@ public class SliceFilter extends ListFilter
 
         String firstArg = null;
 
-        String[] args = arg.getFilterArgs();
+        String[] args = arg.getFilterArgs(chunk);
 
         if (args.length > 0) {
             firstArg = args[0];

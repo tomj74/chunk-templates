@@ -11,7 +11,7 @@ public class IndentFilter extends BasicFilter implements ChunkFilter
     @Override
     public String transformText(Chunk chunk, String text, FilterArgs args)
     {
-        return text == null ? null : applyIndent(text, args);
+        return text == null ? null : applyIndent(text, args, chunk);
     }
 
     public String getFilterName()
@@ -21,9 +21,9 @@ public class IndentFilter extends BasicFilter implements ChunkFilter
 
     private static final Pattern EOL = Pattern.compile("(\\r\\n|\\r\\r|\\n)");
 
-    public static String applyIndent(String text, FilterArgs arg)
+    public static String applyIndent(String text, FilterArgs arg, Chunk chunk)
     {
-        String[] args = arg.getFilterArgs();
+        String[] args = arg.getFilterArgs(chunk);
         if (args == null) return text;
 
         String indent = args[0];

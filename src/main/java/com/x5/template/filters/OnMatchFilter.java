@@ -25,7 +25,7 @@ public class OnMatchFilter extends BasicFilter implements ChunkFilter
 
     private static String applyMatchTransform(Chunk context, String text, FilterArgs arg)
     {
-        String[] args = arg.getFilterArgs();
+        String[] args = arg.getFilterArgs(context);
 
         if (args == null) return text;
 

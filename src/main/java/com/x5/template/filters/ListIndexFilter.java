@@ -17,7 +17,7 @@ public class ListIndexFilter extends ListFilter
     {
         if (list == null) return null;
 
-        String[] args = arg.getFilterArgs();
+        String[] args = arg.getFilterArgs(chunk);
         if (args.length < 1) return null;
 
         int i = Integer.parseInt(args[0]);
@@ -28,31 +28,7 @@ public class ListIndexFilter extends ListFilter
         if (i < 0 || i >= list.size()) {
             return null;
         } else {
-            return resolveDeepRefs(list.get(i), arg.getDeepRefPath());
+            return ObjectFilter.resolveDeepRefs(list.get(i), arg.getDeepRefPath());
         }
     }
-
-    @SuppressWarnings("rawtypes")
-    private Object resolveDeepRefs(Object o, String[] path)
-    {
-        if (path == null) return o;
-
-        Object deepVal = o;
-        int segment = 0;
-
-        while (path.length > segment && deepVal != null) {
-            deepVal = Chunk.boxIfAlienObject(deepVal);
-            if (deepVal instanceof Map) {
-                String segmentName = path[segment];
-                Map obj = (Map)deepVal;
-                deepVal = obj.get(segmentName);
-                segment++;
-            } else {
-                deepVal = null;
-            }
-        }
-
-        return deepVal == null ? o : deepVal;
-    }
-
 }

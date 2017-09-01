@@ -16,7 +16,7 @@ public class SplitFilter implements ChunkFilter
         String delim = null;
         int limit = -1;
 
-        String[] args = arg.getFilterArgs();
+        String[] args = arg.getFilterArgs(chunk);
 
         if (args == null || args.length < 1 || arg.getUnparsedArgs().length() < 1) {
             delim = DEFAULT_DELIM;

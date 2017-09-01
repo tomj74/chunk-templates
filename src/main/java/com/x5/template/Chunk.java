@@ -988,7 +988,7 @@ public class Chunk implements Map<String,Object>
         return tagValue;
     }
 
-    private String resolveBackticks(String lookupName, int depth)
+    protected String resolveBackticks(String lookupName, int depth)
     {
         int backtickA = lookupName.indexOf('`');
         if (backtickA < 0) return lookupName;

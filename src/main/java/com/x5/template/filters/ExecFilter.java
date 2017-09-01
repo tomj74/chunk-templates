@@ -9,7 +9,7 @@ public class ExecFilter extends BasicFilter
 {
     public String transformText(Chunk chunk, String text, FilterArgs arg)
     {
-        String[] args = arg.getFilterArgs();
+        String[] args = arg.getFilterArgs(chunk);
 
         String templateName;
         if (args != null && args.length > 0) {

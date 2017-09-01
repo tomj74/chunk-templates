@@ -3,6 +3,7 @@ package com.x5.template.filters;
 import java.util.StringTokenizer;
 
 import com.x5.template.Chunk;
+import com.x5.template.Filter;
 import com.x5.template.TemplateSet;
 
 public class FilterArgs
@@ -25,9 +26,73 @@ public class FilterArgs
         return this.filterName;
     }
 
+    /**
+     * Returns literal filter arguments from original template with no interpolation.
+     * If you really want this, use {@link #getUnresolvedArgs()} instead.
+     *
+     * @deprecated use {@link #getFilterArgs(Chunk)} instead.
+     */
+    @Deprecated
     public String[] getFilterArgs()
     {
         return this.filterArgs;
+    }
+
+    /**
+     * When getFilterArgs is provided with a context, backticks will be resolved
+     * and args that look like tag values are resolved. The old method signature
+     * is deprecated, please always call this version of getFilterArgs.
+     *
+     * @param context
+     * @return resolved arguments as strings
+     */
+    public String[] getFilterArgs(Chunk context)
+    {
+        Object[] resolvedObjs = getArgsAsObjects(context);
+        if (resolvedObjs == null) {
+            return null;
+        }
+
+        String[] resolved = new String[resolvedObjs.length];
+        for (int i=0; i<resolved.length; i++) {
+            Object val = resolvedObjs[i];
+            if (val != null) {
+                resolved[i] = val.toString();
+            }
+        }
+
+        return resolved;
+    }
+
+    /**
+     * When passing tag values as filter args, you may want to manipulate the
+     * original object within the filter logic, ie and not its string representation.
+     *
+     * eg: {$name|myFilter($x,$y.attr,$z)}
+     *
+     * @param context
+     * @return context-resolved arguments as bare objects
+     */
+    public Object[] getArgsAsObjects(Chunk context) {
+        if (filterArgs == null) {
+            return null;
+        }
+
+        Object[] resolvedArgs = new Object[filterArgs.length];
+
+        for (int i=0; i<resolvedArgs.length; i++) {
+            String resolvedStr = Filter.resolveBackticks(context, filterArgs[i]);
+            Object resolved = resolvedStr;
+            if (resolvedStr.length() > 2) {
+                char magicChar = resolvedStr.charAt(0);
+                if (magicChar == '$' || magicChar == '~') {
+                    resolved = context.get(resolvedStr.substring(1));
+                }
+            }
+            resolvedArgs[i] = resolved;
+        }
+
+        return resolvedArgs;
     }
 
     public String getUnparsedFilter()
@@ -38,6 +103,11 @@ public class FilterArgs
     public String getUnparsedArgs()
     {
         return this.rawArgs;
+    }
+
+    public String[] getUnresolvedArgs()
+    {
+        return this.filterArgs;
     }
 
     public String[] getDeepRefPath()
@@ -224,7 +294,7 @@ public class FilterArgs
     }
 
     /**
-     * magicBraces wraps unbraced tag-specials ~tag ^command +include in {~braces}
+     * magicBraces wraps unbraced tag-specials $tag ^command +include in {$braces}
      * to trigger proper re-processing later on.  magicBraces leaves unprefixed
      * values intact.
      */

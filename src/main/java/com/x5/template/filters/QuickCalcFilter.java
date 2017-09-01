@@ -17,7 +17,7 @@ public class QuickCalcFilter extends BasicFilter implements ChunkFilter
 {
     public String transformText(Chunk chunk, String text, FilterArgs args)
     {
-        String[] parsedArgs = args.getFilterArgs();
+        String[] parsedArgs = args.getFilterArgs(chunk);
         if (parsedArgs == null) return text;
 
         String calc = parsedArgs[0];

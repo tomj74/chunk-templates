@@ -606,6 +606,17 @@ public class FilterTest
         assertEquals("hello", c.toString());
     }
 
+    @Test
+    public void testBacktickFilterArg()
+    {
+        Chunk c = new Chunk();
+        Goober g = new Goober(5, "goober");
+        c.set("goober", g);
+        c.set("name", "penelope");
+        c.append("{$name|lpad(*,`$goober.id`)}");
+        assertEquals("*****penelope", c.toString());
+    }
+
     class Goober
     {
         public int id;
@@ -1207,7 +1218,7 @@ public class FilterTest
             String format = null;
             String timezone = "UTC";
 
-            String[] args = arg.getFilterArgs();
+            String[] args = arg.getFilterArgs(chunk);
             if (args != null) {
                 if (args.length == 1) {
                     format = args[0];
