@@ -858,6 +858,16 @@ public class FilterTest
     }
 
     @Test
+    public void testAlternateFilterTemplates()
+    {
+        Theme theme = new Theme("test/base");
+        Chunk c = theme.makeChunk("alternator#loop_test");
+        c.set("stooges",new String[]{"Larry","Curly","Moe"});
+
+        assertEquals("Larry:EVEN-Curly:ODD-Moe:EVEN", c.toString());
+    }
+
+    @Test
     public void testAlternateFilterTagsPlusDeepRef()
     {
         Chunk c = new Chunk();

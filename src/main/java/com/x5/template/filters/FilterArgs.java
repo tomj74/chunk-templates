@@ -87,6 +87,8 @@ public class FilterArgs
                 char magicChar = resolvedStr.charAt(0);
                 if (magicChar == '$' || magicChar == '~') {
                     resolved = context.get(resolvedStr.substring(1));
+                } else if (magicChar == '+') {
+                    resolved = magicBraces(context, resolvedStr);
                 }
             }
             resolvedArgs[i] = resolved;

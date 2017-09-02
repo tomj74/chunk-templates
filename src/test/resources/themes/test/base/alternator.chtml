@@ -1,0 +1,8 @@
+{#loop_test}
+{% loop in $stooges as $name counter=$i divider="-" %}
+{$name}:{$i|alternate(+#even,+#odd)}{% endloop %}
+{#}
+
+{#even}EVEN{#}
+
+{#odd}ODD{#}

@@ -1,5 +1,9 @@
 Release History
 
+v3.3.1 - 2017-09-01 tmcclure
+
+  Fix {$i|alternate(+#even,+#odd)} template inclusion shorthand
+
 v3.3.0 - 2017-09-01 tmcclure
 
   Support complex conditionals w/grouping, && and || operators
