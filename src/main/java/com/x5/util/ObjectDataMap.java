@@ -3,6 +3,7 @@ package com.x5.util;
 import java.beans.BeanInfo;
 import java.beans.Introspector;
 import java.beans.PropertyDescriptor;
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -33,13 +34,16 @@ public class ObjectDataMap implements Map
 {
     private Map<String,Object> pickle = null;
     private Object object;
-    private boolean isBean = false;
+    private Boolean isBean = null;
 
     private static BeanIntrospector introspector = null;
     private static final Map<String,Object> EMPTY_MAP = new HashMap<String,Object>();
     private static final HashSet<Class<?>> WRAPPER_TYPES = getWrapperTypes();
     private static final String TRUE = "TRUE";
     private static final Class[] NO_ARGS = new Class[]{};
+
+    private static Map<Class,Field[]> declaredFields = new HashMap<Class,Field[]>();
+    private static Map<Class,Boolean> looksLikePojo = new HashMap<Class,Boolean>();
 
     private static HashSet<Class<?>> getWrapperTypes()
     {
@@ -91,7 +95,7 @@ public class ObjectDataMap implements Map
 
     public boolean isBean()
     {
-        return this.isBean;
+        return this.isBean != null && this.isBean;
     }
 
     public static String getAsString(Object obj)
@@ -118,39 +122,59 @@ public class ObjectDataMap implements Map
         }
     }
 
+    private boolean hasBeanAnnotation(Class candidateClass)
+    {
+        return candidateClass.isAnnotationPresent(AccessAsBean.class);
+    }
+
+    private boolean hasPojoAnnotation(Class candidateClass)
+    {
+        return candidateClass.isAnnotationPresent(AccessAsPojo.class);
+    }
+
     private Map<String,Object> mapify(Object pojo)
     {
         Map<String,Object> data = null;
+
         if (pojo instanceof DataCapsule) {
             return mapifyCapsule((DataCapsule)pojo);
         }
-        if (!isBean) {
-            if (hasNonFinalPublicFields(pojo)) {
+
+        if (isBean == null) {
+            Class objClass = pojo.getClass();
+            if (looksLikePojo.containsKey(objClass)) {
+                isBean = !looksLikePojo.get(objClass);
+            } else if (mightBePOJO(pojo)) {
                 data = mapifyPOJO(pojo);
-                if (data == null || data.isEmpty()) {
-                    // hmmm, maybe it's a bean?
-                    isBean = true;
-                } else {
+                // This is the first time we've tried to read fields from this class.
+                if (data != null && !data.isEmpty()) {
+                    isBean = false;
                     return data;
                 }
+                // Failed to access as POJO.  Always treat class as bean.
+                looksLikePojo.put(objClass, false);
+                isBean = true;
             } else {
-                // no public (non-final) fields, treat as bean
                 isBean = true;
             }
         }
-        if (isBean) {
+
+        if (!isBean) {
+            return mapifyPOJO(pojo);
+        }
+
+        if (introspector == null) {
+            introspector = pickIntrospector();
             if (introspector == null) {
-                introspector = pickIntrospector();
-                if (introspector == null) {
-                    return data;
-                }
-            }
-            try {
-                return introspector.mapifyBean(pojo);
-            } catch (IntrospectionException e) {
-                // hmm, not a bean after all...
+                return data;
             }
         }
+        try {
+            return introspector.mapifyBean(pojo);
+        } catch (IntrospectionException e) {
+            // hmm, not a bean after all...
+        }
+
         return data;
     }
 
@@ -172,16 +196,28 @@ public class ObjectDataMap implements Map
         }
     }
 
-    private static Map<Class,Field[]> declaredFields = new HashMap<Class,Field[]>();
-    private static Map<Class,Boolean> looksLikePojo = new HashMap<Class,Boolean>();
+    private boolean mightBePOJO(Object pojo) {
+        Class pojoClass = pojo.getClass();
+        if (hasBeanAnnotation(pojoClass)) {
+            looksLikePojo.put(pojoClass, false);
+            return false;
+        }
+
+        if (hasPojoAnnotation(pojoClass)) {
+            looksLikePojo.put(pojoClass, true);
+            return true;
+        }
+
+        if (hasNonFinalPublicFields(pojo)) {
+            looksLikePojo.put(pojoClass, true);
+            return true;
+        }
+
+        return false;
+    }
 
     private boolean hasNonFinalPublicFields(Object pojo)
     {
-        Class pojoClass = pojo.getClass();
-        if (looksLikePojo.containsKey(pojoClass)) {
-            return looksLikePojo.get(pojoClass);
-        }
-
         boolean found = false;
 
         Field[] fields = grokFields(pojo);
@@ -202,7 +238,6 @@ public class ObjectDataMap implements Map
             break;
         }
 
-        looksLikePojo.put(pojoClass, found);
         return found;
     }
 
@@ -257,7 +292,7 @@ public class ObjectDataMap implements Map
             if (pickle == null) pickle = new HashMap<String,Object>();
             // convert isActive to is_active
             paramName = splitCamelCase(paramName);
-            storeValue(pickle, paramClass, paramName, paramValue, isBean);
+            storeValue(pickle, paramClass, paramName, paramValue, isBean());
         }
 
         return pickle;

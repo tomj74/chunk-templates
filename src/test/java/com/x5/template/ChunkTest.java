@@ -8,6 +8,7 @@ import java.util.Map;
 import org.junit.Test;
 
 import com.x5.util.ObjectDataMap;
+import com.x5.util.AccessAsPojo;
 
 import static org.junit.Assert.*;
 
@@ -630,10 +631,20 @@ public class ChunkTest
     {
         Theme theme = new Theme();
         Chunk c = theme.makeChunk();
-        c.append("{$x.name} {$x.age} {$x.e|sprintf(%.02f)} {$x.pi|sprintf(%.02f)} {$x.is_active:FALSE}");
+        c.append("{$x.name} {$x.age} {$x.e|sprintf(%.02f)} {$x.pi|sprintf(%.02f)} {$x.is_active:FALSE} {$x.immutable} {$x.six_times_nine}");
         c.set("x", new Thing("Bob",28,true));
 
-        assertEquals("Bob 28 2.72 3.14 TRUE", c.toString());
+        assertEquals("Bob 28 2.72 3.14 TRUE 42 54", c.toString());
+    }
+
+    @Test
+    public void simpleFinalPOJOTest()
+    {
+        Theme theme = new Theme();
+        Chunk c = theme.makeChunk();
+        c.append("hello {$x.immutable:FAIL}");
+        c.set("x", new SimpleFinalThing());
+        assertEquals("hello 42", c.toString());
     }
 
     @Test
@@ -954,11 +965,22 @@ public class ChunkTest
     }
 
     /**
+     * for POJO with nothing but final members test
+     */
+    @AccessAsPojo
+    public static class SimpleFinalThing
+    {
+        public final String immutable = "42";
+    }
+
+    /**
      * for POJO test
      */
     public static class Thing
     {
         public static final String CONSTANT = "constant";
+        final int immutable = 42;
+        public final String sixTimesNine = "54";
         public enum WashType { SHOWER, BATH }
         public WashType washType = WashType.SHOWER;
         String name;
