@@ -818,6 +818,19 @@ public class ChunkTest
     }
 
     @Test
+    public void beanBooleanTest()
+    {
+        Theme theme = new Theme();
+        Chunk c = theme.makeChunk();
+        c.append("{$x.is_active|ondefined(Active):Inactive}");
+        c.append(" {$x.has_lemons|ondefined(Lemon-Ready):Lemonless}");
+        ThingBean bean = new ThingBean();
+        c.set("x", bean);
+        bean.setActive(true);
+        assertEquals("Active Lemonless", c.toString());
+    }
+
+    @Test
     public void circularPOJOTest()
     {
         Theme theme = new Theme();
@@ -1058,6 +1071,7 @@ public class ChunkTest
         private double pi = Math.PI;
         private Double e = new Double(Math.E);
         private boolean isActive;
+        private boolean hasLemons;
         private ThingBean boss;
         private ThingBean[] children;
 
@@ -1101,6 +1115,11 @@ public class ChunkTest
         public boolean isActive()
         {
             return isActive;
+        }
+
+        public Boolean getHasLemons()
+        {
+            return hasLemons;
         }
 
         public ThingBean getBoss()

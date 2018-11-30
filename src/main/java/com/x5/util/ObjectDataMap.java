@@ -472,7 +472,7 @@ public class ObjectDataMap implements Map
 
             String paramName = property.getName();
             paramName = splitCamelCase(paramName);
-            if (this.valueClass.toString().equalsIgnoreCase("boolean")) {
+            if (getter.getName().startsWith("is")) {
                 paramName = "is_"+paramName;
             }
             this.name = paramName;
@@ -575,7 +575,7 @@ public class ObjectDataMap implements Map
                         // converts getBookTitle() to book_title
                         String paramName = property.getName();
                         paramName = splitCamelCase(paramName);
-                        if (paramValue instanceof Boolean) {
+                        if (getter.getName().startsWith("is")) {
                             paramName = "is_"+paramName;
                         }
 
