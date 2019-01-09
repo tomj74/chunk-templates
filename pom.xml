@@ -3,7 +3,7 @@
   <groupId>com.x5dev</groupId>
   <artifactId>chunk-templates</artifactId>
   <packaging>jar</packaging>
-  <version>3.4.0</version>
+  <version>3.5.0</version>
   <name>Chunk Templates</name>
   <description>Chunk Template Engine for Java</description>
   <url>http://www.x5software.com/chunk/</url>

@@ -22,6 +22,7 @@ public class Theme implements ContentSource, ChunkFactory
     private int cacheMins = 0;
 
     private String localeCode = null;
+    private boolean hardFailMissingTemplate = false;
     private boolean renderErrs = true;
     private PrintStream errLog = null;
 
@@ -37,6 +38,9 @@ public class Theme implements ContentSource, ChunkFactory
         this.localeCode = config.getLocaleCode();
         if (config.hideErrors()) {
             this.setErrorHandling(false, config.getErrorLog());
+        }
+        if (config.abortOnMissingTemplate()) {
+            this.setAbortOnMissingTemplate(true);
         }
 
         ChunkFilter[] filters = config.getFilters();
@@ -140,6 +144,7 @@ public class Theme implements ContentSource, ChunkFactory
         if (layerNames == null) {
             TemplateSet simple = new TemplateSet(classpathThemesFolder, themesFolder, fileExtension, cacheMins);
             if (!renderErrs) simple.signalFailureWithNull();
+            if (hardFailMissingTemplate) simple.setHardFail(true);
             themeLayers.add(simple);
         } else {
             for (int i=0; i<layerNames.length; i++) {
@@ -150,6 +155,9 @@ public class Theme implements ContentSource, ChunkFactory
                 // layers, a null response is required to search the
                 // next layer in the stack for the missing template.
                 x.signalFailureWithNull();
+                // likewise, failure to locate a template in all layers is handled here, not in the layer TemplateSet.
+                x.setHardFail(false);
+
                 themeLayers.add(x);
             }
         }
@@ -274,6 +282,10 @@ public class Theme implements ContentSource, ChunkFactory
 
         if (errLog != null) {
             Chunk.logChunkError(errLog, err.toString());
+        }
+
+        if (hardFailMissingTemplate) {
+            throw new TemplateNotFoundException(err.toString());
         }
 
         return renderErrs ? Snippet.getSnippet(err.toString()) : null;
@@ -455,6 +467,11 @@ public class Theme implements ContentSource, ChunkFactory
     {
         this.renderErrs = renderErrs;
         this.errLog = errLog;
+    }
+
+    public void setAbortOnMissingTemplate(boolean hardFail)
+    {
+        this.hardFailMissingTemplate = hardFail;
     }
 
 }

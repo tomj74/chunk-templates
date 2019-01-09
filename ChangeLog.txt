@@ -1,5 +1,10 @@
 Release History
 
+v3.5.0 - 2019-01-12 tmcclure
+
+  Optionally fire runtime exception on missing template
+  Prefix boolean bean properties with "is_" only for methods that start with "is"
+
 v3.4.0 - 2018-10-21 tmcclure
 
   New @AccessAsPojo and @AccessAsBean annotations to hint object-mapping logic
