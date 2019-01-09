@@ -117,6 +117,7 @@ public class TemplateSet implements ContentSource, ChunkFactory
     private Object resourceContext = null;
 
     private boolean prettyFail = true;
+    private boolean hardFail = false;
     private String expectedEncoding = TemplateDoc.getDefaultEncoding();
 
     public TemplateSet() {}
@@ -265,38 +266,48 @@ public class TemplateSet implements ContentSource, ChunkFactory
                     }
                 }
             } catch (java.io.IOException e) {
-                if (!prettyFail) return null;
-
-                StringBuilder errmsg = new StringBuilder("[error fetching ");
+                StringBuilder errmsg = new StringBuilder("error fetching ");
                 errmsg.append(extension);
                 errmsg.append(" template '");
                 errmsg.append(name);
-                errmsg.append("']<!-- ");
+                errmsg.append("'");
+
+                if (hardFail) {
+                    throw new TemplateNotFoundException(errmsg.toString(), e);
+                }
+
+                if (!prettyFail) return null;
+
                 StringWriter w = new StringWriter();
                 e.printStackTrace(new PrintWriter(w));
-                errmsg.append(w.toString());
-                errmsg.append(" -->");
+                StringBuilder trace = new StringBuilder();
+                trace.append("<!-- ");
+                trace.append(w.toString());
+                trace.append(" -->");
 
-                template = Snippet.getSnippet(errmsg.toString());
+                template = Snippet.getSnippet("[" + errmsg.toString() + "]" + trace.toString());
             }
         }
 
         if (template == null) {
-            if (prettyFail) {
+            StringBuilder errmsg = new StringBuilder();
+            errmsg.append(extension);
+            errmsg.append(" template '");
+            errmsg.append(name);
+            errmsg.append("' not found");
 
-                StringBuilder errmsg = new StringBuilder();
-                errmsg.append("[");
-                errmsg.append(extension);
-                errmsg.append(" template '");
-                errmsg.append(name);
-                errmsg.append("' not found]<!-- looked in [");
-                errmsg.append(filename);
-                errmsg.append("] -->");
-
-                template = Snippet.getSnippet(errmsg.toString());
-            } else {
-                return null;
+            if (hardFail) {
+                throw new TemplateNotFoundException(errmsg.toString() + ". Looked in: " + filename);
             }
+
+            if (!prettyFail) return null;
+
+            StringBuilder details = new StringBuilder();
+            details.append("<!-- looked in [");
+            details.append(filename);
+            details.append("] -->");
+
+            template = Snippet.getSnippet("[" + errmsg.toString() + "]" + details.toString());
         }
 
         return template;
@@ -598,6 +609,11 @@ public class TemplateSet implements ContentSource, ChunkFactory
     public void signalFailureWithNull()
     {
         this.prettyFail = false;
+    }
+
+    public void setHardFail(boolean hardFail)
+    {
+        this.hardFail = hardFail;
     }
 
     public String getTemplatePath(String templateName, String ext)

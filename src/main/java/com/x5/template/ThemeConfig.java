@@ -17,6 +17,7 @@ public class ThemeConfig
     public static final String LAYER_NAMES = "layers";
     public static final String DEFAULT_EXT = "default_extension";
     public static final String CACHE_MINUTES = "cache_minutes";
+    public static final String THROW_ERRORS = "throw_errors";
     public static final String HIDE_ERRORS = "hide_errors";
     public static final String ERROR_LOG = "error_log";
     public static final String FILTERS = "filters";
@@ -33,6 +34,7 @@ public class ThemeConfig
     private int cacheMinutes = 0;
     private String locale = null;
     private String encoding = null;
+    private boolean throwErrors = false;
     private boolean hideErrors = false;
     private PrintStream errorLog = null;
     private ChunkFilter[] filters = null;
@@ -69,6 +71,10 @@ public class ThemeConfig
                 this.cacheMinutes = Integer.parseInt(value);
             } catch (NumberFormatException e) {
                 System.err.println("Chunk Theme config error: cache_minutes must be a number.");
+            }
+        } else if (configKey.equals(THROW_ERRORS)) {
+            if (value != null && !value.equalsIgnoreCase("FALSE")) {
+                this.throwErrors = true;
             }
         } else if (configKey.equals(HIDE_ERRORS)) {
             if (value != null && !value.equalsIgnoreCase("FALSE")) {
@@ -201,6 +207,11 @@ public class ThemeConfig
     public String getEncoding()
     {
         return this.encoding;
+    }
+
+    public boolean abortOnMissingTemplate()
+    {
+        return this.throwErrors;
     }
 
     public boolean hideErrors()

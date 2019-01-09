@@ -110,6 +110,85 @@ public class ThemeTest
         assertEquals("snippet", snippet.toString());
     }
 
+    @Test
+    public void testNotFoundInlineError()
+    {
+        Theme theme = new Theme();
+        theme.setErrorHandling(true, null);
+        Chunk c = theme.makeChunk("does_not_exist");
+
+        assertTrue(c.toString().contains("not found"));
+    }
+
+    @Test
+    public void testNotFoundSuppressInlineError()
+    {
+        Theme theme = new Theme();
+        theme.setErrorHandling(false, null);
+        Chunk c = theme.makeChunk("does_not_exist");
+
+        assertFalse(c.toString().contains("not found"));
+    }
+
+    @Test(expected = TemplateNotFoundException.class)
+    public void testNotFoundThrowsException()
+    {
+        Theme theme = new Theme();
+        theme.setAbortOnMissingTemplate(true);
+        Chunk c = theme.makeChunk("does_not_exist");
+        c.toString();
+    }
+
+    @Test(expected = TemplateNotFoundException.class)
+    public void testDeepNotFoundThrowsException()
+    {
+        Theme theme = new Theme();
+        theme.setAbortOnMissingTemplate(true);
+        Chunk c = theme.makeChunk();
+        c.append("{.include does_not_exist}");
+        c.toString();
+    }
+
+    @Test
+    public void testOverrideLayerWithAbortOnMissing()
+    {
+         Theme theme = new Theme("themes","test/base,test/override");
+         theme.setAbortOnMissingTemplate(true);
+         Chunk c = theme.makeChunk("chunk_test");
+
+         assertEquals("Override Layer", c.toString().trim());
+    }
+
+    @Test(expected = TemplateNotFoundException.class)
+    public void testOverrideLayerThrowsWithAbortOnMissing()
+    {
+         Theme theme = new Theme("themes","test/base,test/override");
+         theme.setAbortOnMissingTemplate(true);
+         Chunk c = theme.makeChunk("does_not_exist");
+         c.toString();
+    }
+
+    @Test
+    public void testLayersWithAbortOnMissing()
+    {
+         Theme theme = new Theme("themes","test/base,test/override");
+         theme.setAbortOnMissingTemplate(true);
+         Chunk c = theme.makeChunk("BUG29_MACRO");
+
+         assertEquals(38, c.toString().length());
+    }
+
+    @Test
+    public void testOverrideLayerWithoutAbortOnMissing()
+    {
+         Theme theme = new Theme("themes","test/base,test/override");
+         theme.setErrorHandling(true, null);
+         theme.setAbortOnMissingTemplate(false);
+         Chunk c = theme.makeChunk("chunk_not_exists");
+
+         assertTrue(c.toString().contains("not found"));
+    }
+
     public static class DummyLoader extends TemplateProvider
     {
         public String loadContainerDoc(String docName)
