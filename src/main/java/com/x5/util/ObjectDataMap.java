@@ -567,6 +567,8 @@ public class ObjectDataMap implements Map
             for (com.madrobot.beans.PropertyDescriptor property : properties) {
                 Class paramClass = property.getPropertyType();
                 Method getter = property.getReadMethod();
+                if (getter == null) continue;
+
                 try {
                     Object paramValue = getter.invoke(bean, (Object[])null);
 
