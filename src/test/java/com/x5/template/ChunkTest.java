@@ -379,8 +379,6 @@ public class ChunkTest
     @Test
     public void testFilteredBacktick()
     {
-        // TODO: add some tests for backtick edge cases
-        // (eg, what if ~id is not defined, what if ~name21 is not defined)
         Chunk c = new Chunk();
         c.set("name", "Bob");
         c.set("name22", "Rob");
@@ -388,6 +386,42 @@ public class ChunkTest
         c.append("Hello, my name is {$name`$id|qcalc(+1)`}!");
 
         assertEquals(c.toString(), "Hello, my name is Rob!");
+    }
+
+    @Test
+    public void testBacktickWithColon()
+    {
+        Chunk c = new Chunk();
+        c.set("name", "Bob");
+        c.set("name22", "Rob");
+        c.set("id", "21");
+        c.append("Hello, my name is {$name`$xx:22`}!");
+
+        assertEquals(c.toString(), "Hello, my name is Rob!");
+    }
+
+    @Test
+    public void testFilteredBacktickWithColon()
+    {
+        Chunk c = new Chunk();
+        c.set("name", "Bob");
+        c.set("name22", "Rob");
+        c.set("id", "_22");
+        c.append("Hello, my name is {$name`$id|slice(1:)`}!");
+
+        assertEquals(c.toString(), "Hello, my name is Rob!");
+    }
+
+    @Test
+    public void testFilteredBacktickWithColonDefault()
+    {
+        Chunk c = new Chunk();
+        c.set("name", "Bob");
+        c.set("name22", "Rob");
+        c.set("name23", "Boboso");
+        c.append("Hello, my name is {$name`$id|slice(1:):23`}!");
+
+        assertEquals(c.toString(), "Hello, my name is Boboso!");
     }
 
     @Test

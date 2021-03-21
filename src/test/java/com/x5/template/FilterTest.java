@@ -705,6 +705,75 @@ public class FilterTest
     }
 
     @Test
+    public void testSplitNull()
+    {
+        Chunk c = new Chunk();
+        c.append("{$x|split:default}");
+        assertEquals("default", c.toString());
+    }
+
+    @Test
+    public void testJoinNull()
+    {
+        Chunk c = new Chunk();
+        c.append("{$x|join:default}");
+        assertEquals("default", c.toString());
+    }
+
+    @Test
+    public void testSliceNull()
+    {
+        Chunk c = new Chunk();
+        c.append("{$x|slice(1):default}");
+        assertEquals("default", c.toString());
+    }
+
+    @Test
+    public void testSliceString()
+    {
+        Chunk c = new Chunk();
+        c.set("x", "abcd");
+        c.append("{$x|slice(2)}");
+        assertEquals("cd", c.toString());
+    }
+
+    @Test
+    public void testSliceStringOutOfBounds()
+    {
+        Chunk c = new Chunk();
+        c.set("x", "abcd");
+        c.append("{$x|slice(20):default}");
+        assertEquals("", c.toString());
+    }
+
+    @Test
+    public void testSliceEmptyString()
+    {
+        Chunk c = new Chunk();
+        c.set("x", "");
+        c.append("{$x|slice(1):default}");
+        assertEquals("", c.toString());
+    }
+
+    @Test
+    public void testSplitNullInBackticks()
+    {
+        Chunk c = new Chunk();
+        c.set("happy", "smile");
+        c.append("{$`$x|split:happy`}");
+        assertEquals("smile", c.toString());
+    }
+
+    @Test
+    public void testJoinNullInBackticks()
+    {
+        Chunk c = new Chunk();
+        c.set("happy", "smile");
+        c.append("{$`$x|join:happy`}");
+        assertEquals("smile", c.toString());
+    }
+
+    @Test
     public void testPadRight()
     {
         Chunk c = new Chunk();

@@ -24,7 +24,7 @@ public abstract class ListFilter implements ChunkFilter
         List<Character> characters = new ArrayList<Character>();
         char[] chars = text.toCharArray();
         for (int i=0; i<chars.length; i++) {
-            characters.add(new Character(chars[i]));
+            characters.add(Character.valueOf(chars[i]));
         }
 
         return characters;
@@ -48,7 +48,7 @@ public abstract class ListFilter implements ChunkFilter
             list = Arrays.asList((Object[])object);
         } else if (object instanceof String) {
             return applyFilter(chunk, (String)object, args);
-        } else {
+        } else if (object != null) {
             // turn single objects into List of length one
             list = Arrays.asList(object);
         }

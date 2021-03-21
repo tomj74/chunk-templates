@@ -22,7 +22,7 @@ public class JoinFilter extends ListFilter
 
     public static Object join(List list, String divider)
     {
-        if (list == null) return "";
+        if (list == null) return null;
         if (list.size() == 1) return list.get(0);
 
         StringBuilder x = new StringBuilder();

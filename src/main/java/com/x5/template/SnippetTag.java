@@ -57,15 +57,76 @@ public class SnippetTag extends SnippetPart
         }
     }
 
+    private int[][] findBacktickSpans() {
+        int maxTicks = 10;
+        int[] allTicks = new int[maxTicks];
+        int tick = 0;
+        int tagLen = tag.length();
+
+        for (int i=0; i<tagLen && tick<maxTicks; i++) {
+            char c = tag.charAt(i);
+            if (c == '`') {
+                allTicks[tick] = i;
+                tick++;
+            }
+        }
+
+        if (tick == 0) {
+            return null;
+        }
+
+        int[][] spans = new int[(tick+1)/2][];
+        for (int i=0; i<(tick+1)/2; i++) {
+            spans[i] = new int[]{allTicks[i*2],allTicks[i*2+1]};
+        }
+        return spans;
+    }
+
+    private int[] getMatchingSpan(int[][] spans, int index) {
+        if (spans == null) {
+            return null;
+        }
+        for (int[] span : spans) {
+            int spanStart = span[0];
+            int spanEnd = span[1];
+            if (index >= spanStart) {
+                if (spanEnd == 0 || index < spanEnd) {
+                    return span;
+                }
+            }
+        }
+        return null;
+    }
+
+    private int findCharacterOutsideSpans(String searchSpace, int[][] offLimits, char c) {
+        int pos = searchSpace.indexOf(c);
+        if (pos < 0) {
+            return pos;
+        }
+
+        int[] span;
+        while (pos > -1 && (span = getMatchingSpan(offLimits, pos)) != null) {
+            int spanEnd = span[1];
+            if (spanEnd == 0) {
+                return -1;
+            }
+            pos = searchSpace.indexOf(c, spanEnd+1);
+        }
+
+        return pos;
+    }
+
     private void init()
     {
+        int[][] backtickSpans = findBacktickSpans();
+
         String lookupName = tag;
 
         //strip off the default if provided eg {$tagName:333} means use 333
         // if no specific value is provided.
         //strip filters as well eg {$tagName|s/xx/yy/}
-        int colonPos = tag.indexOf(':');
-        int pipePos = tag.indexOf('|');
+        int colonPos = findCharacterOutsideSpans(lookupName, backtickSpans, ':');
+        int pipePos = findCharacterOutsideSpans(lookupName, backtickSpans, '|');
         if (pipePos > -1) pipePos = confirmPipe(tag,pipePos);
 
         if (colonPos > 0 || pipePos > 0) {
