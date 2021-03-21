@@ -1,5 +1,13 @@
 Release History
 
+v3.6.0 - 2021-03-21 tmcclure
+
+  New hook for custom TranslationsProvider theme.setTranslationsProvider(...)
+    not just limited to packaging on filesystem/classpath anymore!
+  Fix npe in android bean binding logic
+  Fix list filters slice/join so null input passes as null output
+  Correctly handle colons inside backtick expressions
+
 v3.5.0 - 2019-01-12 tmcclure
 
   Optionally fire runtime exception on missing template
