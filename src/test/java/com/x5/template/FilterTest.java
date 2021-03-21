@@ -892,19 +892,6 @@ public class FilterTest
     }
 
     @Test
-    public void testTranslationFilter()
-    {
-        ChunkLocale.registerLocale("de_DE", new String[]{"blue","blau"});
-
-        Chunk c = new Chunk();
-        c.setLocale("de_DE");
-        c.set("color","blue");
-        c.append(c.makeTag("color|xlate"));
-
-        assertEquals("blau",c.toString());
-    }
-
-    @Test
     public void testAlternateFilter()
     {
         Chunk c = new Chunk();

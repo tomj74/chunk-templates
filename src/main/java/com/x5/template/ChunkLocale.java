@@ -1,169 +1,33 @@
 package com.x5.template;
 
 import java.util.HashMap;
+import java.util.Map;
 import java.util.IllegalFormatException;
 import java.util.Locale;
 import java.util.MissingResourceException;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.charset.Charset;
-import java.nio.charset.IllegalCharsetNameException;
-import java.nio.charset.UnsupportedCharsetException;
 
-import com.csvreader.CsvReader;
-import com.x5.util.JarResource;
+import com.x5.template.providers.TranslationsProvider;
 
 public class ChunkLocale
 {
     private String localeCode;
-    private HashMap<String,String> translations;
-
-    private static HashMap<String,ChunkLocale> locales = new HashMap<String,ChunkLocale>();
+    private Map<String,String> translations;
 
     public static ChunkLocale getInstance(String localeCode, Chunk context)
     {
-        ChunkLocale instance = locales.get(localeCode);
-        if (instance != null) {
-            return instance;
-        } else {
-            instance = new ChunkLocale(localeCode, context);
-            locales.put(localeCode,instance);
-            return instance;
-        }
-    }
-
-    public static void registerLocale(String localeCode, String[] translations)
-    {
-        // this is mainly here just for testing.
-        ChunkLocale instance = new ChunkLocale(localeCode, translations);
-        locales.put(localeCode, instance);
+        return new ChunkLocale(localeCode, context);
     }
 
     private ChunkLocale(String localeCode, Chunk context)
     {
         this.localeCode = localeCode;
-        loadTranslations(context);
-    }
 
-    private ChunkLocale(String localeCode, String[] strings)
-    {
-        // this is mainly here just for testing.
-        this.localeCode = localeCode;
-        if (strings != null && strings.length > 1) {
-            this.translations = new HashMap<String,String>();
-            for (int i=0; i+1<strings.length; i++) {
-                String a = strings[i];
-                String b = strings[i+1];
-                translations.put(a,b);
-            }
-        }
-    }
-
-    private void loadTranslations(Chunk context)
-    {
-        // locate matching csv file and load translations
-        try {
-            InputStream in = locateLocaleDB(context);
-            if (in == null) return;
-
-            Charset charset = grokLocaleDBCharset();
-            CsvReader reader = new CsvReader(in,charset);
-            reader.setUseComments(true); // ignore lines beginning with #
-
-            String[] entry = null;
-
-            translations = new HashMap<String,String>();
-
-            while (reader.readRecord()) {
-                entry = reader.getValues();
-
-                if (entry != null && entry.length > 1 && entry[0] != null && entry[1] != null) {
-                    String key = entry[0];
-                    String localString = entry[1];
-                    translations.put(key,localString);
-                }
-            }
-
-        } catch (IOException e) {
-            System.err.println("ERROR loading locale DB: "+localeCode);
-            e.printStackTrace(System.err);
-        }
-    }
-
-    private Charset grokLocaleDBCharset()
-    {
-        String override = System.getProperty("chunk.localedb.charset");
-        if (override != null) {
-            Charset charset = null;
-            try {
-                charset = Charset.forName(override);
-            } catch (IllegalCharsetNameException e) {
-            } catch (UnsupportedCharsetException e) {
-            }
-            if (charset != null) return charset;
+        TranslationsProvider provider = context.getTranslationsProvider();
+        if (provider == null) {
+            provider = new DefaultTranslationsProvider();
         }
 
-        try {
-            return Charset.forName("UTF-8"); // sensible default
-        } catch (Exception e) {
-        }
-
-        // ok fine, whatever you got.
-        return Charset.defaultCharset();
-    }
-
-    @SuppressWarnings("rawtypes")
-    private InputStream locateLocaleDB(Chunk context)
-    throws java.io.IOException
-    {
-        // (1) if chunk.localedb.path is defined,
-        // check there for a file named xx_XX/translate.csv
-        String sysLocalePath = System.getProperty("chunk.localedb.path");
-        if (sysLocalePath != null) {
-            File folder = new File(sysLocalePath);
-            if (folder.exists()) {
-                File file = new File(folder, localeCode + "/translate.csv");
-                if (file.exists()) {
-                    return new FileInputStream(file);
-                }
-            }
-        }
-
-        // (2) check the classpath for a resource named /locale/xx_XX/translate.csv
-        String path = "/locale/" + localeCode + "/translate.csv";
-        InputStream in = this.getClass().getResourceAsStream(path);
-        if (in != null) return in;
-
-        // (2a) check the caller's class resources
-        Class classInApp = TemplateSet.grokCallerClass();
-        if (classInApp != null) {
-            in = classInApp.getResourceAsStream(path);
-            if (in != null) {
-                return in;
-            }
-        }
-
-        // (3a) TODO - use context to grok app's resource context
-        // and check there (eg, should work inside servlet context)
-
-        // (3) check inside jars on the classpath...
-        String cp = System.getProperty("java.class.path");
-        if (cp == null) return null;
-
-        String[] jars = cp.split(":");
-        if (jars == null) return null;
-
-        for (String jar : jars) {
-            if (jar.endsWith(".jar")) {
-                in = JarResource.peekInsideJar("jar:file:"+jar, path);
-                if (in != null) return in;
-            }
-        }
-
-        // (4) give up!
-        return null;
+        this.translations = provider.getTranslations(localeCode);
     }
 
     public String translate(String string, String[] args, Chunk context)
@@ -177,7 +41,7 @@ public class ChunkLocale
     }
 
     public static String processFormatString(String string, String[] args,
-            Chunk context, HashMap<String,String> translations)
+            Chunk context, Map<String,String> translations)
     {
         if (string == null) return null;
 

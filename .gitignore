@@ -5,3 +5,6 @@ self-release.sh
 /.settings/
 README.txt
 *jardesc
+.idea
+*.iml
+test_errors

@@ -16,6 +16,7 @@ import java.util.Set;
 
 import com.x5.template.filters.ChunkFilter;
 import com.x5.template.filters.RegexFilter;
+import com.x5.template.providers.TranslationsProvider;
 import com.x5.util.JarResource;
 import com.x5.util.Path;
 
@@ -589,6 +590,11 @@ public class TemplateSet implements ContentSource, ChunkFactory
 
     // chunk factory now supports sharing content sources with its factory-created chunks
     private HashSet<ContentSource> altSources = null;
+    private TranslationsProvider translationsProvider = null;
+
+    public void setTranslationsProvider(TranslationsProvider provider) {
+        this.translationsProvider = provider;
+    }
 
     public void addProtocol(ContentSource src)
     {
@@ -598,11 +604,15 @@ public class TemplateSet implements ContentSource, ChunkFactory
 
     private void shareContentSources(Chunk c)
     {
-        if (altSources == null) return;
-        java.util.Iterator<ContentSource> iter = altSources.iterator();
-        while (iter.hasNext()) {
-            ContentSource src = iter.next();
-            c.addProtocol(src);
+        if (altSources != null) {
+            java.util.Iterator<ContentSource> iter = altSources.iterator();
+            while (iter.hasNext()) {
+                ContentSource src = iter.next();
+                c.addProtocol(src);
+            }
+        }
+        if (translationsProvider != null) {
+            c.setTranslationsProvider(translationsProvider);
         }
     }
 

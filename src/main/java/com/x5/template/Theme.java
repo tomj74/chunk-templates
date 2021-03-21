@@ -7,6 +7,7 @@ import java.util.HashSet;
 import java.util.Map;
 
 import com.x5.template.filters.ChunkFilter;
+import com.x5.template.providers.TranslationsProvider;
 import com.x5.util.Path;
 
 public class Theme implements ContentSource, ChunkFactory
@@ -145,11 +146,13 @@ public class Theme implements ContentSource, ChunkFactory
             TemplateSet simple = new TemplateSet(classpathThemesFolder, themesFolder, fileExtension, cacheMins);
             if (!renderErrs) simple.signalFailureWithNull();
             if (hardFailMissingTemplate) simple.setHardFail(true);
+            simple.setTranslationsProvider(translationsProvider);
             themeLayers.add(simple);
         } else {
             for (int i=0; i<layerNames.length; i++) {
                 TemplateSet x = new TemplateSet(classpathThemesFolder, themesFolder + layerNames[i], fileExtension, cacheMins);
                 x.setLayerName(layerNames[i]);
+                x.setTranslationsProvider(translationsProvider);
                 // do not return pretty HTML-formatted error strings
                 // when template can not be located -- with multiple
                 // layers, a null response is required to search the
@@ -383,6 +386,13 @@ public class Theme implements ContentSource, ChunkFactory
     // chunk factory now supports sharing content sources with its factory-created chunks
     private HashSet<ContentSource> altSources = null;
 
+    // theme can have custom translations provider which it shares with its chunks
+    private TranslationsProvider translationsProvider = null;
+
+    public void setTranslationsProvider(TranslationsProvider provider) {
+        this.translationsProvider = provider;
+    }
+
     public void addProtocol(ContentSource src)
     {
         if (altSources == null) altSources = new HashSet<ContentSource>();
@@ -391,11 +401,15 @@ public class Theme implements ContentSource, ChunkFactory
 
     private void shareContentSources(Chunk c)
     {
-        if (altSources == null) return;
-        java.util.Iterator<ContentSource> iter = altSources.iterator();
-        while (iter.hasNext()) {
-            ContentSource src = iter.next();
-            c.addProtocol(src);
+        if (altSources != null) {
+            java.util.Iterator<ContentSource> iter = altSources.iterator();
+            while (iter.hasNext()) {
+                ContentSource src = iter.next();
+                c.addProtocol(src);
+            }
+        }
+        if (translationsProvider != null) {
+            c.setTranslationsProvider(translationsProvider);
         }
     }
 

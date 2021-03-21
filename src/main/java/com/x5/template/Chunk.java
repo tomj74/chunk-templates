@@ -16,6 +16,7 @@ import java.util.Map;
 import java.util.regex.Matcher;
 
 import com.x5.template.filters.Calc;
+import com.x5.template.providers.TranslationsProvider;
 import com.x5.util.DataCapsule;
 import com.x5.util.DataCapsuleReader;
 import com.x5.util.ObjectDataMap;
@@ -852,6 +853,15 @@ public class Chunk implements Map<String,Object>
     }
 
     private Hashtable<String,ContentSource> altSources = null;
+    private TranslationsProvider translationsProvider = null;
+
+    public void setTranslationsProvider(TranslationsProvider customProvider) {
+        this.translationsProvider = customProvider;
+    }
+
+    public TranslationsProvider getTranslationsProvider() {
+        return translationsProvider;
+    }
 
     public void addProtocol(ContentSource src)
     {

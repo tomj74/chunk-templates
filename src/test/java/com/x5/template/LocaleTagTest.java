@@ -1,6 +1,11 @@
 package com.x5.template;
 
+import com.x5.template.providers.TranslationsProvider;
 import org.junit.Test;
+
+import java.util.HashMap;
+import java.util.Map;
+
 import static org.junit.Assert.*;
 
 public class LocaleTagTest
@@ -117,19 +122,35 @@ public class LocaleTagTest
         Chunk c = new Chunk();
         c.set("color", "_[blue]");
         c.set("make", "lexus");
-        ChunkLocale.registerLocale("de_DE", new String[]{"A new %s %s!","Eine neue %s %s!","blue","blau"});
+        String[] translations = new String[]{"A new %s %s!","Eine neue %s %s!","blue","blau"};
+        c.setTranslationsProvider(new TestTranslationsProvider("de_DE", translations));
         c.setLocale("de_DE");
         c.append("Bla bla bla {_[A new %s %s!],~color,~make} bla bla");
         assertEquals("Bla bla bla Eine neue blau lexus! bla bla", c.toString());
     }
 
     @Test
-    public void testTranslationNoFile()
+    public void testTranslationCustomProvider()
     {
         // translate and substitute dynamic tag correctly
         Chunk c = new Chunk();
-        ChunkLocale.registerLocale("de_DE", new String[]{"A new car!","Eine neue Auto!"});
+        String[] translations = new String[]{"A new car!","Eine neue Auto!"};
+        c.setTranslationsProvider(new TestTranslationsProvider("de_DE", translations));
         c.setLocale("de_DE");
+        c.append("Bla bla bla _[A new car!] bla bla");
+        assertEquals("Bla bla bla Eine neue Auto! bla bla", c.toString());
+    }
+
+    @Test
+    public void testTranslationCustomProviderWithTheme()
+    {
+        // translate and substitute dynamic tag correctly
+        Theme theme = new Theme();
+        String[] translations = new String[]{"A new car!","Eine neue Auto!"};
+        theme.setTranslationsProvider(new TestTranslationsProvider("de_DE", translations));
+        theme.setLocale("de_DE");
+
+        Chunk c = theme.makeChunk();
         c.append("Bla bla bla _[A new car!] bla bla");
         assertEquals("Bla bla bla Eine neue Auto! bla bla", c.toString());
     }
@@ -141,7 +162,8 @@ public class LocaleTagTest
         Chunk c = new Chunk();
         c.set("color", "_[blue]");
         c.set("make", "lexus");
-        ChunkLocale.registerLocale("de_DE", new String[]{"A new %s %s!","Eine neue %s %s!","blue","blau"});
+        String[] translations = new String[]{"A new %s %s!","Eine neue %s %s!","blue","blau"};
+        c.setTranslationsProvider(new TestTranslationsProvider("de_DE", translations));
         c.setLocale("de_DE");
         c.append("Bla bla bla {% _[A new %s %s!],$color,$make %} bla bla");
         assertEquals("Bla bla bla Eine neue blau lexus! bla bla", c.toString());
@@ -174,6 +196,45 @@ public class LocaleTagTest
         c.append("{$x:3000000|sprintf(%,.2f)}");
         String nbsp = "\u00A0"; // unicode non-breaking space
         assertEquals("3"+nbsp+"000"+nbsp+"000,00", c.toString());
+    }
+
+    @Test
+    public void testTranslationFilter()
+    {
+        Chunk c = new Chunk();
+        c.setLocale("de_DE");
+        c.setTranslationsProvider(new TestTranslationsProvider("de_DE", new String[]{"blue","blau"}));
+        c.set("color","blue");
+        c.append(c.makeTag("color|xlate"));
+
+        assertEquals("blau",c.toString());
+    }
+
+    /**
+     * Dumb translations provider that only works for a single locale.
+     */
+    class TestTranslationsProvider implements TranslationsProvider {
+        private String localeCode;
+        private Map<String, String> translations;
+
+        public TestTranslationsProvider(String localeCode, String[] testStrings) {
+            this.localeCode = localeCode;
+            if (testStrings != null && testStrings.length > 1) {
+                this.translations = new HashMap<String,String>();
+                for (int i=0; i+1<testStrings.length; i++) {
+                    String a = testStrings[i];
+                    String b = testStrings[i+1];
+                    translations.put(a,b);
+                }
+            }
+        }
+
+        public Map<String, String> getTranslations(String localeCode) {
+            if (localeCode != this.localeCode) {
+                return null;
+            }
+            return this.translations;
+        }
     }
 
 }
