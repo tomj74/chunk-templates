@@ -36,7 +36,7 @@
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
-      <version>4.8.1</version>
+      <version>4.13.1</version>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -87,6 +87,16 @@
   </developers>
 
   <build>
+    <resources>
+      <!-- needed for mvn jar:jar to make -src jar -->
+      <resource>
+        <directory>src/main/java</directory>
+        <includes>
+          <include>**/*.java</include>
+        </includes>
+      </resource>
+    </resources>
+
     <pluginManagement>
       <plugins>
         <plugin>
@@ -111,6 +121,36 @@
           <source>1.5</source>
           <target>1.5</target>
         </configuration>
+      </plugin>
+
+      <plugin>
+        <!-- mvn jar:jar to make library jar with sources bundled -->
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-jar-plugin</artifactId>
+        <version>2.3</version>
+        <executions>
+          <execution>
+            <id>default-jar</id>
+            <goals><goal>jar</goal></goals>
+            <phase>package</phase>
+            <configuration>
+              <excludes>
+                <exclude>**/*.java</exclude>
+              </excludes>
+            </configuration>
+          </execution>
+          <execution>
+            <id>src-jar</id>
+            <goals><goal>jar</goal></goals>
+            <phase>package</phase>
+            <configuration>
+              <classifier>src</classifier>
+              <includes>
+                <include>**/*</include>
+              </includes>
+            </configuration>
+          </execution>
+        </executions>
       </plugin>
 
       <plugin>
