@@ -1,6 +1,10 @@
 Release History
 
-v3.6.0 - 2021-03-21 tmcclure
+3.6.1 - 2021-03-21 tmcclure
+  json-smart is now an optional dependency, no longer required in pom.xml
+  Add support for jackson-databind to unlock json macro features
+
+3.6.0 - 2021-03-21 tmcclure
 
   New hook for custom TranslationsProvider theme.setTranslationsProvider(...)
     not just limited to packaging on filesystem/classpath anymore!

@@ -71,7 +71,7 @@ public class MacroTest
         Chunk c = theme.makeChunk("macro_test#bad_json");
         c.toString();
 
-        String targetOutput = "Error processing template: exec expected JSON object, not String.\n";
+        String targetOutput = "Error processing template: exec expected JSON object.\n";
         String err = myErr.toString();
         // strip timestamp
         int errStart = err.indexOf("Error");

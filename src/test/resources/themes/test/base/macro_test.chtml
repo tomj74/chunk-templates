@@ -241,9 +241,9 @@ All:
 {% exec #MAP_LOOP @json %}
 { items :
  [
-  { price: 20, id: 3, name: weeble},
-  { id: 4, price:40, name:marble },
-  { id: 19, price:23, name:stubble }
+  { price: 20, id: 3, name: "weeble"},
+  { id: 4, price:40, name:"marble" },
+  { id: 19, price:23, name:'stubble' }
  ]
 }
 {/exec}

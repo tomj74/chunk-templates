@@ -3,7 +3,7 @@
   <groupId>com.x5dev</groupId>
   <artifactId>chunk-templates</artifactId>
   <packaging>jar</packaging>
-  <version>3.6.0</version>
+  <version>3.6.1</version>
   <name>Chunk Templates</name>
   <description>Chunk Template Engine for Java</description>
   <url>http://www.x5software.com/chunk/</url>
@@ -44,6 +44,14 @@
       <artifactId>json-smart</artifactId>
       <version>1.1.1</version>
       <scope>compile</scope>
+      <optional>true</optional>
+    </dependency>
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-databind</artifactId>
+      <version>2.12.2</version>
+      <scope>compile</scope>
+      <optional>true</optional>
     </dependency>
     <dependency>
       <groupId>org.cheffo</groupId>

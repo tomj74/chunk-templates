@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 
 import com.x5.util.LiteXml;
 
@@ -15,6 +16,7 @@ import net.minidev.json.JSONValue;
 import net.minidev.json.parser.JSONParser;
 import static net.minidev.json.parser.ContainerFactory.FACTORY_ORDERED;
 import static net.minidev.json.parser.JSONParser.MODE_RFC4627;
+
 
 public class MacroTag extends BlockTag
 {
@@ -198,7 +200,14 @@ public class MacroTag extends BlockTag
             Class.forName("net.minidev.json.JSONValue");
             // it exists on the classpath
         } catch (ClassNotFoundException e) {
-            logInputError("Error: template uses json-formatted args in exec, but json-smart jar is not in the classpath!");
+            try {
+                Class.forName("com.fasterxml.jackson.databind.ObjectMapper");
+                parseDefsJacksonJsonLax(json);
+                return;
+            } catch (ClassNotFoundException e2) {
+                logInputError("Error: template uses json-formatted args in exec, but json-smart or jackson is not in the classpath!");
+                return;
+            }
         }
 
         Object parsedValue = JSONValue.parseKeepingOrder(json);
@@ -208,7 +217,7 @@ public class MacroTag extends BlockTag
         } else if (parsedValue instanceof JSONArray || parsedValue instanceof List) {
             logInputError("Error processing template: exec expected JSON object, not JSON array.");
         } else if (parsedValue instanceof String && parsedValue.toString().trim().length() > 0) {
-            logInputError("Error processing template: exec expected JSON object, not String.");
+            logInputError("Error processing template: exec expected JSON object.");
         }
     }
 
@@ -219,13 +228,20 @@ public class MacroTag extends BlockTag
             body.setOrigin(null); // don't render ORIGIN comment
             String json = body.toString();
 
-            // check for json-smart jar, if not present then output a helpful
+            // check for json-smart or jackson, if not present then output a helpful
             // message to stderr.
             try {
                 Class.forName("net.minidev.json.JSONValue");
                 // it exists on the classpath
             } catch (ClassNotFoundException e) {
-                logInputError("Error: template uses json-formatted args in exec, but json-smart jar is not in the classpath!");
+                try {
+                    Class.forName("com.fasterxml.jackson.databind.ObjectMapper");
+                    parseDefsJacksonJsonStrict(json);
+                    return;
+                } catch (ClassNotFoundException e2) {
+                    logInputError("Error: template uses json-formatted args in exec, but json-smart or jackson are not in the classpath!");
+                    return;
+                }
             }
 
             Object parsedValue = parseStrictJsonKeepingOrder(json);
@@ -235,10 +251,28 @@ public class MacroTag extends BlockTag
             } else if (parsedValue instanceof JSONArray || parsedValue instanceof List) {
                 logInputError("Error processing template: exec expected JSON object, not JSON array.");
             } else if (parsedValue instanceof String && parsedValue.toString().trim().length() > 0) {
-                logInputError("Error processing template: exec expected JSON object, not String.");
+                logInputError("Error processing template: exec expected JSON object.");
             }
         } catch (Exception e) {
             e.printStackTrace(System.err);
+        }
+    }
+
+    private void parseDefsJacksonJsonLax(String json) {
+        try {
+            Map<String,Object> defs = JacksonJsonParser.parseJsonLax(json);
+            importJSONDefs(defs);
+        } catch (JsonParseException e) {
+            logInputError(e.getMessage());
+        }
+    }
+
+    private void parseDefsJacksonJsonStrict(String json) {
+        try {
+            Map<String,Object> defs = JacksonJsonParser.parseJsonStrict(json);
+            importJSONDefs(defs);
+        } catch (JsonParseException e) {
+            logInputError(e.getMessage());
         }
     }
 
@@ -487,5 +521,43 @@ public class MacroTag extends BlockTag
     public boolean doSmartTrimAroundBlock()
     {
         return true;
+    }
+
+    private static class JacksonJsonParser {
+        public static Map<String,Object> parseJsonLax(String json) throws JsonParseException {
+            return parseJson(json, false);
+        }
+
+        public static Map<String,Object> parseJsonStrict(String json) throws JsonParseException {
+            return parseJson(json, true);
+        }
+
+        private static Map<String,Object> parseJson(String json, boolean isStrict) throws JsonParseException {
+            com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+            if (!isStrict) {
+                mapper.configure(com.fasterxml.jackson.core.JsonParser.Feature.ALLOW_SINGLE_QUOTES, true);
+                mapper.configure(com.fasterxml.jackson.core.JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES, true);
+                mapper.configure(com.fasterxml.jackson.core.JsonParser.Feature.ALLOW_TRAILING_COMMA, true);
+            }
+            try {
+                com.fasterxml.jackson.databind.JsonNode node = mapper.readTree(json);
+                if (node.isObject()) {
+                    Map<String,Object> defs = mapper.convertValue(node, new com.fasterxml.jackson.core.type.TypeReference<TreeMap<String, Object>>(){});
+                    return defs;
+                } else if (node.isArray()) {
+                    throw new JsonParseException("Error processing template: exec expected JSON object, not JSON array.", null);
+                } else {
+                    throw new JsonParseException("Error processing template: exec expected JSON object.", null);
+                }
+            } catch (com.fasterxml.jackson.core.JsonProcessingException e) {
+                throw new JsonParseException("Error processing template: exec expected JSON object.", e);
+            }
+        }
+    }
+
+    private static class JsonParseException extends Exception {
+        public JsonParseException(String message, Throwable t) {
+            super(message, t);
+        }
     }
 }
