@@ -52,16 +52,16 @@ Dependencies
 
 Most features work fully with the standalone jar.  A couple advanced features can be unlocked by adding these libraries to the classpath:
 
- * Provide macro (exec) arguments in JSON format - [download json-smart jar][8] or fetch via maven:
+ * Provide macro (exec) arguments in JSON format - download [jackson-databind][8], [jackson-core][9] and [jackson-annotations][10] or fetch via maven:
 ```
     <dependency>
-      <groupId>net.minidev</groupId>
-      <artifactId>json-smart</artifactId>
-      <version>1.1.1</version>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-databind</artifactId>
+      <version>2.12.2</version>
     </dependency>
 ```
 
- * Enable jeplite-powered math expression evaluation via the |calc(...) filter - [download jeplite jar][9] or fetch via maven:
+ * Enable jeplite-powered math expression evaluation via the |calc(...) filter - [download jeplite jar][11] or fetch via maven:
 ```
     <dependency>
       <groupId>org.cheffo</groupId>
@@ -84,16 +84,18 @@ Note: on Android (optional) - to make use of chunk.setToBean("tag",bean) binding
     </dependency>
 ```
 
-Or download madrobotbeans-0.1.jar from the [Downloads][2] area.  Thanks to Elton Kent and the [Mad Robot][4] project.
+Or [download madrobotbeans-0.1.jar][2] directly.  Thanks to Elton Kent and the [Mad Robot][4] project.
 
 ![Analytics](https://ga-beacon.appspot.com/UA-18933152-2/tomj74/chunk-templates)
 
-  [1]: http://www.x5software.com/chunk/wiki/Chunk_Tag_Filters
-  [2]: http://code.google.com/p/chunk-templates/downloads/list
+  [1]: https://www.x5software.com/chunk/wiki/Chunk_Tag_Filters
+  [2]: https://github.com/tomj74/chunk-templates/releases/download/release-2.4/madrobotbeans-0.1.jar
   [3]: http://www.x5software.com/chunk/wiki/index.php/Eclipse_Template_Editor_plugin
   [4]: https://code.google.com/p/mad-robot/
-  [5]: http://www.x5software.com/chunk/
+  [5]: https://www.x5software.com/chunk/
   [6]: https://github.com/tomj74/chunk-templates/releases/latest
-  [7]: http://www.x5software.com/chunk/wiki/Spring_MVC
-  [8]: https://github.com/tomj74/chunk-templates/releases/download/release-2.4/json-smart-1.1.1.jar
-  [9]: https://github.com/tomj74/chunk-templates/releases/download/release-2.4/jeplite-0.8.7a.jar
+  [7]: https://www.x5software.com/chunk/wiki/Spring_MVC
+  [8]: https://repo1.maven.org/maven2/com/fasterxml/jackson/core/jackson-databind/2.12.2/jackson-databind-2.12.2.jar
+  [9]: https://repo1.maven.org/maven2/com/fasterxml/jackson/core/jackson-core/2.12.2/jackson-core-2.12.2.jar
+  [10]: https://repo1.maven.org/maven2/com/fasterxml/jackson/core/jackson-annotations/2.12.2/jackson-annotations-2.12.2.jar
+  [11]: https://github.com/tomj74/chunk-templates/releases/download/release-2.4/jeplite-0.8.7a.jar
