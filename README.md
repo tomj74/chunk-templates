@@ -10,6 +10,8 @@ Chunk is compact and speedy, easy to learn yet very powerful.
 
 Chunk templates provide a rich featureset: in-tag filters, in-tag default values, includes, looping and branching, defining multiple snippets per template file, layered themes, macros, and much much more.
 
+Free to use, copyright waived.  MIT License.
+
 Quick Start
 ===========
 
@@ -23,7 +25,7 @@ Available from Maven Central:
     <dependency>
       <groupId>com.x5dev</groupId>
       <artifactId>chunk-templates</artifactId>
-      <version>3.6.1</version>
+      <version>3.6.2</version>
     </dependency>
 ```
 

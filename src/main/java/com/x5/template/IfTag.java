@@ -64,7 +64,13 @@ public class IfTag extends BlockTag
         int exprPos = params.indexOf("f") + 1; // if or elseIf
         String test = params.substring(exprPos).trim();
         if (test.charAt(0) == '(' && test.charAt(test.length()-1) == ')') {
-            test = test.substring(1,test.length()-1);
+            // DON'T strip outer parens if there are ANY inner parens
+            // in fact, maybe never strip outer parens anymore,
+            // ie now that the cond expr parser can handle parens?
+            int innerParenPos = test.indexOf(')', 1);
+            if (innerParenPos == test.length()-1) {
+                test = test.substring(1, test.length() - 1);
+            }
         }
 
         return test;

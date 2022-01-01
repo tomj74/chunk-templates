@@ -95,6 +95,62 @@ public class IfTagTest
     }
 
     @Test
+    public void testAndWithBoolAndInequality()
+    {
+        Chunk c = new Chunk();
+        c.append("{%if $a && $b != 0.0 %}pass{% else %}fail{% endif %}");
+        c.set("a", "A");
+        c.set("b", 1);
+
+        assertEquals("pass", c.toString());
+
+        c.unset("a");
+
+        assertEquals("fail", c.toString());
+
+        c.set("a", "A");
+        c.set("b", "0.0");
+
+        assertEquals("fail", c.toString());
+    }
+
+    @Test
+    public void testAndWithBoolAndInequalityAndGrouping()
+    {
+        Chunk c = new Chunk();
+        c.append("{%if $a && ($b != 0.0) %}pass{% else %}fail{% endif %}");
+        c.set("a", "A");
+        c.set("b", 1);
+
+        assertEquals("pass", c.toString());
+
+        c.resetTemplate();
+        c.append("{%if ($a) && ($b != 0.0) %}pass{% else %}fail{% endif %}");
+
+        assertEquals("pass", c.toString());
+
+        c.unset("a");
+        assertEquals("fail", c.toString());
+
+        c.set("a", "A");
+        c.set("b", "0.0");
+        assertEquals("fail", c.toString());
+
+        c.resetTemplate();
+        c.append("{%if (($a) && ($b != 0.0)) %}pass{% else %}fail{% endif %}");
+
+        c.set("b", 1);
+        assertEquals("pass", c.toString());
+
+        c.unset("a");
+        assertEquals("fail", c.toString());
+
+        c.set("a", "A");
+        c.set("b", "0.0");
+        assertEquals("fail", c.toString());
+    }
+
+    @Test
     public void testIfTagWithConstants()
     {
         Chunk c = new Chunk();

@@ -3,7 +3,7 @@
   <groupId>com.x5dev</groupId>
   <artifactId>chunk-templates</artifactId>
   <packaging>jar</packaging>
-  <version>3.6.1</version>
+  <version>3.6.2</version>
   <name>Chunk Templates</name>
   <description>Chunk Template Engine for Java</description>
   <url>http://www.x5software.com/chunk/</url>
@@ -20,8 +20,8 @@
 
   <licenses>
     <license>
-      <name>The Apache Software License, Version 2.0</name>
-      <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+      <name>MIT License</name>
+      <url>http://www.opensource.org/licenses/mit-license.php</url>
       <distribution>repo</distribution>
     </license>
   </licenses>

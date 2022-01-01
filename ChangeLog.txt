@@ -1,6 +1,12 @@
 Release History
 
+3.6.2 - 2021-12-31 tmcclure
+
+  Fix bug in conditional expression tokenizer
+  Switch to MIT license
+
 3.6.1 - 2021-03-21 tmcclure
+
   json-smart is now an optional dependency, no longer required in pom.xml
   Add support for jackson-databind to unlock json macro features
 

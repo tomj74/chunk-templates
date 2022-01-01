@@ -59,7 +59,7 @@ public class CondLexer
             // not a logic token, must be the start of a comparison/test.
             int j = endOfComparison(conditional, i);
             tokens.add(conditional.substring(i,j));
-            i = j;
+            i = j-1;
         }
 
         return tokens.iterator();
@@ -104,6 +104,9 @@ public class CondLexer
                     return i;
                 }
                 continue;
+            }
+            if (exprCount > 0 && (c == '&' || c == '|' || c == ')')) {
+                return i;
             }
             if (exprCount > 0 && (c == '=' || c == '!')) {
                 if (i+1 == len) {
