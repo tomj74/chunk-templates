@@ -2,6 +2,7 @@ package com.x5.util;
 
 import java.beans.BeanInfo;
 import java.beans.Introspector;
+import java.beans.MethodDescriptor;
 import java.beans.PropertyDescriptor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
@@ -505,8 +506,9 @@ public class ObjectDataMap implements Map
 
             if (getters == null) {
                 PropertyDescriptor[] properties = null;
+                BeanInfo beanInfo;
                 try {
-                    BeanInfo beanInfo = Introspector.getBeanInfo(bean.getClass());
+                    beanInfo = Introspector.getBeanInfo(bean.getClass());
                     properties = beanInfo.getPropertyDescriptors();
                 } catch (java.beans.IntrospectionException e) {
                     throw new IntrospectionException();
@@ -517,7 +519,18 @@ public class ObjectDataMap implements Map
                 getters = new ArrayList<Getter>();
                 for (PropertyDescriptor property : properties) {
                     Method getter = property.getReadMethod();
-                    if (getter == null) continue;
+                    if (getter == null) {
+                        if (property.getPropertyType().equals(Boolean.class)) {
+                            String isMaybeMethod = "is" + property.getName();
+                            for (MethodDescriptor desc : beanInfo.getMethodDescriptors()) {
+                                if (desc.getName().equalsIgnoreCase(isMaybeMethod)) {
+                                    getters.add(new Getter(property, desc.getMethod()));
+                                    break;
+                                }
+                            }
+                        }
+                        continue;
+                    }
                     getters.add(new Getter(property, getter));
                 }
 

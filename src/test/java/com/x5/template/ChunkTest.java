@@ -857,11 +857,12 @@ public class ChunkTest
         Theme theme = new Theme();
         Chunk c = theme.makeChunk();
         c.append("{$x.is_active|ondefined(Active):Inactive}");
-        c.append(" {$x.has_lemons|ondefined(Lemon-Ready):Lemonless}");
+        c.append(" {$x.is_has_lemons|ondefined(Lemon-Ready):Lemonless}");
         ThingBean bean = new ThingBean();
         c.set("x", bean);
         bean.setActive(true);
-        assertEquals("Active Lemonless", c.toString());
+        bean.setHasLemons(true);
+        assertEquals("Active Lemon-Ready", c.toString());
     }
 
     @Test
@@ -1151,7 +1152,7 @@ public class ChunkTest
             return isActive;
         }
 
-        public Boolean getHasLemons()
+        public Boolean isHasLemons()
         {
             return hasLemons;
         }
@@ -1185,6 +1186,8 @@ public class ChunkTest
         {
             this.isActive = isActive;
         }
+
+        public void setHasLemons(Boolean hasLemons) { this.hasLemons = hasLemons; }
 
         public void setBoss(ThingBean boss)
         {
