@@ -1,8 +1,8 @@
 Chunk Templates for Java
 ========================
 
-[<img align="right" src= "http://www.x5software.com/chunk/docs/img/chunk_logo_500x500.png" width="250" />][5]
-Full documentation at http://www.x5software.com/chunk/
+[<img align="right" src= "http://www.x5dev.com/chunk/docs/img/chunk_logo_500x500.png" width="250" />][5]
+Full documentation at http://www.x5dev.com/chunk/
 
 Chunk is a Java Template Engine for applications that serve HTML or XML.  It's the little engine that can handle any templating job, plain text, markup, markdown, whatever, wherever.
 
@@ -90,13 +90,13 @@ Or [download madrobotbeans-0.1.jar][2] directly.  Thanks to Elton Kent and the [
 
 ![Analytics](https://ga-beacon.appspot.com/UA-18933152-2/tomj74/chunk-templates)
 
-  [1]: https://www.x5software.com/chunk/wiki/Chunk_Tag_Filters
+  [1]: https://www.x5dev.com/chunk/wiki/Chunk_Tag_Filters
   [2]: https://github.com/tomj74/chunk-templates/releases/download/release-2.4/madrobotbeans-0.1.jar
-  [3]: http://www.x5software.com/chunk/wiki/index.php/Eclipse_Template_Editor_plugin
+  [3]: http://www.x5dev.com/chunk/wiki/index.php/Eclipse_Template_Editor_plugin
   [4]: https://code.google.com/p/mad-robot/
-  [5]: https://www.x5software.com/chunk/
+  [5]: https://www.x5dev.com/chunk/
   [6]: https://github.com/tomj74/chunk-templates/releases/latest
-  [7]: https://www.x5software.com/chunk/wiki/Spring_MVC
+  [7]: https://www.x5dev.com/chunk/wiki/Spring_MVC
   [8]: https://repo1.maven.org/maven2/com/fasterxml/jackson/core/jackson-databind/2.12.2/jackson-databind-2.12.2.jar
   [9]: https://repo1.maven.org/maven2/com/fasterxml/jackson/core/jackson-core/2.12.2/jackson-core-2.12.2.jar
   [10]: https://repo1.maven.org/maven2/com/fasterxml/jackson/core/jackson-annotations/2.12.2/jackson-annotations-2.12.2.jar

@@ -15,7 +15,7 @@ package com.x5.template;
  *
  * <P>
  * Copyright: Copyright (c) 2003<BR>
- * Company: <A href="http://www.x5software.com/">X5 Software</A><BR>
+ * Company: <A href="http://www.x5dev.com/">X5 Software</A><BR>
  * Updates: <A href="http://www.dagblastit.com/">www.dagblastit.com</A><BR>
  *
  * @author Tom McClure

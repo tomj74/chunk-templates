@@ -105,7 +105,7 @@ import com.x5.util.TableData;
  *           * macro-style templating<BR>
  *           * extending the system to access alternate template repositories<BR>
  *
- * <P>Complete details are here: <a href="http://www.x5software.com/chunk/">http://www.x5software.com/chunk</a>
+ * <P>Complete details are here: <a href="http://www.x5dev.com/chunk/">http://www.x5dev.com/chunk</a>
  *
  * <P>
  * <B>Q: My final output says "infinite recursion detected."  What gives?</B>
@@ -240,8 +240,8 @@ import com.x5.util.TableData;
  * </PRE>
  *
  * Copyright: waived, free to use<BR>
- * Company: <A href="http://www.x5software.com/">X5 Software</A><BR>
- * Updates: <A href="http://www.x5software.com/chunk/">Chunk Documentation</A><BR>
+ * Company: <A href="http://www.x5dev.com/">X5 Software</A><BR>
+ * Updates: <A href="http://www.x5dev.com/chunk/">Chunk Documentation</A><BR>
  *
  * @author Tom McClure
  * @version 3.6.2

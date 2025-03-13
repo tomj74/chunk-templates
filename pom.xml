@@ -6,7 +6,7 @@
   <version>3.6.2</version>
   <name>Chunk Templates</name>
   <description>Chunk Template Engine for Java</description>
-  <url>http://www.x5software.com/chunk/</url>
+  <url>http://www.x5dev.com/chunk/</url>
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -82,7 +82,7 @@
       <email>tom@dagblastit.com</email>
       <url>http://www.dagblastit.com/</url>
       <organization>X5 Software</organization>
-      <organizationUrl>http://www.x5software.com/</organizationUrl>
+      <organizationUrl>http://www.x5dev.com/</organizationUrl>
       <roles>
         <role>architect</role>
         <role>developer</role>

@@ -169,7 +169,7 @@ v2.2.2 - Fixed issue with android.
 
 v2.2 - Theme objects can now be created with custom template provider.
        Full details with examples:
-         http://x5software.com/chunk/examples/ChunkExample?example=net
+         http://x5dev.com/chunk/examples/ChunkExample?example=net
 
 v2.1.2 - Fixed bug in addData(capsule, "x")
 

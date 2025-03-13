@@ -80,8 +80,8 @@ import com.x5.util.Path;
  * </PRE>
  *
  * Copyright: waived, free to use<BR>
- * Company: <A href="http://www.x5software.com/">X5 Software</A><BR>
- * Updates: <A href="http://www.x5software.com/chunk/wiki/">Chunk Documentation</A><BR>
+ * Company: <A href="http://www.x5dev.com/">X5 Software</A><BR>
+ * Updates: <A href="http://www.x5dev.com/chunk/wiki/">Chunk Documentation</A><BR>
  *
  * @author Tom McClure
  */
